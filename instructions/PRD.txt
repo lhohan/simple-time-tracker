@@ -48,8 +48,14 @@ To ensure consistency and ease of parsing, here are a few suggested input format
 - #sport 30m Voorbereiden douchen
 ```
 
-20m : 'm' stands for minutes
-1h : 'h' stands for hours
-4p : 'p' stands for pomodoros, 1 pomodoro can be translated to 30 minutes
+Time tracking entries are marked with mark down heading (any level deep) starting with TT followed by a date.
+Example above contained entries for Jan 15th 2025.
 
-The '#' indicates the project or key the time should be recorded under.
+Each new entry starts with a top level bullet item (starts with '-').
+In each entry:
+- Contains a time:
+    - 20m : 'm' stands for minutes
+    - 1h : 'h' stands for hours
+    - 4p : 'p' stands for pomodoros, 1 pomodoro can be translated to 30 minutes
+    - There can be multiple times per entry
+- The '#' indicates the project or key the time should be recorded under.

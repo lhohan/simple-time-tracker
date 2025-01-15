@@ -38,36 +38,47 @@ impl TimeEntry {
         format!("{}: {} minutes", self.project, self.minutes)
     }
     fn parse_line(line: &str) -> Result<TimeEntry, ParseError> {
-        if line.starts_with("- #") {
-            let parts: Vec<&str> = line.trim_start_matches("- #").split_whitespace().collect();
-            if parts.len() >= 2 {
-                let minutes = match parts[1] {
-                    // Handle minutes
-                    time if time.ends_with('m') => time
-                        .trim_end_matches('m')
-                        .parse::<u32>()
-                        .map_err(|_| ParseError::InvalidTime(time.to_string()))
-                        .map(|m| m),
-                    // Handle hours - smallest change to support hours
-                    time if time.ends_with('h') => time
-                        .trim_end_matches('h')
-                        .parse::<u32>()
-                        .map_err(|_| ParseError::InvalidTime(time.to_string()))
-                        .map(|h| h * 60),
-                    time if time.ends_with('p') => time
-                        .trim_end_matches('p')
-                        .parse::<u32>()
-                        .map_err(|_| ParseError::InvalidTime(time.to_string()))
-                        .map(|h| h * 30),
-                    _ => Err(ParseError::InvalidFormat),
-                }?;
-                Ok(TimeEntry {
-                    project: parts[0].to_string(),
-                    minutes,
-                })
-            } else {
-                Err(ParseError::InvalidFormat)
+        if !line.starts_with("- #") {
+            return Err(ParseError::InvalidFormat);
+        }
+
+        let parts: Vec<&str> = line.trim_start_matches("- #").split_whitespace().collect();
+        if parts.len() < 2 {
+            return Err(ParseError::InvalidFormat);
+        }
+
+        let project = parts[0].to_string();
+
+        let parse_time = |time: &str| -> Result<Option<u32>, ParseError> {
+            match time {
+                t if t.ends_with('m') => t
+                    .trim_end_matches('m')
+                    .parse::<u32>()
+                    .map_err(|_| ParseError::InvalidTime(t.to_string()))
+                    .map(Some),
+                t if t.ends_with('h') => t
+                    .trim_end_matches('h')
+                    .parse::<u32>()
+                    .map_err(|_| ParseError::InvalidTime(t.to_string()))
+                    .map(|h| Some(h * 60)),
+                t if t.ends_with('p') => t
+                    .trim_end_matches('p')
+                    .parse::<u32>()
+                    .map_err(|_| ParseError::InvalidTime(t.to_string()))
+                    .map(|p| Some(p * 30)),
+                _ => Ok(None),
             }
+        };
+
+        let total_minutes = parts[1..].iter().try_fold(0u32, |acc, &part| {
+            parse_time(part).map(|maybe_minutes| acc + maybe_minutes.unwrap_or(0))
+        })?;
+
+        if total_minutes > 0 {
+            Ok(TimeEntry {
+                project,
+                minutes: total_minutes,
+            })
         } else {
             Err(ParseError::InvalidFormat)
         }
@@ -149,5 +160,42 @@ mod tests {
     fn test_error_conversion() {
         let err = ParseError::InvalidTime("abc".to_string());
         let _: Box<dyn std::error::Error> = Box::new(err); // Should compile
+    }
+
+    #[test]
+    fn test_parse_multiple_times() {
+        let input = "- #sport 1h 30m";
+        let expected = TimeEntry {
+            project: "sport".to_string(),
+            minutes: 90, // 1h (60m) + 30m = 90m
+        };
+        assert_eq!(TimeEntry::parse_line(input), Ok(expected));
+    }
+
+    #[test]
+    fn test_parse_mixed_content() {
+        // Valid times with description
+        assert_eq!(
+            TimeEntry::parse_line("- #sport 1h some description 30m"),
+            Ok(TimeEntry {
+                project: "sport".to_string(),
+                minutes: 90
+            })
+        );
+
+        // Invalid time format
+        assert_eq!(
+            TimeEntry::parse_line("- #sport 1h 30invalid_time_unit 30m"),
+            Ok(TimeEntry {
+                project: "sport".to_string(),
+                minutes: 90
+            })
+        );
+
+        // No valid times
+        assert_eq!(
+            TimeEntry::parse_line("- #sport only description"),
+            Err(ParseError::InvalidFormat)
+        );
     }
 }
