@@ -25,17 +25,15 @@ fn test_basic_time_tracking() -> Result<(), Box<dyn std::error::Error>> {
         .assert()
         .success()
         .stdout(predicate::str::contains(
-            "journaling............  20 minutes ( 12%)",
+            "journaling............ 0h 20m ( 12%)",
         ))
         .stdout(predicate::str::contains(
-            "coding................  60 minutes ( 35%)",
+            "coding................ 1h  0m ( 35%)",
         ))
         .stdout(predicate::str::contains(
-            "sport.................  90 minutes ( 53%)",
+            "sport................. 1h 30m ( 53%)",
         ))
-        .stdout(predicate::str::contains(
-            "Total................. 170 minutes (100%)",
-        ));
+        .stdout(predicate::str::contains("Total................. 2h 50m"));
 
     Ok(())
 }
@@ -55,7 +53,7 @@ fn test_verbose_output() -> Result<(), Box<dyn std::error::Error>> {
         .success()
         .stdout(predicate::str::contains("Processing file:"))
         .stdout(predicate::str::contains(
-            "test..................  30 minutes (100%)",
+            "test.................. 0h 30m (100%)",
         ));
 
     Ok(())

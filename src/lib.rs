@@ -6,29 +6,32 @@ pub fn run(input_path: &Path) -> Result<(), ParseError> {
     let content = read_to_string(input_path).map_err(|_| ParseError::InvalidFormat)?;
     let entries = get_entries(&content)?;
 
-    // Calculate total minutes for percentage
     let total_minutes: u32 = entries.iter().map(|e| e.minutes).sum();
 
     for entry in entries {
         let percentage = (entry.minutes as f64 / total_minutes as f64 * 100.0).round() as u32;
         println!(
-            "{}..{:>4} minutes ({:>3}%)",
+            "{}..{} ({:>3}%)",
             format!("{:.<20}", entry.project),
-            entry.minutes,
+            format_duration(entry.minutes),
             percentage
         );
     }
 
-    // print totals
-    println!("{}", "_".repeat(40));
+    println!("{}", "-".repeat(40));
     println!(
-        "{}..{:>4} minutes ({:>3}%)",
+        "{}..{}",
         format!("{:.<20}", "Total"),
-        total_minutes,
-        100
+        format_duration(total_minutes),
     );
 
     Ok(())
+}
+
+fn format_duration(minutes: u32) -> String {
+    let hours = minutes / 60;
+    let remaining_minutes = minutes % 60;
+    format!("{:2}h {:2}m", hours, remaining_minutes)
 }
 
 #[derive(Debug, PartialEq)]
