@@ -3,9 +3,11 @@ use std::fs::read_to_string;
 use std::path::Path;
 
 pub fn run(input_path: &Path) -> Result<(), ParseError> {
-    let entries = get_entries(input_path)?;
+    let content = read_to_string(input_path).map_err(|_| ParseError::InvalidFormat)?;
+    let entries = get_entries(&content)?;
+
     for entry in entries {
-        println!("{}", entry.display());
+        println!("{}: {} minutes", entry.project, entry.minutes);
     }
     Ok(())
 }
@@ -34,9 +36,6 @@ struct TimeEntry {
 }
 
 impl TimeEntry {
-    fn display(&self) -> String {
-        format!("{}: {} minutes", self.project, self.minutes)
-    }
     fn parse_line(line: &str) -> Result<TimeEntry, ParseError> {
         if !line.starts_with("- #") {
             return Err(ParseError::InvalidFormat);
@@ -85,17 +84,35 @@ impl TimeEntry {
     }
 }
 
-fn get_entries(path: &Path) -> Result<Vec<TimeEntry>, ParseError> {
-    let content = read_to_string(path).map_err(|_| ParseError::InvalidFormat)?;
+fn get_entries_from_string(content: &str) -> Result<Vec<TimeEntry>, ParseError> {
+    content
+        .lines()
+        .filter(|line| line.starts_with("- #"))
+        .map(TimeEntry::parse_line)
+        .collect()
+}
 
-    let mut entries = Vec::new();
-    for line in content.lines() {
-        if line.starts_with("- #") {
-            entries.push(TimeEntry::parse_line(line)?);
-        }
+fn get_entries(content: &str) -> Result<Vec<TimeEntry>, ParseError> {
+    let entries = get_entries_from_string(content)?;
+    Ok(summarize_entries(&entries))
+}
+
+fn summarize_entries(entries: &[TimeEntry]) -> Vec<TimeEntry> {
+    let mut summary = std::collections::HashMap::new();
+
+    for entry in entries {
+        *summary.entry(entry.project.clone()).or_insert(0) += entry.minutes;
     }
 
-    Ok(entries)
+    let mut result: Vec<_> = summary
+        .into_iter()
+        .map(|s| TimeEntry {
+            minutes: s.1,
+            project: s.0,
+        })
+        .collect();
+    result.sort_by(|a, b| a.project.cmp(&b.project));
+    result
 }
 
 #[cfg(test)]
@@ -196,6 +213,30 @@ mod tests {
         assert_eq!(
             TimeEntry::parse_line("- #sport only description"),
             Err(ParseError::InvalidFormat)
+        );
+    }
+
+    #[test]
+    fn test_get_entries_from_string() {
+        let input = r#"- #sport 1h
+- #sport 30m
+- #coding 2p"#;
+
+        let entries = get_entries(input).unwrap();
+        assert_eq!(entries.len(), 2);
+        assert_eq!(
+            entries[0],
+            TimeEntry {
+                project: "coding".to_string(),
+                minutes: 60
+            }
+        );
+        assert_eq!(
+            entries[1],
+            TimeEntry {
+                project: "sport".to_string(),
+                minutes: 90
+            }
         );
     }
 }
