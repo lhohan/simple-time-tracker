@@ -1,0 +1,55 @@
+# Product Requirements Document (PRD)
+
+1. Introduction
+This document describes the features and requirements for a simple time-tracking text-based application. The application will read text files from a specified location, process marked down data to track time spent on various projects, and generate reports.
+
+2. Purpose
+The purpose of this application is to provide a straightforward method for tracking time spent on tasks, with the capability to generate detailed reports for different periods such as days, weeks, or months.
+
+3. Features & Requirements
+
+3.1. Input
+File Reading: The application will read text files from a specified directory.
+Markdown Parsing: Each text file will follow a markdown format to ensure consistency and easy parsing.
+Task Identification: Tasks will be identified using specific markers within the markdown text, such as project identifiers and timestamps.
+Time Units: Time reporting will support minutes, hours, and pomodoros.
+
+3.2. Processing
+Data Extraction: Extract relevant data from the text files, including task start and end times, project identifiers, and descriptions.
+Data Storage (Optional): Store the extracted data in a structured format for further processing and reporting.
+
+3.3. Output
+Report Generation: Generate reports based on the extracted data, allowing users to view time tracking for specific days, weeks, or months.
+Report Format: Reports can be provided in two ways:
+Generated Files: TBD Should support clear reporting
+Web Server (Optional): Host reports on a simple web server for online viewing.
+Summary Information: Each report should include a summary of total time spent on each project, broken down by day, week, or month.
+
+3.4. User Interface
+Command-Line Interface (CLI): Initially, the application will be operated through a CLI, allowing users to specify the input directory, report type, and other parameters.
+Web Interface (Optional): A basic web interface can be developed as an enhancement to allow users to upload files and view reports online.
+
+3.5. Configuration
+Project Identifiers: Users should be able to define project identifiers and reference them consistently across text files.
+Time Intervals: Users should be able to select the desired reporting interval (daily, weekly, or monthly).
+
+4. Suggestions for Input Format
+To ensure consistency and ease of parsing, here are a few suggested input formats for the markdown files:
+
+4.1. Basic Markdown Example
+
+```markdown
+## TT 2025-01-15
+
+- #journaling  20m
+- #2nd-brain 1p samenvatting inzichten journaling
+- #prj-time-tracking 4p
+- #sport 1h
+- #sport 30m Voorbereiden douchen
+```
+
+20m : 'm' stands for minutes
+1h : 'h' stands for hours
+4p : 'p' stands for pomodoros, 1 pomodoro can be translated to 30 minutes
+
+The '#' indicates the project or key the time should be recorded under.
