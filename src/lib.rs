@@ -6,8 +6,10 @@ pub fn run(input_path: &Path) -> Result<(), ParseError> {
     let content = read_to_string(input_path).map_err(|_| ParseError::InvalidFormat)?;
     let entries = get_entries(&content)?;
 
+    println!("Time tracking summary:");
+
     for entry in entries {
-        println!("{}: {} minutes", entry.project, entry.minutes);
+        println!("{:.<20} {:>3} minutes", entry.project, entry.minutes);
     }
     Ok(())
 }
