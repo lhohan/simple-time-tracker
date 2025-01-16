@@ -18,7 +18,7 @@ fn test_basic_time_tracking() -> Result<(), Box<dyn std::error::Error>> {
 - #sport 1h"#,
     )?;
 
-    let mut cmd = Command::cargo_bin("time-tracker")?;
+    let mut cmd = Command::cargo_bin("tt")?;
 
     cmd.arg("--input")
         .arg(input_file.path())
@@ -47,7 +47,7 @@ fn test_verbose_output() -> Result<(), Box<dyn std::error::Error>> {
         - #test 30m"#,
     )?;
 
-    let mut cmd = Command::cargo_bin("time-tracker")?;
+    let mut cmd = Command::cargo_bin("tt")?;
 
     cmd.arg("--input")
         .arg(input_file.path())
@@ -81,7 +81,7 @@ Some random content
 - #not-tracked 1h"#,
     )?;
 
-    let mut cmd = Command::cargo_bin("time-tracker")?;
+    let mut cmd = Command::cargo_bin("tt")?;
 
     cmd.arg("--input")
         .arg(input_file.path())
