@@ -59,3 +59,13 @@ In each entry:
     - 4p : 'p' stands for pomodoros, 1 pomodoro can be translated to 30 minutes
     - There can be multiple times per entry
 - The '#' indicates the project or key the time should be recorded under.
+
+4.2 Input specifications
+
+**Multiple project identifiers**
+
+An entry for a sub-project 'sub-proj' below main project 'proj'. Futher nesting is possible.
+
+```
+- #proj #sub-proj 5h My task
+```
