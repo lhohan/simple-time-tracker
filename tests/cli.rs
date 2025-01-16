@@ -42,7 +42,10 @@ fn test_basic_time_tracking() -> Result<(), Box<dyn std::error::Error>> {
 fn test_verbose_output() -> Result<(), Box<dyn std::error::Error>> {
     let temp = assert_fs::TempDir::new()?;
     let input_file = temp.child("day1.md");
-    input_file.write_str("- #test 30m")?;
+    input_file.write_str(
+        r#"## TT 2025-01-15
+        - #test 30m"#,
+    )?;
 
     let mut cmd = Command::cargo_bin("time-tracker")?;
 
@@ -55,6 +58,42 @@ fn test_verbose_output() -> Result<(), Box<dyn std::error::Error>> {
         .stdout(predicate::str::contains(
             "test.................. 0h 30m (100%)",
         ));
+
+    Ok(())
+}
+
+#[test]
+fn should_only_process_entries_in_time_tracking_sections() -> Result<(), Box<dyn std::error::Error>>
+{
+    let temp = assert_fs::TempDir::new()?;
+    let input_file = temp.child("mixed_content.md");
+
+    input_file.write_str(
+        r#"# Random Header
+Some random content
+- #not-tracked 1h
+
+## TT 2025-01-15
+- #sport 1h
+- #coding 2p
+
+# Another Section
+- #not-tracked 1h"#,
+    )?;
+
+    let mut cmd = Command::cargo_bin("time-tracker")?;
+
+    cmd.arg("--input")
+        .arg(input_file.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            "coding................ 1h  0m ( 50%)",
+        ))
+        .stdout(predicate::str::contains(
+            "sport................. 1h  0m ( 50%)",
+        ))
+        .stdout(predicate::str::contains("Total................. 2h  0m"));
 
     Ok(())
 }

@@ -2,6 +2,7 @@ pub mod cli;
 mod domain;
 mod parsing;
 mod reporting;
+mod utils;
 
 use domain::ParseError;
 use reporting::Report;

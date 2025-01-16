@@ -1,4 +1,5 @@
 use crate::domain::{ParseError, TimeEntry};
+use crate::utils::Pipe;
 
 pub fn get_entries(content: &str) -> Result<Vec<TimeEntry>, ParseError> {
     let entries = get_entries_from_string(content)?;
@@ -6,11 +7,23 @@ pub fn get_entries(content: &str) -> Result<Vec<TimeEntry>, ParseError> {
 }
 
 fn get_entries_from_string(content: &str) -> Result<Vec<TimeEntry>, ParseError> {
+    let mut in_tt_section = false;
+
     content
         .lines()
-        .filter(|line| line.starts_with("- #"))
-        .map(parse_line)
-        .collect()
+        .filter_map(|line| {
+            let line = line.trim();
+            if line.starts_with('#') {
+                in_tt_section = is_date_header(line);
+                None
+            } else if in_tt_section && line.starts_with("- #") {
+                parse_line(line).ok()
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<_>>()
+        .pipe(|entries| Ok(entries))
 }
 
 fn parse_line(line: &str) -> Result<TimeEntry, ParseError> {
@@ -70,6 +83,13 @@ fn summarize_entries(entries: &[TimeEntry]) -> Vec<TimeEntry> {
         .collect();
     result.sort_by(|a, b| a.project.cmp(&b.project));
     result
+}
+
+fn is_date_header(line: &str) -> bool {
+    let mut words = line.trim().split_whitespace();
+
+    matches!(words.next(), Some(first) if first.starts_with('#'))
+        && matches!(words.next(), Some("TT"))
 }
 
 #[cfg(test)]
@@ -175,7 +195,8 @@ mod tests {
 
     #[test]
     fn test_get_entries_from_string() {
-        let input = r#"- #sport 1h
+        let input = r#"## TT 2025-01-15
+- #sport 1h
 - #sport 30m
 - #coding 2p"#;
 
@@ -195,5 +216,19 @@ mod tests {
                 minutes: 90
             }
         );
+    }
+
+    #[test]
+    fn test_detect_date_header() {
+        assert!(is_date_header("# TT 2025-01-15"));
+        assert!(is_date_header("## TT 2025-01-15"));
+        assert!(is_date_header("### TT 2025-01-15"));
+        assert!(is_date_header("############### TT 2025-01-15"));
+
+        // Negative cases
+        assert!(!is_date_header("- #sport 1h"));
+        assert!(!is_date_header("## Something else"));
+        assert!(!is_date_header("TTT 2025-01-15")); // No header markers
+        assert!(!is_date_header("#TT 2025-01-15")); // No space after #
     }
 }

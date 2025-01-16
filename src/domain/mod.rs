@@ -14,6 +14,7 @@ impl TimeEntry {
 pub enum ParseError {
     InvalidFormat,
     InvalidTime(String),
+    InvalidDate(String),
 }
 
 impl std::fmt::Display for ParseError {
@@ -21,6 +22,7 @@ impl std::fmt::Display for ParseError {
         match self {
             ParseError::InvalidFormat => write!(f, "invalid line format"),
             ParseError::InvalidTime(line) => write!(f, "invalid time format: '{}'", line),
+            ParseError::InvalidDate(line) => write!(f, "invalid date format: '{}'", line),
         }
     }
 }
