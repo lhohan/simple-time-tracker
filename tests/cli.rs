@@ -32,8 +32,7 @@ fn test_basic_time_tracking() -> Result<(), Box<dyn std::error::Error>> {
         ))
         .stdout(predicate::str::contains(
             "sport................. 1h 30m ( 53%)",
-        ))
-        .stdout(predicate::str::contains("Total................. 2h 50m"));
+        ));
 
     Ok(())
 }
@@ -92,8 +91,37 @@ Some random content
         ))
         .stdout(predicate::str::contains(
             "sport................. 1h  0m ( 50%)",
+        ));
+
+    Ok(())
+}
+
+#[test]
+fn test_summary_statistics() -> Result<(), Box<dyn std::error::Error>> {
+    let temp = assert_fs::TempDir::new()?;
+    let input_file = temp.child("day1.md");
+    input_file.write_str(
+        r#"## TT 2025-01-15
+- #work 2h
+- #exercise 2h
+## TT 2025-01-16
+- #work 3h
+- #exercise 1h"#,
+    )?;
+
+    let mut cmd = Command::cargo_bin("tt")?;
+
+    cmd.arg("--input")
+        .arg(input_file.path())
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            "work.................. 5h  0m ( 63%)",
         ))
-        .stdout(predicate::str::contains("Total................. 2h  0m"));
+        .stdout(predicate::str::contains(
+            "exercise.............. 3h  0m ( 38%)",
+        ))
+        .stdout(predicate::str::contains("2 days, 4.0 h/day"));
 
     Ok(())
 }

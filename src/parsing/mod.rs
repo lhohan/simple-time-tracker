@@ -1,20 +1,24 @@
 use crate::domain::{ParseError, TimeEntry};
-use crate::utils::Pipe;
 
-pub fn get_entries(content: &str) -> Result<Vec<TimeEntry>, ParseError> {
-    let entries = get_entries_from_string(content)?;
-    Ok(summarize_entries(&entries))
+pub fn get_entries(content: &str) -> Result<(Vec<TimeEntry>, u32), ParseError> {
+    let (entries, days) = get_entries_from_string(content)?;
+    Ok((summarize_entries(&entries), days))
 }
 
-fn get_entries_from_string(content: &str) -> Result<Vec<TimeEntry>, ParseError> {
+fn get_entries_from_string(content: &str) -> Result<(Vec<TimeEntry>, u32), ParseError> {
     let mut in_tt_section = false;
+    let mut days = 0u32;
 
-    content
+    let entries = content
         .lines()
         .filter_map(|line| {
             let line = line.trim();
             if line.starts_with('#') {
-                in_tt_section = is_date_header(line);
+                let is_tt = is_date_header(line);
+                if is_tt {
+                    days += 1;
+                }
+                in_tt_section = is_tt;
                 None
             } else if in_tt_section && line.starts_with("- #") {
                 parse_line(line).ok()
@@ -22,8 +26,8 @@ fn get_entries_from_string(content: &str) -> Result<Vec<TimeEntry>, ParseError> 
                 None
             }
         })
-        .collect::<Vec<_>>()
-        .pipe(|entries| Ok(entries))
+        .collect::<Vec<_>>();
+    Ok((entries, days))
 }
 
 fn parse_line(line: &str) -> Result<TimeEntry, ParseError> {
@@ -200,7 +204,7 @@ mod tests {
 - #sport 30m
 - #coding 2p"#;
 
-        let entries = get_entries(input).unwrap();
+        let (entries, _) = get_entries(input).unwrap();
         assert_eq!(entries.len(), 2);
         assert_eq!(
             entries[0],

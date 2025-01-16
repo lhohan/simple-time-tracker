@@ -4,10 +4,11 @@ use itertools::Itertools;
 pub struct Report {
     entries: Vec<TimeEntry>,
     total_minutes: u32,
+    days: u32,
 }
 
 impl Report {
-    pub fn new(entries: Vec<TimeEntry>) -> Self {
+    pub fn new(entries: Vec<TimeEntry>, days: u32) -> Self {
         let entries: Vec<_> = entries
             .into_iter()
             .sorted_by(|a, b| b.minutes.cmp(&a.minutes).then(a.project.cmp(&b.project)))
@@ -16,6 +17,7 @@ impl Report {
         Self {
             entries,
             total_minutes,
+            days: days,
         }
     }
 
@@ -31,10 +33,11 @@ impl Report {
         }
 
         println!("{}", "-".repeat(40));
+        print!("{} days", self.days);
+        print!(", ");
         println!(
-            "{}..{}",
-            format!("{:.<20}", "Total"),
-            format_duration(self.total_minutes),
+            "{:.1} h/day",
+            (self.total_minutes as f64 / 60.0) / self.days as f64,
         );
     }
 
@@ -62,7 +65,7 @@ pub(crate) mod tests {
             TimeEntry::new("also-long".to_string(), 120),
         ];
 
-        let report = Report::new(entries);
+        let report = Report::new(entries, 1);
 
         // First two entries should be the 120-minute ones, alphabetically ordered
         assert_eq!(report.entries[0].project, "also-long");

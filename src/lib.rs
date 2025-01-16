@@ -2,7 +2,6 @@ pub mod cli;
 mod domain;
 mod parsing;
 mod reporting;
-mod utils;
 
 use domain::ParseError;
 use reporting::Report;
@@ -11,8 +10,8 @@ use std::path::Path;
 
 pub fn run(input_path: &Path) -> Result<(), ParseError> {
     let content = read_to_string(input_path).map_err(|_| ParseError::InvalidFormat)?;
-    let entries = parsing::get_entries(&content)?;
-    let report = Report::new(entries);
+    let (entries, days) = parsing::get_entries(&content)?;
+    let report = Report::new(entries, days);
     report.display();
 
     Ok(())
