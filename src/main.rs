@@ -1,18 +1,5 @@
 use anyhow::Result;
-use clap::Parser;
-use std::path::PathBuf;
-
-/// Time tracking application
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-struct Args {
-    #[arg(short, long, value_name = "FILE")]
-    input: PathBuf,
-
-    /// Show verbose output
-    #[arg(short, long)]
-    verbose: bool,
-}
+use time_tracker::cli::Args;
 
 fn main() -> Result<()> {
     let args = Args::parse();
