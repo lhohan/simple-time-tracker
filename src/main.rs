@@ -8,6 +8,6 @@ fn main() -> Result<()> {
         println!("Processing file: {}", args.input.display());
     }
 
-    time_tracker::run(&args.input).map_err(anyhow::Error::from)?;
+    time_tracker::run(&args.input, args.project.as_deref()).map_err(anyhow::Error::from)?;
     Ok(())
 }

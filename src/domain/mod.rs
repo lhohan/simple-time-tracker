@@ -1,12 +1,17 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct TimeEntry {
     pub project: String,
     pub minutes: u32,
+    pub description: Option<String>,
 }
 
 impl TimeEntry {
-    pub fn new(project: String, minutes: u32) -> Self {
-        Self { project, minutes }
+    pub fn new(project: String, minutes: u32, description: Option<String>) -> Self {
+        Self {
+            project,
+            minutes,
+            description,
+        }
     }
 }
 

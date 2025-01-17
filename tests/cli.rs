@@ -125,3 +125,37 @@ fn test_summary_statistics() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn test_project_filter() -> Result<(), Box<dyn std::error::Error>> {
+    // Create a temporary test directory
+    let temp = assert_fs::TempDir::new()?;
+
+    // Create input file with test content
+    let input_file = temp.child("test.md");
+    input_file.write_str(
+        r#"## TT 2025-01-15
+- #dev #rust 2h implementing filters
+- #dev 1h planning
+- #sport 30m"#,
+    )?;
+
+    let mut cmd = Command::cargo_bin("tt")?;
+
+    cmd.arg("--input")
+        .arg(input_file.path())
+        .arg("--project")
+        .arg("dev")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Project: dev"))
+        .stdout(predicate::str::contains("Total time:  3h"))
+        .stdout(predicate::str::contains(
+            "implementing filters.. 2h  0m (67%)",
+        ))
+        .stdout(predicate::str::contains(
+            "planning.............. 1h  0m (33%)",
+        ));
+
+    Ok(())
+}
