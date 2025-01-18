@@ -1,6 +1,15 @@
 use assert_cmd::Command;
 use assert_fs::prelude::*;
 use predicates::prelude::*;
+mod test_helpers;
+use test_helpers::*;
+
+#[test]
+fn shows_help_information() -> Result<(), Box<dyn std::error::Error>> {
+    assert_cli_command(&["--help"])?.should_succeed();
+
+    Ok(())
+}
 
 #[test]
 fn test_basic_time_tracking() -> Result<(), Box<dyn std::error::Error>> {
