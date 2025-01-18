@@ -6,13 +6,33 @@ use test_helpers::*;
 
 #[test]
 fn shows_help_information() -> Result<(), Box<dyn std::error::Error>> {
-    assert_cli_command(&["--help"])?.should_succeed();
+    Cmd::with_help().run()?.should_succeed();
 
     Ok(())
 }
 
 #[test]
 fn test_basic_time_tracking() -> Result<(), Box<dyn std::error::Error>> {
+    Cmd::with_content(
+        r#"
+        ## TT 2025-01-15
+        - #sport 30m
+        - #coding 2p
+        - #journaling 20m
+        - #sport 1h
+    "#,
+    )
+    .run()?
+    .should_succeed()
+    .should_contain_project("sport", [("Duration", "1h 30m"), ("Percentage", "53")])
+    .should_contain_project("coding", [("Duration", "1h  0m"), ("Percentage", "35")])
+    .should_contain_project("journaling", [("Duration", "0h 20m"), ("Percentage", "12")]);
+
+    Ok(())
+}
+
+#[test]
+fn test_basic_time_tracking_old() -> Result<(), Box<dyn std::error::Error>> {
     // Create a temporary test directory
     let temp = assert_fs::TempDir::new()?;
 
@@ -27,9 +47,9 @@ fn test_basic_time_tracking() -> Result<(), Box<dyn std::error::Error>> {
 - #sport 1h"#,
     )?;
 
-    let mut cmd = Command::cargo_bin("tt")?;
+    let mut c = Command::cargo_bin("tt")?;
 
-    cmd.arg("--input")
+    c.arg("--input")
         .arg(input_file.path())
         .assert()
         .success()
@@ -55,9 +75,9 @@ fn test_verbose_output() -> Result<(), Box<dyn std::error::Error>> {
         - #test 30m"#,
     )?;
 
-    let mut cmd = Command::cargo_bin("tt")?;
+    let mut c = Command::cargo_bin("tt")?;
 
-    cmd.arg("--input")
+    c.arg("--input")
         .arg(input_file.path())
         .arg("--verbose")
         .assert()
@@ -89,9 +109,9 @@ Some random content
 - #not-tracked 1h"#,
     )?;
 
-    let mut cmd = Command::cargo_bin("tt")?;
+    let mut c = Command::cargo_bin("tt")?;
 
-    cmd.arg("--input")
+    c.arg("--input")
         .arg(input_file.path())
         .assert()
         .success()
@@ -118,9 +138,9 @@ fn test_summary_statistics() -> Result<(), Box<dyn std::error::Error>> {
 - #exercise 1h"#,
     )?;
 
-    let mut cmd = Command::cargo_bin("tt")?;
+    let mut c = Command::cargo_bin("tt")?;
 
-    cmd.arg("--input")
+    c.arg("--input")
         .arg(input_file.path())
         .assert()
         .success()
@@ -149,9 +169,9 @@ fn test_project_filter() -> Result<(), Box<dyn std::error::Error>> {
 - #sport 30m"#,
     )?;
 
-    let mut cmd = Command::cargo_bin("tt")?;
+    let mut c = Command::cargo_bin("tt")?;
 
-    cmd.arg("--input")
+    c.arg("--input")
         .arg(input_file.path())
         .arg("--project")
         .arg("dev")
