@@ -80,16 +80,16 @@ impl CommandResult {
         self.assert_project(&ProjectExpectations::new(project))
     }
 
-    pub fn with_project(self, name: &str) -> ProjectAssertion<'_> {
+    pub fn expect_project(self, name: &str) -> ProjectAssertion<'_> {
         ProjectAssertion {
             cmd_result: self,
             project: ProjectExpectations::new(name),
         }
     }
 
-    fn assert_project(self, project: &ProjectExpectations) -> Self {
-        let name = project.name.to_string();
-        let expectations = project.expectations.clone();
+    fn assert_project(self, expectations: &ProjectExpectations) -> Self {
+        let name = expectations.name.to_string();
+        let expectations = expectations.expectations.clone();
 
         let assert = self
             .output
@@ -174,6 +174,10 @@ impl<'a> ProjectAssertion<'a> {
 
     pub fn and(self) -> CommandResult {
         self.cmd_result.assert_project(&self.project)
+    }
+
+    pub fn validate(self) -> CommandResult {
+        self.and()
     }
 }
 
