@@ -10,7 +10,7 @@ pub struct CommandBuilder {
 
 pub struct CommandResult {
     output: assert_cmd::assert::Assert,
-    _temp_dir: Option<assert_fs::TempDir>, // Keep temp dir alive during test
+    _temp_dir: Option<assert_fs::TempDir>,
 }
 
 impl CommandBuilder {
@@ -30,7 +30,6 @@ impl CommandBuilder {
 
     pub fn run(self) -> Result<CommandResult, Box<dyn std::error::Error>> {
         let (temp_dir, mut command) = match self.content {
-            // Made command mutable
             Some(content) => {
                 let temp = assert_fs::TempDir::new()?;
                 let input_file = temp.child("test.md");
@@ -71,27 +70,47 @@ impl CommandResult {
         project: &str,
         expectations: [(&'static str, &str); N],
     ) -> Self {
-        let expectations_vec: Vec<_> = expectations.into_iter().collect();
+        self.assert_project(&ProjectExpectations {
+            name: project,
+            expectations: expectations.into_iter().collect(),
+        })
+    }
+
+    pub fn should_have_project(self, project: &str) -> Self {
+        self.assert_project(&ProjectExpectations::new(project))
+    }
+
+    pub fn with_project(self, name: &str) -> ProjectAssertion<'_> {
+        ProjectAssertion {
+            cmd_result: self,
+            project: ProjectExpectations::new(name),
+        }
+    }
+
+    fn assert_project(self, project: &ProjectExpectations) -> Self {
+        let name = project.name.to_string();
+        let expectations = project.expectations.clone();
+
         let assert = self
             .output
             .stdout(predicate::function(move |output: &[u8]| {
                 if let Ok(output_str) = std::str::from_utf8(output) {
                     output_str
                         .lines()
-                        .find(|line| line.contains(project))
+                        .find(|line| line.contains(&name))
                         .map_or(false, |line| {
                             let mut all_match = true;
                             let mut error = AssertionError::new(format!(
                                 "Project '{}' validation failed",
-                                project
+                                name
                             ))
                             .actual(line);
 
-                            for &(label, expected) in &expectations_vec {
+                            for &(label, expected) in &expectations {
                                 let found = line.contains(expected);
                                 if !found {
                                     all_match = false;
-                                    error = error.expected(label, expected);
+                                    error = error.expected(label, expected.to_string());
                                 }
                             }
 
@@ -101,6 +120,7 @@ impl CommandResult {
                             all_match
                         })
                 } else {
+                    println!("\nInvalid UTF-8 in command output");
                     false
                 }
             }));
@@ -112,6 +132,51 @@ impl CommandResult {
     }
 }
 
+pub struct ProjectExpectations<'a> {
+    name: &'a str,
+    expectations: Vec<(&'static str, &'a str)>,
+}
+
+impl<'a> ProjectExpectations<'a> {
+    fn new(name: &'a str) -> Self {
+        Self {
+            name,
+            expectations: Vec::new(),
+        }
+    }
+
+    fn with_duration(mut self, duration: &'a str) -> Self {
+        self.expectations.push(("Duration", duration));
+        self
+    }
+
+    fn with_percentage(mut self, percentage: &'a str) -> Self {
+        self.expectations.push(("Percentage", percentage));
+        self
+    }
+}
+
+pub struct ProjectAssertion<'a> {
+    cmd_result: CommandResult,
+    project: ProjectExpectations<'a>,
+}
+
+impl<'a> ProjectAssertion<'a> {
+    pub fn taking(mut self, duration: &'a str) -> Self {
+        self.project = self.project.with_duration(duration);
+        self
+    }
+
+    pub fn with_percentage(mut self, percentage: &'a str) -> Self {
+        self.project = self.project.with_percentage(percentage);
+        self
+    }
+
+    pub fn and(self) -> CommandResult {
+        self.cmd_result.assert_project(&self.project)
+    }
+}
+
 pub struct Cmd;
 
 impl Cmd {
@@ -119,7 +184,7 @@ impl Cmd {
         CommandBuilder::with_help()
     }
 
-    pub fn with_content(content: &str) -> CommandBuilder {
+    pub fn given_content(content: &str) -> CommandBuilder {
         CommandBuilder::with_content(content)
     }
 }
