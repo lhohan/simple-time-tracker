@@ -25,17 +25,15 @@ fn test_basic_time_tracking() -> Result<(), Box<dyn std::error::Error>> {
     .run()?
     .should_succeed()
     .expect_project("sport")
-    .taking("1h 30m")
+    .taking("1h 30")
     .with_percentage("53")
-    .and()
     .expect_project("coding")
     .taking("1h  0m")
     .with_percentage("35")
-    .and()
     .expect_project("journaling")
     .taking("0h 20m")
     .with_percentage("12")
-    .validate();
+    .validate()?;
 
     Ok(())
 }

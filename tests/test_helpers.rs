@@ -1,7 +1,6 @@
 use assert_cmd::Command;
 use assert_fs::prelude::*;
 use predicates::prelude::*;
-use std::fmt;
 
 pub struct CommandBuilder {
     args: Vec<String>,
@@ -11,6 +10,35 @@ pub struct CommandBuilder {
 pub struct CommandResult {
     output: assert_cmd::assert::Assert,
     _temp_dir: Option<assert_fs::TempDir>,
+}
+
+pub struct ProjectExpectations {
+    name: String,
+    expectations: Vec<(&'static str, String)>,
+}
+
+impl ProjectExpectations {
+    fn new(name: &str) -> Self {
+        Self {
+            name: name.to_string(),
+            expectations: Vec::new(),
+        }
+    }
+
+    fn with_duration(mut self, duration: &str) -> Self {
+        self.expectations.push(("Duration", duration.to_string()));
+        self
+    }
+
+    fn with_percentage(mut self, percentage: String) -> Self {
+        self.expectations.push(("Percentage", percentage));
+        self
+    }
+}
+
+pub struct ProjectAssertion {
+    cmd_result: CommandResult,
+    project: ProjectExpectations,
 }
 
 impl CommandBuilder {
@@ -65,62 +93,77 @@ impl CommandResult {
         }
     }
 
-    pub fn should_contain_project<const N: usize>(
-        self,
-        project: &str,
-        expectations: [(&'static str, &str); N],
-    ) -> Self {
-        self.assert_project(&ProjectExpectations {
-            name: project,
-            expectations: expectations.into_iter().collect(),
-        })
-    }
-
-    pub fn should_have_project(self, project: &str) -> Self {
-        self.assert_project(&ProjectExpectations::new(project))
-    }
-
-    pub fn expect_project(self, name: &str) -> ProjectAssertion<'_> {
+    pub fn expect_project(self, name: &str) -> ProjectAssertion {
         ProjectAssertion {
             cmd_result: self,
             project: ProjectExpectations::new(name),
         }
     }
 
-    fn assert_project(self, expectations: &ProjectExpectations) -> Self {
-        let name = expectations.name.to_string();
-        let expectations = expectations.expectations.clone();
+    pub fn should_contain_project<const N: usize>(
+        self,
+        project: &str,
+        expectations: [(&'static str, &str); N],
+    ) -> Self {
+        let project_exp = ProjectExpectations {
+            name: project.to_string(),
+            expectations: expectations
+                .into_iter()
+                .map(|(label, value)| (label, value.to_string()))
+                .collect(),
+        };
+
+        self.assert_project(&project_exp)
+    }
+
+    fn assert_project(self, project: &ProjectExpectations) -> Self {
+        let project_name = &project.name;
+        let project_name_with_delimiter = &format!("{}.", project_name);
+        let expectations = &project.expectations;
 
         let assert = self
             .output
             .stdout(predicate::function(move |output: &[u8]| {
                 if let Ok(output_str) = std::str::from_utf8(output) {
-                    output_str
+                    let project_line = output_str
                         .lines()
-                        .find(|line| line.contains(&name))
-                        .map_or(false, |line| {
-                            let mut all_match = true;
-                            let mut error = AssertionError::new(format!(
-                                "Project '{}' validation failed",
-                                name
-                            ))
-                            .actual(line);
+                        .find(|line| line.contains(project_name_with_delimiter));
 
-                            for &(label, expected) in &expectations {
-                                let found = line.contains(expected);
-                                if !found {
-                                    all_match = false;
-                                    error = error.expected(label, expected.to_string());
+                    match project_line {
+                        Some(line) => {
+                            let failed_expectations: Vec<_> = expectations
+                                .iter()
+                                .filter(|(_, expected)| !line.contains(expected))
+                                .collect();
+
+                            if !failed_expectations.is_empty() {
+                                println!("\nProject '{}' validation failed", project_name);
+                                println!("Found line: '{}'", line);
+                                println!("Failed expectations:");
+                                for (label, expected) in &failed_expectations {
+                                    println!("  - {}: Expected '{}'", label, expected);
                                 }
+                                false
+                            } else {
+                                true
                             }
-
-                            if !all_match {
-                                println!("{}", error);
-                            }
-                            all_match
-                        })
+                        }
+                        None => {
+                            println!("\nProject '{}' not found in output", project_name);
+                            println!(
+                                "Expected to find a line containing: '{}'",
+                                project_name_with_delimiter
+                            );
+                            println!("Full output:");
+                            println!("---");
+                            println!("{}", output_str);
+                            println!("---");
+                            false
+                        }
+                    }
                 } else {
                     println!("\nInvalid UTF-8 in command output");
+                    println!("Raw output: {:?}", output);
                     false
                 }
             }));
@@ -132,52 +175,32 @@ impl CommandResult {
     }
 }
 
-pub struct ProjectExpectations<'a> {
-    name: &'a str,
-    expectations: Vec<(&'static str, &'a str)>,
-}
-
-impl<'a> ProjectExpectations<'a> {
-    fn new(name: &'a str) -> Self {
-        Self {
-            name,
-            expectations: Vec::new(),
-        }
-    }
-
-    fn with_duration(mut self, duration: &'a str) -> Self {
-        self.expectations.push(("Duration", duration));
-        self
-    }
-
-    fn with_percentage(mut self, percentage: &'a str) -> Self {
-        self.expectations.push(("Percentage", percentage));
-        self
-    }
-}
-
-pub struct ProjectAssertion<'a> {
-    cmd_result: CommandResult,
-    project: ProjectExpectations<'a>,
-}
-
-impl<'a> ProjectAssertion<'a> {
-    pub fn taking(mut self, duration: &'a str) -> Self {
+impl ProjectAssertion {
+    pub fn taking(mut self, duration: &str) -> Self {
         self.project = self.project.with_duration(duration);
         self
     }
 
-    pub fn with_percentage(mut self, percentage: &'a str) -> Self {
-        self.project = self.project.with_percentage(percentage);
+    pub fn with_percentage(mut self, percentage: &str) -> Self {
+        let formatted_percentage = format!("({:>3}%)", percentage);
+        self.project = self.project.with_percentage(formatted_percentage);
         self
     }
 
-    pub fn and(self) -> CommandResult {
-        self.cmd_result.assert_project(&self.project)
+    pub fn expect_project(self, name: &str) -> Self {
+        // First validate the current project
+        let cmd_result = self.cmd_result.assert_project(&self.project);
+
+        // Then create new ProjectAssertion for the next project
+        Self {
+            cmd_result,
+            project: ProjectExpectations::new(name),
+        }
     }
 
-    pub fn validate(self) -> CommandResult {
-        self.and()
+    pub fn validate(self) -> Result<(), Box<dyn std::error::Error>> {
+        self.cmd_result.assert_project(&self.project);
+        Ok(())
     }
 }
 
@@ -190,63 +213,5 @@ impl Cmd {
 
     pub fn given_content(content: &str) -> CommandBuilder {
         CommandBuilder::with_content(content)
-    }
-}
-
-#[derive(Debug)]
-struct AssertionError {
-    context: String,
-    expected: Vec<(&'static str, String)>,
-    actual: String,
-    full_output: String,
-}
-
-impl AssertionError {
-    fn new(context: impl Into<String>) -> Self {
-        Self {
-            context: context.into(),
-            expected: Vec::new(),
-            actual: String::new(),
-            full_output: String::new(),
-        }
-    }
-
-    fn expected(mut self, label: &'static str, value: impl Into<String>) -> Self {
-        self.expected.push((label, value.into()));
-        self
-    }
-
-    fn actual(mut self, line: impl Into<String>) -> Self {
-        self.actual = line.into();
-        self
-    }
-
-    fn full_output(mut self, output: impl Into<String>) -> Self {
-        self.full_output = output.into();
-        self
-    }
-}
-
-impl fmt::Display for AssertionError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "\n{}", self.context)?;
-
-        if !self.actual.is_empty() {
-            writeln!(f, "Found line: '{}'", self.actual)?;
-        }
-
-        if !self.expected.is_empty() {
-            writeln!(f, "Expected to contain:")?;
-            for (label, value) in &self.expected {
-                writeln!(f, "  - {}: '{}'", label, value)?;
-            }
-        }
-
-        if !self.full_output.is_empty() {
-            writeln!(f, "\nFull output:")?;
-            writeln!(f, "{}", self.full_output)?;
-        }
-
-        Ok(())
     }
 }
