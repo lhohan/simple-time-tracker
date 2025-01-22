@@ -56,7 +56,7 @@ impl CommandBuilder {
         }
     }
 
-    pub fn run(self) -> Result<CommandResult, Box<dyn std::error::Error>> {
+    pub fn when_run(self) -> Result<CommandResult, Box<dyn std::error::Error>> {
         let (temp_dir, mut command) = match self.content {
             Some(content) => {
                 let temp = assert_fs::TempDir::new()?;

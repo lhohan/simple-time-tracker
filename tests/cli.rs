@@ -6,7 +6,7 @@ use test_helpers::*;
 
 #[test]
 fn shows_help_information() -> Result<(), Box<dyn std::error::Error>> {
-    Cmd::with_help().run()?.should_succeed();
+    Cmd::with_help().when_run()?.should_succeed();
 
     Ok(())
 }
@@ -22,7 +22,7 @@ fn test_basic_time_tracking() -> Result<(), Box<dyn std::error::Error>> {
         - #sport 1h
         "#,
     )
-    .run()?
+    .when_run()?
     .should_succeed()
     .expect_project("sport")
     .taking("1h 30")
@@ -49,7 +49,7 @@ fn test_basic_time_tracking_basic_dsl() -> Result<(), Box<dyn std::error::Error>
         - #sport 1h
     "#,
     )
-    .run()?
+    .when_run()?
     .should_succeed()
     .should_contain_project("sport", [("Duration", "1h 30m"), ("Percentage", "53")])
     .should_contain_project("coding", [("Duration", "1h  0m"), ("Percentage", "35")])
