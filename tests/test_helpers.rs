@@ -56,21 +56,23 @@ impl CommandBuilder {
         }
     }
 
-    pub fn when_run(self) -> Result<CommandResult, Box<dyn std::error::Error>> {
+    pub fn when_run(self) -> CommandResult {
         let (temp_dir, mut command) = match self.content {
             Some(content) => {
-                let temp = assert_fs::TempDir::new()?;
+                let temp = assert_fs::TempDir::new().expect("Failed to create temporary directory");
                 let input_file = temp.child("test.md");
-                input_file.write_str(&content)?;
+                input_file
+                    .write_str(&content)
+                    .expect("Failed to write to test file");
 
-                let mut cmd = Command::cargo_bin("tt")?;
+                let mut cmd = Command::cargo_bin("tt").expect("Failed to create cargo command");
                 cmd.arg("--input").arg(input_file.path());
                 cmd.args(&self.args);
 
                 (Some(temp), cmd)
             }
             None => {
-                let mut cmd = Command::cargo_bin("tt")?;
+                let mut cmd = Command::cargo_bin("tt").expect("Failed to create cargo command");
                 cmd.args(&self.args);
                 (None, cmd)
             }
@@ -78,10 +80,10 @@ impl CommandBuilder {
 
         let output = command.assert();
 
-        Ok(CommandResult {
+        CommandResult {
             output,
             _temp_dir: temp_dir,
-        })
+        }
     }
 }
 
