@@ -5,7 +5,7 @@ fn main() -> Result<()> {
     let args = Args::parse();
 
     if args.verbose {
-        println!("Processing file: {}", args.input.display());
+        println!("Processing path: {}", args.input.display());
     }
 
     time_tracker::run(&args.input, args.project.as_deref()).map_err(anyhow::Error::from)?;

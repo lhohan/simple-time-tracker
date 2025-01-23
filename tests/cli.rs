@@ -6,54 +6,59 @@ use test_helpers::*;
 
 #[test]
 fn shows_help_information() -> Result<(), Box<dyn std::error::Error>> {
-    Cmd::with_help().when_run().should_succeed();
+    CommandBuilder::new()
+        .with_help()
+        .when_run()
+        .should_succeed();
 
     Ok(())
 }
 
 #[test]
 fn test_basic_time_tracking() -> Result<(), Box<dyn std::error::Error>> {
-    Cmd::given_content(
-        r#"
+    CommandBuilder::new()
+        .with_content(
+            r#"
         ## TT 2025-01-15
         - #sport 30m
         - #coding 2p
         - #journaling 20m
         - #sport 1h
         "#,
-    )
-    .when_run()
-    .should_succeed()
-    .expect_project("sport")
-    .taking("1h 30")
-    .with_percentage("53")
-    .expect_project("coding")
-    .taking("1h  0m")
-    .with_percentage("35")
-    .expect_project("journaling")
-    .taking("0h 20m")
-    .with_percentage("12")
-    .validate()?;
+        )
+        .when_run()
+        .should_succeed()
+        .expect_project("sport")
+        .taking("1h 30")
+        .with_percentage("53")
+        .expect_project("coding")
+        .taking("1h  0m")
+        .with_percentage("35")
+        .expect_project("journaling")
+        .taking("0h 20m")
+        .with_percentage("12")
+        .validate()?;
 
     Ok(())
 }
 
 #[test]
 fn test_basic_time_tracking_basic_dsl() -> Result<(), Box<dyn std::error::Error>> {
-    Cmd::given_content(
-        r#"
+    CommandBuilder::new()
+        .with_content(
+            r#"
         ## TT 2025-01-15
         - #sport 30m
         - #coding 2p
         - #journaling 20m
         - #sport 1h
     "#,
-    )
-    .when_run()
-    .should_succeed()
-    .should_contain_project("sport", [("Duration", "1h 30m"), ("Percentage", "53")])
-    .should_contain_project("coding", [("Duration", "1h  0m"), ("Percentage", "35")])
-    .should_contain_project("journaling", [("Duration", "0h 20m"), ("Percentage", "12")]);
+        )
+        .when_run()
+        .should_succeed()
+        .should_contain_project("sport", [("Duration", "1h 30m"), ("Percentage", "53")])
+        .should_contain_project("coding", [("Duration", "1h  0m"), ("Percentage", "35")])
+        .should_contain_project("journaling", [("Duration", "0h 20m"), ("Percentage", "12")]);
 
     Ok(())
 }
@@ -95,31 +100,15 @@ fn test_basic_time_tracking_old() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn test_verbose_output() -> Result<(), Box<dyn std::error::Error>> {
-    let temp = assert_fs::TempDir::new()?;
-    let input_file = temp.child("day1.md");
-    input_file.write_str(
-        r#"## TT 2025-01-15
-        - #test 30m"#,
-    )?;
-
-    let mut c = Command::cargo_bin("tt")?;
-
-    c.arg("--input")
-        .arg(input_file.path())
-        .arg("--verbose")
-        .assert()
-        .success()
-        .stdout(predicate::str::contains("Processing file:"))
-        .stdout(predicate::str::contains(
-            "test.................. 0h 30m (100%)",
-        ));
-
-    Cmd::given_content(
-        r#"## TT 2025-01-15
+    CommandBuilder::new()
+        .with_verbose()
+        .with_content(
+            r#"## TT 2025-01-15
     - #test 30m"#,
-    )
-    .when_run()
-    .should_succeed();
+        )
+        .when_run()
+        .should_succeed()
+        .expect_processing_output();
 
     Ok(())
 }

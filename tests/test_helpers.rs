@@ -1,10 +1,74 @@
-use assert_cmd::Command;
+use assert_cmd::{output, Command};
 use assert_fs::prelude::*;
 use predicates::prelude::*;
 
 pub struct CommandBuilder {
     args: Vec<String>,
     content: Option<String>,
+}
+
+impl CommandBuilder {
+    pub fn new() -> Self {
+        Self {
+            args: Vec::new(),
+            content: None,
+        }
+    }
+
+    pub fn with_help(self) -> Self {
+        let mut args = self.args;
+        args.push("--help".to_string());
+        Self {
+            args,
+            content: self.content,
+        }
+    }
+
+    pub fn with_verbose(self) -> Self {
+        let mut args = self.args;
+        args.push("--verbose".to_string());
+        Self {
+            args,
+            content: self.content,
+        }
+    }
+
+    pub fn with_content(self, content: &str) -> Self {
+        Self {
+            args: self.args,
+            content: Some(content.to_string()),
+        }
+    }
+
+    pub fn when_run(self) -> CommandResult {
+        let (temp_dir, mut command) = match self.content {
+            Some(content) => {
+                let temp = assert_fs::TempDir::new().expect("Failed to create temporary directory");
+                let input_file = temp.child("test.md");
+                input_file
+                    .write_str(&content)
+                    .expect("Failed to write to test file");
+
+                let mut cmd = Command::cargo_bin("tt").expect("Failed to create cargo command");
+                cmd.arg("--input").arg(input_file.path());
+                cmd.args(&self.args);
+
+                (Some(temp), cmd)
+            }
+            None => {
+                let mut cmd = Command::cargo_bin("tt").expect("Failed to create cargo command");
+                cmd.args(&self.args);
+                (None, cmd)
+            }
+        };
+
+        let output = command.assert();
+
+        CommandResult {
+            output,
+            _temp_dir: temp_dir,
+        }
+    }
 }
 
 pub struct CommandResult {
@@ -41,52 +105,6 @@ pub struct ProjectAssertion {
     project: ProjectExpectations,
 }
 
-impl CommandBuilder {
-    pub fn with_help() -> Self {
-        Self {
-            args: vec!["--help".to_string()],
-            content: None,
-        }
-    }
-
-    pub fn with_content(content: &str) -> Self {
-        Self {
-            args: Vec::new(),
-            content: Some(content.to_string()),
-        }
-    }
-
-    pub fn when_run(self) -> CommandResult {
-        let (temp_dir, mut command) = match self.content {
-            Some(content) => {
-                let temp = assert_fs::TempDir::new().expect("Failed to create temporary directory");
-                let input_file = temp.child("test.md");
-                input_file
-                    .write_str(&content)
-                    .expect("Failed to write to test file");
-
-                let mut cmd = Command::cargo_bin("tt").expect("Failed to create cargo command");
-                cmd.arg("--input").arg(input_file.path());
-                cmd.args(&self.args);
-
-                (Some(temp), cmd)
-            }
-            None => {
-                let mut cmd = Command::cargo_bin("tt").expect("Failed to create cargo command");
-                cmd.args(&self.args);
-                (None, cmd)
-            }
-        };
-
-        let output = command.assert();
-
-        CommandResult {
-            output,
-            _temp_dir: temp_dir,
-        }
-    }
-}
-
 impl CommandResult {
     pub fn should_succeed(self) -> Self {
         Self {
@@ -99,6 +117,17 @@ impl CommandResult {
         ProjectAssertion {
             cmd_result: self,
             project: ProjectExpectations::new(name),
+        }
+    }
+
+    pub fn expect_processing_output(self) -> Self {
+        let new_output = self
+            .output
+            .stdout(predicate::str::contains("Processing path"));
+
+        Self {
+            output: new_output,
+            ..self
         }
     }
 
@@ -203,17 +232,5 @@ impl ProjectAssertion {
     pub fn validate(self) -> Result<(), Box<dyn std::error::Error>> {
         self.cmd_result.assert_project(&self.project);
         Ok(())
-    }
-}
-
-pub struct Cmd;
-
-impl Cmd {
-    pub fn with_help() -> CommandBuilder {
-        CommandBuilder::with_help()
-    }
-
-    pub fn given_content(content: &str) -> CommandBuilder {
-        CommandBuilder::with_content(content)
     }
 }
