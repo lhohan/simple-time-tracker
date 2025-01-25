@@ -1,13 +1,13 @@
-use assert_cmd::{output, Command};
+use assert_cmd::Command;
 use assert_fs::prelude::*;
 use predicates::prelude::*;
 
-pub struct CommandBuilder {
+pub struct CommandSpec {
     args: Vec<String>,
     content: Option<String>,
 }
 
-impl CommandBuilder {
+impl CommandSpec {
     pub fn new() -> Self {
         Self {
             args: Vec::new(),
@@ -102,7 +102,7 @@ impl ProjectExpectations {
 
 pub struct ProjectAssertion {
     cmd_result: CommandResult,
-    project: ProjectExpectations,
+    project_expectations: ProjectExpectations,
 }
 
 impl CommandResult {
@@ -116,7 +116,7 @@ impl CommandResult {
     pub fn expect_project(self, name: &str) -> ProjectAssertion {
         ProjectAssertion {
             cmd_result: self,
-            project: ProjectExpectations::new(name),
+            project_expectations: ProjectExpectations::new(name),
         }
     }
 
@@ -208,29 +208,31 @@ impl CommandResult {
 
 impl ProjectAssertion {
     pub fn taking(mut self, duration: &str) -> Self {
-        self.project = self.project.with_duration(duration);
+        self.project_expectations = self.project_expectations.with_duration(duration);
         self
     }
 
     pub fn with_percentage(mut self, percentage: &str) -> Self {
         let formatted_percentage = format!("({:>3}%)", percentage);
-        self.project = self.project.with_percentage(formatted_percentage);
+        self.project_expectations = self
+            .project_expectations
+            .with_percentage(formatted_percentage);
         self
     }
 
     pub fn expect_project(self, name: &str) -> Self {
         // First validate the current project
-        let cmd_result = self.cmd_result.assert_project(&self.project);
+        let cmd_result = self.cmd_result.assert_project(&self.project_expectations);
 
         // Then create new ProjectAssertion for the next project
         Self {
             cmd_result,
-            project: ProjectExpectations::new(name),
+            project_expectations: ProjectExpectations::new(name),
         }
     }
 
     pub fn validate(self) -> Result<(), Box<dyn std::error::Error>> {
-        self.cmd_result.assert_project(&self.project);
+        self.cmd_result.assert_project(&self.project_expectations);
         Ok(())
     }
 }

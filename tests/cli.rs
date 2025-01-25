@@ -6,17 +6,14 @@ use test_helpers::*;
 
 #[test]
 fn shows_help_information() -> Result<(), Box<dyn std::error::Error>> {
-    CommandBuilder::new()
-        .with_help()
-        .when_run()
-        .should_succeed();
+    CommandSpec::new().with_help().when_run().should_succeed();
 
     Ok(())
 }
 
 #[test]
 fn test_basic_time_tracking() -> Result<(), Box<dyn std::error::Error>> {
-    CommandBuilder::new()
+    CommandSpec::new()
         .with_content(
             r#"
         ## TT 2025-01-15
@@ -44,7 +41,7 @@ fn test_basic_time_tracking() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn test_basic_time_tracking_basic_dsl() -> Result<(), Box<dyn std::error::Error>> {
-    CommandBuilder::new()
+    CommandSpec::new()
         .with_content(
             r#"
         ## TT 2025-01-15
@@ -100,7 +97,7 @@ fn test_basic_time_tracking_old() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn test_verbose_output() -> Result<(), Box<dyn std::error::Error>> {
-    CommandBuilder::new()
+    CommandSpec::new()
         .with_verbose()
         .with_content(
             r#"## TT 2025-01-15
@@ -116,11 +113,9 @@ fn test_verbose_output() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn should_only_process_entries_in_time_tracking_sections() -> Result<(), Box<dyn std::error::Error>>
 {
-    let temp = assert_fs::TempDir::new()?;
-    let input_file = temp.child("mixed_content.md");
-
-    input_file.write_str(
-        r#"# Random Header
+    CommandSpec::new()
+        .with_content(
+            r#"# Random Header
 Some random content
 - #not-tracked 1h
 
@@ -130,22 +125,16 @@ Some random content
 
 # Another Section
 - #not-tracked 1h"#,
-    )?;
-
-    let mut c = Command::cargo_bin("tt")?;
-
-    c.arg("--input")
-        .arg(input_file.path())
-        .assert()
-        .success()
-        .stdout(predicate::str::contains(
-            "coding................ 1h  0m ( 50%)",
-        ))
-        .stdout(predicate::str::contains(
-            "sport................. 1h  0m ( 50%)",
-        ));
-
-    Ok(())
+        )
+        .when_run()
+        .should_succeed()
+        .expect_project("coding")
+        .taking("1h  0m")
+        .with_percentage("50")
+        .expect_project("sport")
+        .taking("1h  0m")
+        .with_percentage("50")
+        .validate()
 }
 
 #[test]
