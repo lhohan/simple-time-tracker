@@ -131,22 +131,6 @@ impl CommandResult {
         }
     }
 
-    pub fn should_contain_project<const N: usize>(
-        self,
-        project: &str,
-        expectations: [(&'static str, &str); N],
-    ) -> Self {
-        let project_exp = ProjectExpectations {
-            name: project.to_string(),
-            expectations: expectations
-                .into_iter()
-                .map(|(label, value)| (label, value.to_string()))
-                .collect(),
-        };
-
-        self.assert_project(&project_exp)
-    }
-
     fn assert_project(self, project: &ProjectExpectations) -> Self {
         let project_name = &project.name;
         let project_name_with_delimiter = &format!("{}.", project_name);

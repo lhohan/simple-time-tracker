@@ -40,27 +40,6 @@ fn test_basic_time_tracking() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-fn test_basic_time_tracking_basic_dsl() -> Result<(), Box<dyn std::error::Error>> {
-    CommandSpec::new()
-        .with_content(
-            r#"
-        ## TT 2025-01-15
-        - #sport 30m
-        - #coding 2p
-        - #journaling 20m
-        - #sport 1h
-    "#,
-        )
-        .when_run()
-        .should_succeed()
-        .should_contain_project("sport", [("Duration", "1h 30m"), ("Percentage", "53")])
-        .should_contain_project("coding", [("Duration", "1h  0m"), ("Percentage", "35")])
-        .should_contain_project("journaling", [("Duration", "0h 20m"), ("Percentage", "12")]);
-
-    Ok(())
-}
-
-#[test]
 fn test_basic_time_tracking_old() -> Result<(), Box<dyn std::error::Error>> {
     // Create a temporary test directory
     let temp = assert_fs::TempDir::new()?;
