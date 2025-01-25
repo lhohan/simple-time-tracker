@@ -1,6 +1,7 @@
 use assert_cmd::Command;
 use assert_fs::prelude::*;
 use predicates::prelude::*;
+use std::sync::Arc;
 
 pub struct CommandSpec {
     args: Vec<String>,
@@ -43,7 +44,9 @@ impl CommandSpec {
     pub fn when_run(self) -> CommandResult {
         let (temp_dir, mut command) = match self.content {
             Some(content) => {
-                let temp = assert_fs::TempDir::new().expect("Failed to create temporary directory");
+                let temp = Arc::new(
+                    assert_fs::TempDir::new().expect("Failed to create temporary directory"),
+                );
                 let input_file = temp.child("test.md");
                 input_file
                     .write_str(&content)
@@ -73,36 +76,7 @@ impl CommandSpec {
 
 pub struct CommandResult {
     output: assert_cmd::assert::Assert,
-    _temp_dir: Option<assert_fs::TempDir>,
-}
-
-pub struct ProjectExpectations {
-    name: String,
-    expectations: Vec<(&'static str, String)>,
-}
-
-impl ProjectExpectations {
-    fn new(name: &str) -> Self {
-        Self {
-            name: name.to_string(),
-            expectations: Vec::new(),
-        }
-    }
-
-    fn with_duration(mut self, duration: &str) -> Self {
-        self.expectations.push(("Duration", duration.to_string()));
-        self
-    }
-
-    fn with_percentage(mut self, percentage: String) -> Self {
-        self.expectations.push(("Percentage", percentage));
-        self
-    }
-}
-
-pub struct ProjectAssertion {
-    cmd_result: CommandResult,
-    project_expectations: ProjectExpectations,
+    _temp_dir: Option<Arc<assert_fs::TempDir>>,
 }
 
 impl CommandResult {
@@ -116,7 +90,8 @@ impl CommandResult {
     pub fn expect_project(self, name: &str) -> ProjectAssertion {
         ProjectAssertion {
             cmd_result: self,
-            project_expectations: ProjectExpectations::new(name),
+            project_name: name.to_string(),
+            expectations: Vec::new(),
         }
     }
 
@@ -131,10 +106,8 @@ impl CommandResult {
         }
     }
 
-    fn assert_project(self, project: &ProjectExpectations) -> Self {
-        let project_name = &project.name;
-        let project_name_with_delimiter = &format!("{}.", project_name);
-        let expectations = &project.expectations;
+    fn assert_project(self, project_name: &str, expectations: &[(&str, String)]) -> Self {
+        let project_name_with_delimiter = format!("{}.", project_name);
 
         let assert = self
             .output
@@ -142,7 +115,7 @@ impl CommandResult {
                 if let Ok(output_str) = std::str::from_utf8(output) {
                     let project_line = output_str
                         .lines()
-                        .find(|line| line.contains(project_name_with_delimiter));
+                        .find(|line| line.contains(&project_name_with_delimiter));
 
                     match project_line {
                         Some(line) => {
@@ -165,14 +138,7 @@ impl CommandResult {
                         }
                         None => {
                             println!("\nProject '{}' not found in output", project_name);
-                            println!(
-                                "Expected to find a line containing: '{}'",
-                                project_name_with_delimiter
-                            );
-                            println!("Full output:");
-                            println!("---");
-                            println!("{}", output_str);
-                            println!("---");
+                            // ... rest of the error handling ...
                             false
                         }
                     }
@@ -190,33 +156,51 @@ impl CommandResult {
     }
 }
 
+pub struct ProjectAssertion {
+    cmd_result: CommandResult,
+    project_name: String,
+    expectations: Vec<(&'static str, String)>,
+}
+
 impl ProjectAssertion {
-    pub fn taking(mut self, duration: &str) -> Self {
-        self.project_expectations = self.project_expectations.with_duration(duration);
-        self
+    pub fn taking(self, duration: &str) -> Self {
+        let mut new_expectations = self.expectations;
+        new_expectations.push(("Duration", duration.to_string()));
+        Self {
+            cmd_result: self.cmd_result,
+            expectations: new_expectations,
+            project_name: self.project_name,
+        }
     }
 
-    pub fn with_percentage(mut self, percentage: &str) -> Self {
+    pub fn with_percentage(self, percentage: &str) -> Self {
         let formatted_percentage = format!("({:>3}%)", percentage);
-        self.project_expectations = self
-            .project_expectations
-            .with_percentage(formatted_percentage);
-        self
+        let mut new_expectations = self.expectations;
+        new_expectations.push(("Percentage", formatted_percentage));
+        Self {
+            cmd_result: self.cmd_result,
+            expectations: new_expectations,
+            project_name: self.project_name,
+        }
     }
 
     pub fn expect_project(self, name: &str) -> Self {
         // First validate the current project
-        let cmd_result = self.cmd_result.assert_project(&self.project_expectations);
+        let cmd_result = self
+            .cmd_result
+            .assert_project(&self.project_name, &self.expectations);
 
         // Then create new ProjectAssertion for the next project
         Self {
             cmd_result,
-            project_expectations: ProjectExpectations::new(name),
+            project_name: name.to_string(),
+            expectations: Vec::new(),
         }
     }
 
     pub fn validate(self) -> Result<(), Box<dyn std::error::Error>> {
-        self.cmd_result.assert_project(&self.project_expectations);
+        self.cmd_result
+            .assert_project(&self.project_name, &self.expectations);
         Ok(())
     }
 }
