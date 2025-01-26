@@ -1,6 +1,3 @@
-use assert_cmd::Command;
-use assert_fs::prelude::*;
-use predicates::prelude::*;
 mod test_helpers;
 use test_helpers::*;
 
@@ -83,30 +80,26 @@ Some random content
 
 #[test]
 fn test_summary_statistics() -> Result<(), Box<dyn std::error::Error>> {
-    let temp = assert_fs::TempDir::new()?;
-    let input_file = temp.child("day1.md");
-    input_file.write_str(
-        r#"## TT 2025-01-15
-- #work 2h
-- #exercise 2h
-## TT 2025-01-16
-- #work 3h
-- #exercise 1h"#,
-    )?;
+    let content = r#"## TT 2025-01-15
+    - #work 2h
+    - #exercise 2h
+    ## TT 2025-01-16
+    - #work 3h
+    - #exercise 1h"#;
 
-    let mut c = Command::cargo_bin("tt")?;
-
-    c.arg("--input")
-        .arg(input_file.path())
-        .assert()
-        .success()
-        .stdout(predicate::str::contains(
-            "work.................. 5h  0m ( 63%)",
-        ))
-        .stdout(predicate::str::contains(
-            "exercise.............. 3h  0m ( 38%)",
-        ))
-        .stdout(predicate::str::contains("2 days, 4.0 h/day"));
+    CommandSpec::new()
+        .with_content(content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2 days")
+        .expect_output("4.0 h/day")
+        .expect_project("work")
+        .with_percentage("63")
+        .taking("5h  0m")
+        .expect_project("exercise")
+        .with_percentage("38") // todo: sum of both percentages should be 100%
+        .taking("3h  0m")
+        .validate()?;
 
     Ok(())
 }
