@@ -218,9 +218,10 @@ impl ProjectAssertion {
         }
     }
 
-    pub fn validate(self) -> Result<(), Box<dyn std::error::Error>> {
-        self.cmd_result
+    pub fn validate(self) -> CommandResult {
+        let result = self
+            .cmd_result
             .assert_project(&self.project_name, &self.expectations);
-        Ok(())
+        result
     }
 }

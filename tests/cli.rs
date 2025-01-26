@@ -31,7 +31,7 @@ fn test_basic_time_tracking() -> Result<(), Box<dyn std::error::Error>> {
         .expect_project("journaling")
         .taking("0h 20m")
         .with_percentage("12")
-        .validate()?;
+        .validate();
 
     Ok(())
 }
@@ -75,7 +75,9 @@ Some random content
         .expect_project("sport")
         .taking("1h  0m")
         .with_percentage("50")
-        .validate()
+        .validate();
+
+    Ok(())
 }
 
 #[test]
@@ -91,15 +93,15 @@ fn test_summary_statistics() -> Result<(), Box<dyn std::error::Error>> {
         .with_content(content)
         .when_run()
         .should_succeed()
-        .expect_output("2 days")
-        .expect_output("4.0 h/day")
         .expect_project("work")
         .with_percentage("63")
         .taking("5h  0m")
         .expect_project("exercise")
         .with_percentage("38") // todo: sum of both percentages should be 100%
         .taking("3h  0m")
-        .validate()?;
+        .validate()
+        .expect_output("2 days")
+        .expect_output("4.0 h/day");
 
     Ok(())
 }
@@ -121,5 +123,6 @@ fn test_project_filter() -> Result<(), Box<dyn std::error::Error>> {
         .expect_output("implementing filters")
         .expect_output("planning")
         .expect_output("Total time:  3h");
+
     Ok(())
 }
