@@ -34,6 +34,16 @@ impl CommandSpec {
         }
     }
 
+    pub fn with_project_filter(self, project_name: &str) -> Self {
+        let mut args = self.args;
+        args.push("--project".to_string());
+        args.push(project_name.to_string());
+        Self {
+            args,
+            content: self.content,
+        }
+    }
+
     pub fn with_content(self, content: &str) -> Self {
         Self {
             args: self.args,
@@ -83,6 +93,16 @@ impl CommandResult {
     pub fn should_succeed(self) -> Self {
         Self {
             output: self.output.success(),
+            _temp_dir: self._temp_dir,
+        }
+    }
+
+    pub fn expect_output(self, expected_output: &str) -> Self {
+        let new_output = self
+            .output
+            .stdout(predicate::str::contains(expected_output));
+        Self {
+            output: new_output,
             _temp_dir: self._temp_dir,
         }
     }
