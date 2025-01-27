@@ -30,35 +30,40 @@ fn get_entries_from_string(content: &str) -> Result<(Vec<TimeEntry>, u32), Parse
 }
 
 fn parse_line(line: &str) -> Result<TimeEntry, ParseError> {
-    let line = line.strip_prefix("- #").ok_or(ParseError::InvalidFormat)?;
+    let line_no_prefix = line
+        .strip_prefix("- #")
+        .ok_or(ParseError::InvalidLineFormat(line.to_string()))?;
+    let mut parts = line_no_prefix.split_whitespace();
 
-    let parts: Vec<&str> = line.split_whitespace().collect();
-    if parts.len() < 2 {
-        return Err(ParseError::InvalidFormat);
-    }
+    let project = parts
+        .next()
+        .ok_or(ParseError::InvalidLineFormat("Missing project".to_string()))?
+        .to_string();
 
-    let (project, parts) = parts.split_first().ok_or(ParseError::InvalidFormat)?;
+    let mut minutes = 0;
+    let mut description = Vec::new();
+    let mut time_found = false;
 
-    let (minutes, description) = parts.iter().fold(
-        (0, Vec::new()),
-        |(minutes, mut desc), &part| match parse_time(part) {
-            Ok(Some(time)) => (minutes + time, desc),
-            _ => {
-                desc.push(part);
-                (minutes, desc)
+    for part in parts {
+        match parse_time(part) {
+            Ok(Some(time)) => {
+                minutes += time;
+                time_found = true;
             }
-        },
-    );
-
-    if minutes == 0 {
-        return Err(ParseError::InvalidFormat);
+            Ok(None) => {
+                // not a time so we add to description
+                description.push(part);
+            }
+            Err(e) => return Err(e),
+        }
     }
 
-    Ok(TimeEntry::new(
-        project.to_string(),
-        minutes,
-        (!description.is_empty()).then(|| description.join(" ")),
-    ))
+    if !time_found {
+        return Err(ParseError::MissingTime(line.to_string()));
+    }
+    let description =
+        (!description.is_empty()).then(|| description.into_iter().collect::<Vec<_>>().join(" "));
+    Ok(TimeEntry::new(project, minutes, description))
 }
 
 fn parse_time(time: &str) -> Result<Option<u32>, ParseError> {
@@ -93,57 +98,95 @@ fn is_date_header(line: &str) -> bool {
 mod tests {
     use super::*;
 
-    // #[test]
-    // fn test_parse_simple_minutes() {
-    // let input = "- #journaling 20m";
-    // let expected = TimeEntry {
-    // project: "journaling".to_string(),
-    // minutes: 20,
-    // None,
-    // };
-    // assert_eq!(parse_line(input), Ok(expected));
-    // }
+    mod line_parsing {
+        use crate::domain::ParseError;
+        use crate::parsing::tests::LineSpec;
+        use rstest::rstest;
 
-    // #[test]
-    // fn test_parse_simple_hours() {
-    // let input = "- #reading 2h";
-    // let expected = TimeEntry {
-    // project: "reading".to_string(),
-    // minutes: 120, // 2 hours = 120 minutes
-    // None,
-    // };
-    // assert_eq!(parse_line(input), Ok(expected));
-    // }
+        #[test]
+        fn test_parse_simple_complete_line() {
+            let input = "- #my_project 20m Worked on Task ...";
 
-    // #[test]
-    // fn test_parse_pomodoros() {
-    // let input = "- #coding 4p";
-    // let expected = TimeEntry {
-    // project: "coding".to_string(),
-    // minutes: 120, // 4 pomodoros = 120 minutes
-    // None,
-    // };
-    // assert_eq!(parse_line(input), Ok(expected));
-    // }
+            LineSpec::new(input)
+                .when_parsed()
+                .expect_valid()
+                .expect_minutes(20)
+                .expect_project("my_project")
+                .expect_description("Worked on Task ...");
+        }
 
-    #[test]
-    fn test_parse_invalid_line_format() {
-        let input = "not starting with dash and hash";
-        assert_eq!(parse_line(input), Err(ParseError::InvalidFormat));
+        #[test]
+        fn test_parse_simple_minutes() {
+            let input = "- #my_project 20m";
+
+            LineSpec::new(input)
+                .when_parsed()
+                .expect_valid()
+                .expect_minutes(20);
+        }
+
+        #[test]
+        fn test_parse_simple_hours() {
+            let input = "- #my_project 2h";
+
+            LineSpec::new(input)
+                .when_parsed()
+                .expect_valid()
+                .expect_minutes(120);
+        }
+
+        #[test]
+        fn test_parse_pomodoros() {
+            let input = "- #my_project 4p";
+
+            LineSpec::new(input)
+                .when_parsed()
+                .expect_valid()
+                .expect_minutes(120);
+        }
+
+        #[test]
+        fn test_parse_multiple_time_entries() {
+            let input = "- #sport 1h 30m";
+
+            LineSpec::new(input)
+                .when_parsed()
+                .expect_valid()
+                .expect_minutes(90);
+        }
+
+        #[rstest]
+        fn test_parse_invalid_line_format(
+            #[values("- hash (#) not in start of line", "# dash (-)  not in start of line")] input: &str,
+        ) {
+            LineSpec::new(input)
+                .when_parsed()
+                .expect_invalid_with(ParseError::InvalidLineFormat(input.to_string()));
+        }
+
+        #[test]
+        fn test_parse_invalid_time_format() {
+            let input = "- #reading abch";
+
+            LineSpec::new(input)
+                .when_parsed()
+                .expect_invalid_with(ParseError::InvalidTime("abch".to_string()));
+        }
+
+        #[test]
+        fn test_parse_time_missing() {
+            let input = "- #my-project only description";
+
+            LineSpec::new(input)
+                .when_parsed()
+                .expect_invalid_with(ParseError::MissingTime(
+                    "- #my-project only description".to_string(),
+                ));
+        }
     }
-
-    // #[test]
-    // fn test_parse_invalid_time_format() {
-    // let input = "- #reading abch";
-    // assert_eq!(
-    // parse_line(input),
-    // Err(ParseError::InvalidTime("abch".to_string()))
-    // );
-    // }
 
     #[test]
     fn test_error_messages() {
-        assert_eq!(ParseError::InvalidFormat.to_string(), "invalid line format");
         assert_eq!(
             ParseError::InvalidTime("abch".to_string()).to_string(),
             "invalid time format: 'abch'"
@@ -156,26 +199,6 @@ mod tests {
         let _: Box<dyn std::error::Error> = Box::new(err); // Should compile
     }
 
-    // #[test]
-    // fn test_parse_multiple_times() {
-    // let input = "- #sport 1h 30m";
-    // let expected = TimeEntry {
-    // project: "sport".to_string(),
-    // minutes: 90, // 1h (60m) + 30m = 90m
-    // None,
-    // };
-    // assert_eq!(parse_line(input), Ok(expected));
-    // }
-
-    #[test]
-    fn test_parse_invalid_content() {
-        // No valid times
-        assert_eq!(
-            parse_line("- #sport only description"),
-            Err(ParseError::InvalidFormat)
-        );
-    }
-
     #[test]
     fn test_detect_date_header() {
         assert!(is_date_header("# TT 2025-01-15"));
@@ -186,7 +209,54 @@ mod tests {
         // Negative cases
         assert!(!is_date_header("- #sport 1h"));
         assert!(!is_date_header("## Something else"));
-        assert!(!is_date_header("TTT 2025-01-15")); // No header markers
+        assert!(!is_date_header("TT 2025-01-15")); // No header markers
         assert!(!is_date_header("#TT 2025-01-15")); // No space after #
+    }
+
+    struct LineSpec {
+        line: String,
+    }
+
+    struct LineParsingResult {
+        entry: Result<TimeEntry, ParseError>,
+    }
+
+    impl LineSpec {
+        fn new(line: &str) -> Self {
+            LineSpec {
+                line: line.to_string(),
+            }
+        }
+
+        fn when_parsed(self) -> LineParsingResult {
+            let obtained = parse_line(&self.line);
+            LineParsingResult { entry: obtained }
+        }
+    }
+
+    impl LineParsingResult {
+        fn expect_valid(self) -> TimeEntry {
+            self.entry.expect("Expected time entry but was error")
+        }
+
+        fn expect_invalid_with(self, expected_error: ParseError) -> () {
+            let error = self.entry.expect_err("Expected error but was valid");
+            assert_eq!(error, expected_error);
+        }
+    }
+
+    impl TimeEntry {
+        fn expect_minutes(self, expected_minutes: u32) -> TimeEntry {
+            assert_eq!(self.minutes, expected_minutes);
+            self
+        }
+        fn expect_project(self, expected_project: &str) -> TimeEntry {
+            assert_eq!(self.project, expected_project.to_string());
+            self
+        }
+        fn expect_description(self, expected_description: &str) -> TimeEntry {
+            assert_eq!(self.description, Some(expected_description.to_string()));
+            self
+        }
     }
 }

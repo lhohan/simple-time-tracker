@@ -17,3 +17,4 @@ time = { version = "0.3", features = ["parsing"] } # Date parsing
 assert_fs = "1.0"
 assert_cmd = "2.0.16" # CLI testing
 predicates = "3.0"    # Assertions for testing
+rstest = "0.24.0"     # Table driven testing
