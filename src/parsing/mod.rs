@@ -1,5 +1,5 @@
 use crate::domain::{ParseError, TimeEntry};
-use std::{num::IntErrorKind, str::FromStr};
+use std::str::FromStr;
 
 pub fn get_entries(content: &str) -> Result<(Vec<TimeEntry>, u32), ParseError> {
     get_entries_from_string(content)
@@ -96,15 +96,13 @@ fn parse_time(time: &str) -> Result<Option<u32>, ParseError> {
         _ => return Ok(None),
     };
 
-    u32::from_str(value)
-        .map(|val| Some(val * multiplier))
-        .or_else(|e| {
-            if *e.kind() == IntErrorKind::InvalidDigit {
-                Ok(None)
-            } else {
-                Err(ParseError::InvalidTime(time.to_string()))
-            }
-        })
+    match u32::from_str(value) {
+        Ok(val) => Ok(Some(val * multiplier)),
+        Err(e) => match e.kind() {
+            std::num::IntErrorKind::InvalidDigit => Ok(None),
+            _ => Err(ParseError::InvalidTime(time.to_string())),
+        },
+    }
 }
 
 fn is_date_header(line: &str) -> bool {
