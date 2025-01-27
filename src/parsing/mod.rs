@@ -45,19 +45,13 @@ fn parse_line(line: &str) -> Result<TimeEntry, ParseError> {
     let mut time_found = false;
 
     for part in parts {
-        if part.starts_with("#") { // skip other projects
-            continue;
-        }
-        match parse_time(part) {
-            Ok(Some(time)) => {
+        match parse_part(part) {
+            LinePart::Time(time) => {
                 minutes += time;
                 time_found = true;
             }
-            Ok(None) => {
-                // not a time so we add to description
-                description.push(part);
-            }
-            Err(e) => return Err(e),
+            LinePart::Project(_) => continue,
+            LinePart::DescriptionPart(desc) => description.push(desc),
         }
     }
 
@@ -67,6 +61,28 @@ fn parse_line(line: &str) -> Result<TimeEntry, ParseError> {
     let description =
         (!description.is_empty()).then(|| description.into_iter().collect::<Vec<_>>().join(" "));
     Ok(TimeEntry::new(project, minutes, description))
+}
+
+fn parse_part(part: &str) -> LinePart {
+    if part.starts_with("#") {
+        LinePart::Project(
+            part.strip_prefix("#")
+                .expect("project should have had '#' prefix")
+                .to_string(),
+        )
+    } else {
+        match parse_time(part) {
+            Ok(Some(minutes)) => LinePart::Time(minutes),
+            Ok(None) => LinePart::DescriptionPart(part),
+            Err(_) => LinePart::DescriptionPart(part),
+        }
+    }
+}
+
+enum LinePart<'a> {
+    Time(u32),
+    Project(String),
+    DescriptionPart(&'a str),
 }
 
 fn parse_time(time: &str) -> Result<Option<u32>, ParseError> {
@@ -180,12 +196,12 @@ mod tests {
         }
 
         #[test]
-        fn test_parse_invalid_time_format() {
+        fn test_parse_invalid_time_value() {
             let input = "- #reading abch";
 
             LineSpec::new(input)
                 .when_parsed()
-                .expect_invalid_with(ParseError::InvalidTime("abch".to_string()));
+                .expect_invalid_with(ParseError::MissingTime("- #reading abch".to_string()));
         }
 
         #[test]
