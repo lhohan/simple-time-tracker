@@ -19,8 +19,8 @@ fn get_entries_from_string(content: &str) -> Result<(Vec<TimeEntry>, u32), Parse
                 }
                 in_tt_section = is_tt;
                 None
-            } else if in_tt_section && line.starts_with("- #") {
-                parse_line(line).ok()
+            } else if in_tt_section && line.trim().starts_with("- #") {
+                parse_line(line.trim()).ok()
             } else {
                 None
             }
@@ -45,6 +45,9 @@ fn parse_line(line: &str) -> Result<TimeEntry, ParseError> {
     let mut time_found = false;
 
     for part in parts {
+        if part.starts_with("#") { // skip other projects
+            continue;
+        }
         match parse_time(part) {
             Ok(Some(time)) => {
                 minutes += time;
@@ -72,7 +75,7 @@ fn parse_time(time: &str) -> Result<Option<u32>, ParseError> {
             .trim_end_matches('m')
             .parse::<u32>()
             .map_err(|_| ParseError::InvalidTime(t.to_string()))
-            .map(Some),
+            .map(|m| Some(m)),
         t if t.ends_with('h') => t
             .trim_end_matches('h')
             .parse::<u32>()
@@ -102,6 +105,18 @@ mod tests {
         use crate::domain::ParseError;
         use crate::parsing::tests::LineSpec;
         use rstest::rstest;
+
+        #[test]
+        fn test_parse_bug() {
+            let input = "- #prj-1 #health 1h Running";
+
+            LineSpec::new(input)
+                .when_parsed()
+                .expect_valid()
+                .expect_minutes(60)
+                .expect_project("prj-1")
+                .expect_description("Running");
+        }
 
         #[test]
         fn test_parse_simple_complete_line() {
