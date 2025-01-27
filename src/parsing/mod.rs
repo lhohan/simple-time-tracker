@@ -1,4 +1,5 @@
 use crate::domain::{ParseError, TimeEntry};
+use std::{num::IntErrorKind, str::FromStr};
 
 pub fn get_entries(content: &str) -> Result<(Vec<TimeEntry>, u32), ParseError> {
     get_entries_from_string(content)
@@ -46,12 +47,13 @@ fn parse_line(line: &str) -> Result<TimeEntry, ParseError> {
 
     for part in parts {
         match parse_part(part) {
-            LinePart::Time(time) => {
+            Ok(LinePart::Time(time)) => {
                 minutes += time;
                 time_found = true;
             }
-            LinePart::Project(_) => continue,
-            LinePart::DescriptionPart(desc) => description.push(desc),
+            Ok(LinePart::Project(_)) => continue,
+            Ok(LinePart::DescriptionPart(desc)) => description.push(desc),
+            Err(err) => return Err(err),
         }
     }
 
@@ -63,18 +65,19 @@ fn parse_line(line: &str) -> Result<TimeEntry, ParseError> {
     Ok(TimeEntry::new(project, minutes, description))
 }
 
-fn parse_part(part: &str) -> LinePart {
+fn parse_part(part: &str) -> Result<LinePart, ParseError> {
     if part.starts_with("#") {
-        LinePart::Project(
+        let project = LinePart::Project(
             part.strip_prefix("#")
                 .expect("project should have had '#' prefix")
                 .to_string(),
-        )
+        );
+        Ok(project)
     } else {
         match parse_time(part) {
-            Ok(Some(minutes)) => LinePart::Time(minutes),
-            Ok(None) => LinePart::DescriptionPart(part),
-            Err(_) => LinePart::DescriptionPart(part),
+            Ok(Some(minutes)) => Ok(LinePart::Time(minutes)),
+            Ok(None) => Ok(LinePart::DescriptionPart(part)),
+            Err(err) => Err(err),
         }
     }
 }
@@ -86,24 +89,22 @@ enum LinePart<'a> {
 }
 
 fn parse_time(time: &str) -> Result<Option<u32>, ParseError> {
-    match time {
-        t if t.ends_with('m') => t
-            .trim_end_matches('m')
-            .parse::<u32>()
-            .map_err(|_| ParseError::InvalidTime(t.to_string()))
-            .map(|m| Some(m)),
-        t if t.ends_with('h') => t
-            .trim_end_matches('h')
-            .parse::<u32>()
-            .map_err(|_| ParseError::InvalidTime(t.to_string()))
-            .map(|h| Some(h * 60)),
-        t if t.ends_with('p') => t
-            .trim_end_matches('p')
-            .parse::<u32>()
-            .map_err(|_| ParseError::InvalidTime(t.to_string()))
-            .map(|p| Some(p * 30)),
-        _ => Ok(None),
-    }
+    let (value, multiplier) = match time.chars().last() {
+        Some('m') => (time.trim_end_matches('m'), 1),
+        Some('h') => (time.trim_end_matches('h'), 60),
+        Some('p') => (time.trim_end_matches('p'), 30),
+        _ => return Ok(None),
+    };
+
+    u32::from_str(value)
+        .map(|val| Some(val * multiplier))
+        .or_else(|e| {
+            if *e.kind() == IntErrorKind::InvalidDigit {
+                Ok(None)
+            } else {
+                Err(ParseError::InvalidTime(time.to_string()))
+            }
+        })
 }
 
 fn is_date_header(line: &str) -> bool {
@@ -196,7 +197,18 @@ mod tests {
         }
 
         #[test]
-        fn test_parse_invalid_time_value() {
+        fn test_parse_invalid_time() {
+            let input = "- #reading 100000000000000000000h";
+
+            LineSpec::new(input)
+                .when_parsed()
+                .expect_invalid_with(ParseError::InvalidTime(
+                    "100000000000000000000h".to_string(),
+                ));
+        }
+
+        #[test]
+        fn test_parse_maybe_time() {
             let input = "- #reading abch";
 
             LineSpec::new(input)
