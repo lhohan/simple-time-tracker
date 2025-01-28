@@ -1,33 +1,54 @@
-use crate::domain::{ParseError, TimeEntry};
+use crate::domain::{ParseError, ParseResult, TimeEntry};
 use std::str::FromStr;
 
-pub fn get_entries(content: &str) -> Result<(Vec<TimeEntry>, u32), ParseError> {
+pub fn get_entries(content: &str) -> ParseResult {
     get_entries_from_string(content)
 }
 
-fn get_entries_from_string(content: &str) -> Result<(Vec<TimeEntry>, u32), ParseError> {
-    let mut in_tt_section = false;
-    let mut days = 0u32;
-
-    let entries = content
-        .lines()
-        .filter_map(|line| {
-            let line = line.trim();
-            if line.starts_with('#') {
-                let is_tt = is_date_header(line);
-                if is_tt {
-                    days += 1;
+fn get_entries_from_string(content: &str) -> ParseResult {
+    let (entries, errors, _, days): (Vec<TimeEntry>, Vec<ParseError>, bool, u32) =
+        content.lines().map(|line| line.trim()).fold(
+            (Vec::new(), Vec::new(), false, 0u32), // Add 'in_tt_section' flag
+            |(mut entries, mut errors, mut in_tt_section, days), line| {
+                if line.starts_with('#') {
+                    in_tt_section = is_date_header(line);
+                    if in_tt_section {
+                        (entries, errors, in_tt_section, days + 1)
+                    } else {
+                        (entries, errors, in_tt_section, days)
+                    }
+                } else if in_tt_section && line.starts_with("- #") {
+                    match parse_line(line) {
+                        Ok(entry) => (
+                            {
+                                entries.push(entry);
+                                entries
+                            },
+                            errors,
+                            in_tt_section,
+                            days,
+                        ),
+                        Err(e) => (
+                            entries,
+                            {
+                                errors.push(e);
+                                errors
+                            },
+                            in_tt_section,
+                            days,
+                        ),
+                    }
+                } else {
+                    (entries, errors, in_tt_section, days)
                 }
-                in_tt_section = is_tt;
-                None
-            } else if in_tt_section && line.trim().starts_with("- #") {
-                parse_line(line.trim()).ok()
-            } else {
-                None
-            }
-        })
-        .collect::<Vec<_>>();
-    Ok((entries, days))
+            },
+        );
+
+    ParseResult {
+        entries: entries,
+        errors: errors,
+        days: days,
+    }
 }
 
 fn parse_line(line: &str) -> Result<TimeEntry, ParseError> {
@@ -230,7 +251,7 @@ mod tests {
     fn test_error_messages() {
         assert_eq!(
             ParseError::InvalidTime("abch".to_string()).to_string(),
-            "invalid time format: 'abch'"
+            "invalid time format: abch"
         );
     }
 

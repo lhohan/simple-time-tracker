@@ -27,13 +27,20 @@ pub enum ParseError {
 impl std::fmt::Display for ParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ParseError::InvalidLineFormat(line) => write!(f, "invalid line format: '{}'", line),
-            ParseError::InvalidTime(time) => write!(f, "invalid time format: '{}'", time),
-            ParseError::InvalidDate(date) => write!(f, "invalid date format: '{}'", date),
-            ParseError::MissingTime(line) => write!(f, "missing time: '{}'", line),
-            ParseError::ErrorReading(file) => write!(f, "error reading file: '{}'", file),
+            ParseError::InvalidLineFormat(line) => write!(f, "invalid line format: {}", line),
+            ParseError::InvalidTime(time) => write!(f, "invalid time format: {}", time),
+            ParseError::InvalidDate(date) => write!(f, "invalid date format: {}", date),
+            ParseError::MissingTime(line) => write!(f, "missing time: {}", line),
+            ParseError::ErrorReading(file) => write!(f, "error reading file: {}", file),
         }
     }
 }
 
 impl std::error::Error for ParseError {}
+
+#[derive(Debug, PartialEq)]
+pub struct ParseResult {
+    pub entries: Vec<TimeEntry>,
+    pub errors: Vec<ParseError>,
+    pub days: u32,
+}

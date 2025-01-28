@@ -107,6 +107,17 @@ impl CommandResult {
         }
     }
 
+    pub fn expect_warning(self, expected_output: &str) -> Self {
+        let expected_warning = format!("Warning: {}", expected_output);
+        let new_output = self
+            .output
+            .stdout(predicate::str::contains(expected_warning));
+        Self {
+            output: new_output,
+            _temp_dir: self._temp_dir,
+        }
+    }
+
     pub fn expect_project(self, name: &str) -> ProjectAssertion {
         ProjectAssertion {
             cmd_result: self,

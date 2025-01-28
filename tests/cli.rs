@@ -126,3 +126,21 @@ fn test_project_filter() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn test_when_errors_should_report_warnings() -> Result<(), Box<dyn std::error::Error>> {
+    let content = r#"## TT 2025-01-01
+- #dev 1h Task1
+- #dev Task 2 - Forgot to add time"#;
+
+    CommandSpec::new()
+        .with_content(content)
+        .when_run()
+        .should_succeed()
+        .expect_project("dev")
+        .taking("1h")
+        .validate()
+        .expect_warning("missing time: - #dev Task 2 - Forgot to add time");
+
+    Ok(())
+}
