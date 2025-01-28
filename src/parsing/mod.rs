@@ -44,11 +44,7 @@ fn get_entries_from_string(content: &str) -> ParseResult {
             },
         );
 
-    ParseResult {
-        entries,
-        errors,
-        days,
-    }
+    ParseResult::new(entries, errors, days)
 }
 
 // struct LineEntry<'a>(&'a str);

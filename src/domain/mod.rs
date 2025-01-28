@@ -40,7 +40,29 @@ impl std::error::Error for ParseError {}
 
 #[derive(Debug, PartialEq)]
 pub struct ParseResult {
-    pub entries: Vec<TimeEntry>,
-    pub errors: Vec<ParseError>,
-    pub days: u32,
+    entries: Vec<TimeEntry>,
+    errors: Vec<ParseError>,
+    days: u32,
+}
+
+impl ParseResult {
+    pub fn new(entries: Vec<TimeEntry>, errors: Vec<ParseError>, days: u32) -> Self {
+        Self {
+            entries,
+            errors,
+            days,
+        }
+    }
+
+    pub fn entries(&self) -> &Vec<TimeEntry> {
+        &self.entries
+    }
+
+    pub fn errors(&self) -> &Vec<ParseError> {
+        &self.errors
+    }
+
+    pub fn days(&self) -> u32 {
+        self.days
+    }
 }
