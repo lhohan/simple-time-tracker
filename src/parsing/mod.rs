@@ -1,5 +1,5 @@
 use crate::domain::{ParseError, ParseResult, TimeEntry};
-use std::str::FromStr;
+use std::{collections::VecDeque, str::FromStr};
 
 pub fn get_entries(content: &str) -> ParseResult {
     get_entries_from_string(content)
@@ -45,23 +45,27 @@ fn get_entries_from_string(content: &str) -> ParseResult {
         );
 
     ParseResult {
-        entries: entries,
-        errors: errors,
-        days: days,
+        entries,
+        errors,
+        days,
     }
 }
 
+// struct LineEntry<'a>(&'a str);
+// fn parse_line1(line: LineEntry) -> Result<TimeEntry, ParseError> {
+// parse_line(line.0)
+// }
+
 fn parse_line(line: &str) -> Result<TimeEntry, ParseError> {
+    if !line.starts_with("- #") {
+        return Err(ParseError::InvalidLineFormat(line.to_string()));
+    }
     let line_no_prefix = line
-        .strip_prefix("- #")
+        .strip_prefix("- ")
         .ok_or(ParseError::InvalidLineFormat(line.to_string()))?;
-    let mut parts = line_no_prefix.split_whitespace();
+    let parts = line_no_prefix.split_whitespace();
 
-    let project = parts
-        .next()
-        .ok_or(ParseError::InvalidLineFormat("Missing project".to_string()))?
-        .to_string();
-
+    let mut projects = VecDeque::new();
     let mut minutes = 0;
     let mut description = Vec::new();
     let mut time_found = false;
@@ -72,7 +76,9 @@ fn parse_line(line: &str) -> Result<TimeEntry, ParseError> {
                 minutes += time;
                 time_found = true;
             }
-            Ok(LinePart::Project(_)) => continue,
+            Ok(LinePart::Project(project_found)) => {
+                projects.push_back(project_found);
+            }
             Ok(LinePart::DescriptionPart(desc)) => description.push(desc),
             Err(err) => return Err(err),
         }
@@ -81,6 +87,10 @@ fn parse_line(line: &str) -> Result<TimeEntry, ParseError> {
     if !time_found {
         return Err(ParseError::MissingTime(line.to_string()));
     }
+    let project = projects
+        .pop_front() // we ignore all projects except first (for now)
+        .ok_or(ParseError::InvalidLineFormat("Missing project".to_string()))?
+        .to_string();
     let description =
         (!description.is_empty()).then(|| description.into_iter().collect::<Vec<_>>().join(" "));
     Ok(TimeEntry::new(project, minutes, description))
