@@ -107,6 +107,42 @@ impl CommandResult {
         }
     }
 
+    pub fn expect_task(self, task_description: &str) -> Self {
+        let escaped_description = regex::escape(task_description);
+        let pattern = format!(r"\.*-\s+{}\.*", escaped_description);
+
+        let new_output = self
+            .output
+            .stdout(predicate::str::is_match(pattern).unwrap());
+
+        Self {
+            output: new_output,
+            _temp_dir: self._temp_dir,
+        }
+    }
+
+    pub fn expect_task_with_duration(
+        self,
+        task_description: &str,
+        expected_duration: &str,
+    ) -> Self {
+        let escaped_description = regex::escape(task_description);
+        let escaped_duration = regex::escape(expected_duration);
+        let pattern = format!(
+            r"-\s+{}\s*\.+\s*{}\s+\(\d+%\)",
+            escaped_description, escaped_duration
+        );
+
+        let new_output = self
+            .output
+            .stdout(predicate::str::is_match(pattern).unwrap());
+
+        Self {
+            output: new_output,
+            _temp_dir: self._temp_dir,
+        }
+    }
+
     pub fn expect_warning(self, expected_output: &str) -> Self {
         let expected_warning = format!("Warning: {}", expected_output);
         let new_output = self
@@ -169,7 +205,6 @@ impl CommandResult {
                         }
                         None => {
                             println!("\nProject '{}' not found in output", project_name);
-                            // ... rest of the error handling ...
                             false
                         }
                     }

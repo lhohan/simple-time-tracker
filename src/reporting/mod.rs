@@ -10,12 +10,12 @@ pub struct Report {
 
 impl Report {
     pub fn new(entries: Vec<TimeEntry>, days: u32, project_filter: Option<String>) -> Self {
-        let entries = if project_filter.is_none() {
-            // Only summarize for the overview display
-            Self::summarize_entries(entries)
+        let entries = if let Some(project) = &project_filter {
+            // Summarize tasks for the filtered project
+            Self::summarize_tasks_by_description(entries, project)
         } else {
-            // Keep original entries for filtered view
-            entries
+            // Keep existing project summarization for overview
+            Self::summarize_entries(entries)
         };
 
         let entries: Vec<_> = entries
@@ -65,18 +65,20 @@ impl Report {
             for entry in filtered {
                 let percentage =
                     (entry.minutes as f64 / project_total as f64 * 100.0).round() as u32;
-                if let Some(desc) = &entry.description {
-                    println!(
-                        "- {}{} ({}%)",
-                        format!(
-                            "{}..{}",
-                            desc,
-                            ".".repeat(20_usize.saturating_sub(desc.len()))
-                        ),
-                        format_duration(entry.minutes),
-                        percentage
-                    );
-                }
+                let desc = &entry
+                    .description
+                    .clone() // todo: hack?
+                    .unwrap_or("<task without description>".to_string());
+                println!(
+                    "- {}{} ({}%)",
+                    format!(
+                        "{}..{}",
+                        desc,
+                        ".".repeat(20_usize.saturating_sub(desc.len()))
+                    ),
+                    format_duration(entry.minutes),
+                    percentage
+                );
             }
         } else {
             for entry in &self.entries {
@@ -113,6 +115,27 @@ impl Report {
     fn calculate_percentage(&self, minutes: u32) -> u32 {
         ((minutes as f64 / self.total_minutes as f64) * 100.0).round() as u32
     }
+
+    fn summarize_tasks_by_description(entries: Vec<TimeEntry>, project: &str) -> Vec<TimeEntry> {
+        let mut summary = std::collections::HashMap::new();
+
+        for entry in entries
+            .into_iter()
+            .filter(|e| e.project.eq_ignore_ascii_case(project))
+        {
+            let key = entry
+                .description
+                .unwrap_or_else(|| "<no description>".to_string());
+            *summary.entry(key).or_insert(0) += entry.minutes;
+        }
+
+        summary
+            .into_iter()
+            .map(|(description, minutes)| {
+                TimeEntry::new(project.to_string(), minutes, Some(description))
+            })
+            .collect()
+    }
 }
 
 fn format_duration(minutes: u32) -> String {
@@ -141,7 +164,7 @@ pub(crate) mod tests {
     fn test_filtered_entries_with_filter() {
         let entries = create_entries(&["dev", "dev", "sport"]);
         assert_report_with_filter(entries, Some("dev".to_string()))
-            .should_find(2)
+            .should_find(1)
             .entries_of("dev");
     }
 

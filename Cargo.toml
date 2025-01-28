@@ -11,6 +11,7 @@ path = "src/main.rs"
 anyhow = "1.0"                                     # Error handling
 clap = { version = "4.4", features = ["derive"] }  # CLI argument parsing
 itertools = "0.12"
+regex = "1.10"
 time = { version = "0.3", features = ["parsing"] } # Date parsing
 
 [dev-dependencies]

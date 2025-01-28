@@ -120,9 +120,45 @@ fn test_project_filter() -> Result<(), Box<dyn std::error::Error>> {
         .should_succeed()
         // expectations could be more precise
         .expect_output("Project: dev")
-        .expect_output("implementing filters")
-        .expect_output("planning")
+        .expect_task("implementing filters")
+        .expect_task("planning")
         .expect_output("Total time:  3h");
+
+    Ok(())
+}
+
+#[test]
+fn test_when_project_filter_should_total_task_with_same_name(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let content = r#"## TT 2025-01-15
+- #dev 1h My task
+- #dev 1h My task"#;
+
+    CommandSpec::new()
+        .with_content(content)
+        .with_project_filter("dev")
+        .when_run()
+        .should_succeed()
+        .expect_output("Project: dev")
+        .expect_task_with_duration("My task", "2h  0m");
+
+    Ok(())
+}
+
+#[test]
+fn test_when_project_filter_should_default_task_description_if_empty(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let content = r#"## TT 2025-01-15
+- #dev 2h"#;
+
+    CommandSpec::new()
+        .with_content(content)
+        .with_project_filter("dev")
+        .when_run()
+        .should_succeed()
+        // expectations could be more precise
+        .expect_output("Project: dev")
+        .expect_task("<no description>");
 
     Ok(())
 }
