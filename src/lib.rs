@@ -29,7 +29,7 @@ pub fn run(input_path: &Path, project_filter: Option<&str>) -> Result<(), ParseE
         parse_result.start_date(),
         parse_result.end_date(),
     );
-    report.display();
+    println!("{}", report);
 
     let errors = parse_result.errors();
     errors

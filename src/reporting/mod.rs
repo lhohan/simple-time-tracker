@@ -1,5 +1,6 @@
 use crate::domain::{EndDate, StartDate, TimeEntry};
 use itertools::Itertools;
+use std::fmt;
 
 pub struct Report {
     entries: Vec<TimeEntry>,
@@ -56,65 +57,6 @@ impl Report {
             .collect()
     }
 
-    // todo: implement Display trait?
-    pub fn display(&self) {
-        if let Some(project_filter) = &self.project_filter {
-            let filtered = self.filtered_entries();
-            let project_total: u32 = filtered.iter().map(|e| e.minutes).sum();
-            let total_percentage =
-                (project_total as f64 / self.total_minutes as f64 * 100.0).round() as u32;
-
-            println!("Project: {}", project_filter);
-            println!(
-                "Total time: {} ({}% of total time)",
-                format_duration(project_total),
-                total_percentage
-            );
-            println!();
-            println!("Tasks:");
-
-            for entry in filtered {
-                let percentage =
-                    (entry.minutes as f64 / project_total as f64 * 100.0).round() as u32;
-                let desc = &entry
-                    .description
-                    .clone() // todo: hack?
-                    .unwrap_or("<task without description>".to_string());
-                println!(
-                    "- {}{} ({}%)",
-                    format!(
-                        "{}..{}",
-                        desc,
-                        ".".repeat(20_usize.saturating_sub(desc.len()))
-                    ),
-                    format_duration(entry.minutes),
-                    percentage
-                );
-            }
-        } else {
-            for entry in &self.entries {
-                let percentage = self.calculate_percentage(entry.minutes);
-                println!(
-                    "{}..{} ({:>3}%)",
-                    format!("{:.<20}", entry.project),
-                    format_duration(entry.minutes),
-                    percentage
-                );
-            }
-
-            println!("{}", "-".repeat(40));
-            print!("{} days", self.days);
-            print!(", ");
-            println!(
-                "{:.1} h/day",
-                (self.total_minutes as f64 / 60.0) / self.days as f64,
-            );
-        }
-        let start_date = self.start_date.0.format("%Y-%m-%d");
-        let end_date = self.end_date.0.format("%Y-%m-%d");
-        println!("{} -> {}", start_date, end_date)
-    }
-
     fn filtered_entries(&self) -> Vec<&TimeEntry> {
         match &self.project_filter {
             Some(project) => self
@@ -149,6 +91,71 @@ impl Report {
                 TimeEntry::new(project.to_string(), minutes, Some(description))
             })
             .collect()
+    }
+}
+
+impl fmt::Display for Report {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(project_filter) = &self.project_filter {
+            let filtered = self.filtered_entries();
+            let project_total: u32 = filtered.iter().map(|e| e.minutes).sum();
+            let total_percentage =
+                (project_total as f64 / self.total_minutes as f64 * 100.0).round() as u32;
+
+            writeln!(f, "Project: {}", project_filter)?;
+            writeln!(
+                f,
+                "Total time: {} ({}% of total time)",
+                format_duration(project_total),
+                total_percentage
+            )?;
+            writeln!(f)?;
+            writeln!(f, "Tasks:")?;
+
+            for entry in filtered {
+                let percentage =
+                    (entry.minutes as f64 / project_total as f64 * 100.0).round() as u32;
+                let desc = &entry
+                    .description
+                    .clone()
+                    .unwrap_or("<task without description>".to_string());
+                writeln!(
+                    f,
+                    "- {}{} ({}%)",
+                    format!(
+                        "{}..{}",
+                        desc,
+                        ".".repeat(20_usize.saturating_sub(desc.len()))
+                    ),
+                    format_duration(entry.minutes),
+                    percentage
+                )?;
+            }
+        } else {
+            for entry in &self.entries {
+                let percentage = self.calculate_percentage(entry.minutes);
+                writeln!(
+                    f,
+                    "{}..{} ({:>3}%)",
+                    format!("{:.<20}", entry.project),
+                    format_duration(entry.minutes),
+                    percentage
+                )?;
+            }
+
+            writeln!(f, "{}", "-".repeat(40))?;
+            write!(f, "{} days", self.days)?;
+            write!(f, ", ")?;
+            writeln!(
+                f,
+                "{:.1} h/day",
+                (self.total_minutes as f64 / 60.0) / self.days as f64,
+            )?;
+        }
+
+        let start_date = self.start_date.0.format("%Y-%m-%d");
+        let end_date = self.end_date.0.format("%Y-%m-%d");
+        write!(f, "{} -> {}", start_date, end_date)
     }
 }
 
