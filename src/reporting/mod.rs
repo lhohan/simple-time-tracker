@@ -92,71 +92,95 @@ impl Report {
             })
             .collect()
     }
+
+    fn format_project_details(&self, f: &mut fmt::Formatter<'_>, project: &str) -> fmt::Result {
+        let filtered = self.filtered_entries();
+        let project_total: u32 = filtered.iter().map(|e| e.minutes).sum();
+        let total_percentage = self.calculate_percentage(project_total);
+
+        writeln!(f, "Project: {}", project)?;
+        writeln!(
+            f,
+            "Total time: {} ({}% of total time)",
+            format_duration(project_total),
+            total_percentage
+        )?;
+        writeln!(f)?;
+        writeln!(f, "Tasks:")?;
+
+        for entry in filtered {
+            self.format_task_entry(f, entry, project_total)?;
+        }
+        Ok(())
+    }
+
+    fn format_task_entry(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+        entry: &TimeEntry,
+        project_total: u32,
+    ) -> fmt::Result {
+        let percentage = ((entry.minutes as f64 / project_total as f64) * 100.0).round() as u32;
+        let description = entry
+            .description
+            .as_deref()
+            .unwrap_or("<task without description>");
+
+        writeln!(
+            f,
+            "- {}{} ({}%)",
+            format_padded_description(description),
+            format_duration(entry.minutes),
+            percentage
+        )
+    }
+
+    fn format_overview(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Format entries
+        for entry in &self.entries {
+            let percentage = self.calculate_percentage(entry.minutes);
+            writeln!(
+                f,
+                "{}..{} ({:>3}%)",
+                format!("{:.<20}", entry.project),
+                format_duration(entry.minutes),
+                percentage
+            )?;
+        }
+
+        // Format summary
+        writeln!(f, "{}", "-".repeat(40))?;
+        let hours_per_day = (self.total_minutes as f64 / 60.0) / self.days as f64;
+        writeln!(f, "{} days, {:.1} h/day", self.days, hours_per_day)
+    }
+
+    fn format_date_range(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} -> {}",
+            self.start_date.0.format("%Y-%m-%d"),
+            self.end_date.0.format("%Y-%m-%d")
+        )
+    }
 }
 
 impl fmt::Display for Report {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(project_filter) = &self.project_filter {
-            let filtered = self.filtered_entries();
-            let project_total: u32 = filtered.iter().map(|e| e.minutes).sum();
-            let total_percentage =
-                (project_total as f64 / self.total_minutes as f64 * 100.0).round() as u32;
+        match &self.project_filter {
+            Some(project) => self.format_project_details(f, project),
+            None => self.format_overview(f),
+        }?;
 
-            writeln!(f, "Project: {}", project_filter)?;
-            writeln!(
-                f,
-                "Total time: {} ({}% of total time)",
-                format_duration(project_total),
-                total_percentage
-            )?;
-            writeln!(f)?;
-            writeln!(f, "Tasks:")?;
-
-            for entry in filtered {
-                let percentage =
-                    (entry.minutes as f64 / project_total as f64 * 100.0).round() as u32;
-                let desc = &entry
-                    .description
-                    .clone()
-                    .unwrap_or("<task without description>".to_string());
-                writeln!(
-                    f,
-                    "- {}{} ({}%)",
-                    format!(
-                        "{}..{}",
-                        desc,
-                        ".".repeat(20_usize.saturating_sub(desc.len()))
-                    ),
-                    format_duration(entry.minutes),
-                    percentage
-                )?;
-            }
-        } else {
-            for entry in &self.entries {
-                let percentage = self.calculate_percentage(entry.minutes);
-                writeln!(
-                    f,
-                    "{}..{} ({:>3}%)",
-                    format!("{:.<20}", entry.project),
-                    format_duration(entry.minutes),
-                    percentage
-                )?;
-            }
-
-            writeln!(f, "{}", "-".repeat(40))?;
-            write!(f, "{} days", self.days)?;
-            write!(f, ", ")?;
-            writeln!(
-                f,
-                "{:.1} h/day",
-                (self.total_minutes as f64 / 60.0) / self.days as f64,
-            )?;
-        }
-
-        let start_date = self.start_date.0.format("%Y-%m-%d");
-        let end_date = self.end_date.0.format("%Y-%m-%d");
-        write!(f, "{} -> {}", start_date, end_date)
+        self.format_date_range(f)
     }
+}
+
+fn format_padded_description(desc: &str) -> String {
+    format!(
+        "{}..{}",
+        desc,
+        ".".repeat(20_usize.saturating_sub(desc.len()))
+    )
 }
 
 fn format_duration(minutes: u32) -> String {
