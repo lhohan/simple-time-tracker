@@ -154,6 +154,28 @@ impl CommandResult {
         }
     }
 
+    pub fn expect_start_date(self, expected_start_date: &str) -> Self {
+        let expected_output = format!("{} ->", expected_start_date);
+        let new_output = self
+            .output
+            .stdout(predicate::str::contains(expected_output));
+        Self {
+            output: new_output,
+            _temp_dir: self._temp_dir,
+        }
+    }
+
+    pub fn expect_end_date(self, expected_date: &str) -> Self {
+        let expected_output = format!("-> {}", expected_date);
+        let new_output = self
+            .output
+            .stdout(predicate::str::contains(expected_output));
+        Self {
+            output: new_output,
+            _temp_dir: self._temp_dir,
+        }
+    }
+
     pub fn expect_project(self, name: &str) -> ProjectAssertion {
         ProjectAssertion {
             cmd_result: self,

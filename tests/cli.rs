@@ -180,3 +180,37 @@ fn test_when_errors_should_report_warnings() -> Result<(), Box<dyn std::error::E
 
     Ok(())
 }
+
+#[test]
+fn test_report_should_include_interval_start() -> Result<(), Box<dyn std::error::Error>> {
+    // interval Jan 1st to Jan 31st
+    let content = r#"## TT 2025-01-01
+- #dev 5h Task1
+## TT 2025-01-02
+- #dev 5h Task2"#;
+
+    CommandSpec::new()
+        .with_content(content)
+        .when_run()
+        .should_succeed()
+        .expect_start_date("2025-01-01");
+
+    Ok(())
+}
+
+#[test]
+fn test_report_should_include_interval_end() -> Result<(), Box<dyn std::error::Error>> {
+    // interval Jan 1st to Jan 31st
+    let content = r#"## TT 2025-01-01
+- #dev 5h Task1
+## TT 2025-01-02
+- #dev 5h Task2"#;
+
+    CommandSpec::new()
+        .with_content(content)
+        .when_run()
+        .should_succeed()
+        .expect_end_date("2025-01-02");
+
+    Ok(())
+}

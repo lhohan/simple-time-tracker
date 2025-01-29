@@ -41,11 +41,14 @@ impl std::fmt::Display for ParseError {
 
 impl std::error::Error for ParseError {}
 
+pub struct StartDate(pub NaiveDate);
+pub struct EndDate(pub NaiveDate);
+
 #[derive(Debug, PartialEq)]
 pub struct ParseResult {
     errors: Vec<ParseError>,
     days: u32,
-    entries2: HashMap<NaiveDate, Vec<TimeEntry>>,
+    entries: HashMap<NaiveDate, Vec<TimeEntry>>,
 }
 
 impl ParseResult {
@@ -53,12 +56,12 @@ impl ParseResult {
         Self {
             errors,
             days: entries.len() as u32,
-            entries2: entries,
+            entries,
         }
     }
 
     pub fn entries(&self) -> Vec<TimeEntry> {
-        self.entries2
+        self.entries
             .values()
             .into_iter()
             .flat_map(|vec| vec.iter().cloned())
@@ -71,5 +74,17 @@ impl ParseResult {
 
     pub fn days(&self) -> u32 {
         self.days
+    }
+
+    pub fn start_date(&self) -> StartDate {
+        let earliest = self.entries.keys().min_by_key(|date| *date).copied();
+        let earliest = earliest.expect("There should always be a start date");
+        StartDate(earliest)
+    }
+
+    pub fn end_date(&self) -> EndDate {
+        let latest = self.entries.keys().max_by_key(|date| *date).copied();
+        let latest = latest.expect("There should always be an end date");
+        EndDate(latest)
     }
 }

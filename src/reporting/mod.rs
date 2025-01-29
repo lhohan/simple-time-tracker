@@ -1,4 +1,4 @@
-use crate::domain::TimeEntry;
+use crate::domain::{EndDate, StartDate, TimeEntry};
 use itertools::Itertools;
 
 pub struct Report {
@@ -6,10 +6,18 @@ pub struct Report {
     total_minutes: u32,
     days: u32,
     project_filter: Option<String>,
+    start_date: StartDate,
+    end_date: EndDate,
 }
 
 impl Report {
-    pub fn new(entries: Vec<TimeEntry>, days: u32, project_filter: Option<String>) -> Self {
+    pub fn new(
+        entries: Vec<TimeEntry>,
+        days: u32,
+        project_filter: Option<String>,
+        start_date: StartDate,
+        end_date: EndDate,
+    ) -> Self {
         let entries = if let Some(project) = &project_filter {
             // Summarize tasks for the filtered project
             Self::summarize_tasks_by_description(entries, project)
@@ -30,6 +38,8 @@ impl Report {
             total_minutes,
             days,
             project_filter,
+            start_date,
+            end_date,
         }
     }
 
@@ -46,6 +56,7 @@ impl Report {
             .collect()
     }
 
+    // todo: implement Display trait?
     pub fn display(&self) {
         if let Some(project_filter) = &self.project_filter {
             let filtered = self.filtered_entries();
@@ -99,6 +110,9 @@ impl Report {
                 (self.total_minutes as f64 / 60.0) / self.days as f64,
             );
         }
+        let start_date = self.start_date.0.format("%Y-%m-%d");
+        let end_date = self.end_date.0.format("%Y-%m-%d");
+        println!("{} -> {}", start_date, end_date)
     }
 
     fn filtered_entries(&self) -> Vec<&TimeEntry> {
@@ -147,6 +161,7 @@ fn format_duration(minutes: u32) -> String {
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
+    use chrono::NaiveDate;
 
     #[test]
     fn test_report_ordering() {
@@ -232,14 +247,26 @@ pub(crate) mod tests {
         entries: Vec<TimeEntry>,
         project_filter: Option<String>,
     ) -> ReportAssertion {
-        let report = Report::new(entries, 1, project_filter);
+        let report = Report::new(
+            entries,
+            1,
+            project_filter,
+            StartDate(NaiveDate::default()),
+            EndDate(NaiveDate::default()),
+        );
         ReportAssertion {
             filtered_entries: report.filtered_entries().into_iter().cloned().collect(), // Convert references to owned values
         }
     }
 
     fn assert_report(entries: Vec<TimeEntry>) -> ReportAssertion {
-        let report = Report::new(entries, 1, None);
+        let report = Report::new(
+            entries,
+            1,
+            None,
+            StartDate(NaiveDate::default()),
+            EndDate(NaiveDate::default()),
+        );
         ReportAssertion {
             filtered_entries: report.filtered_entries().into_iter().cloned().collect(), // Convert references to owned values
         }
