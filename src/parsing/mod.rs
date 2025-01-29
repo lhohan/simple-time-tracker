@@ -1,50 +1,44 @@
 use crate::domain::{ParseError, ParseResult, TimeEntry};
-use std::{collections::VecDeque, str::FromStr};
+use chrono::NaiveDate;
+use std::{
+    collections::{HashMap, VecDeque},
+    str::FromStr,
+};
 
-pub fn get_entries(content: &str) -> ParseResult {
-    get_entries_from_string(content)
+#[derive(Default)]
+struct ParseState {
+    entries: HashMap<NaiveDate, Vec<TimeEntry>>,
+    current_date: Option<NaiveDate>,
+    errors: Vec<ParseError>,
 }
 
-fn get_entries_from_string(content: &str) -> ParseResult {
-    let (entries, errors, _, days): (Vec<TimeEntry>, Vec<ParseError>, bool, u32) =
-        content.lines().map(|line| line.trim()).fold(
-            (Vec::new(), Vec::new(), false, 0u32), // Add 'in_tt_section' flag
-            |(mut entries, mut errors, mut in_tt_section, days), line| {
-                if line.starts_with('#') {
-                    in_tt_section = is_date_header(line);
-                    if in_tt_section {
-                        (entries, errors, in_tt_section, days + 1)
-                    } else {
-                        (entries, errors, in_tt_section, days)
+pub fn get_entries(content: &str) -> ParseResult {
+    let final_state = content
+        .lines()
+        .map(str::trim)
+        .fold(ParseState::default(), |state, line| {
+            match (line, state.current_date) {
+                (line, _) if line.starts_with('#') => ParseState {
+                    current_date: extract_date(line).ok(),
+                    ..state
+                },
+                (line, Some(date)) if line.starts_with("- #") => match parse_line(line) {
+                    Ok(entry) => {
+                        let mut entries = state.entries;
+                        entries.entry(date).or_default().push(entry);
+                        ParseState { entries, ..state }
                     }
-                } else if in_tt_section && line.starts_with("- #") {
-                    match parse_line(line) {
-                        Ok(entry) => (
-                            {
-                                entries.push(entry);
-                                entries
-                            },
-                            errors,
-                            in_tt_section,
-                            days,
-                        ),
-                        Err(e) => (
-                            entries,
-                            {
-                                errors.push(e);
-                                errors
-                            },
-                            in_tt_section,
-                            days,
-                        ),
+                    Err(e) => {
+                        let mut errors = state.errors;
+                        errors.push(e);
+                        ParseState { errors, ..state }
                     }
-                } else {
-                    (entries, errors, in_tt_section, days)
-                }
-            },
-        );
+                },
+                _ => state,
+            }
+        });
 
-    ParseResult::new(entries, errors, days)
+    ParseResult::new(final_state.entries, final_state.errors)
 }
 
 // struct LineEntry<'a>(&'a str);
@@ -132,11 +126,22 @@ fn parse_time(time: &str) -> Result<Option<u32>, ParseError> {
     }
 }
 
-fn is_date_header(line: &str) -> bool {
+fn maybe_date_from_header(line: &str) -> Option<&str> {
     let mut words = line.trim().split_whitespace();
 
-    matches!(words.next(), Some(first) if first.starts_with('#'))
+    if matches!(words.next(), Some(first) if first.starts_with('#'))
         && matches!(words.next(), Some("TT"))
+    {
+        words.next()
+    } else {
+        None
+    }
+}
+
+fn extract_date(line: &str) -> Result<NaiveDate, ParseError> {
+    let date_str = maybe_date_from_header(line).ok_or(ParseError::InvalidDate(line.to_string()))?;
+    NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
+        .map_err(|e| ParseError::InvalidDate(e.to_string()))
 }
 
 #[cfg(test)]
@@ -279,6 +284,10 @@ mod tests {
         assert!(!is_date_header("## Something else"));
         assert!(!is_date_header("TT 2025-01-15")); // No header markers
         assert!(!is_date_header("#TT 2025-01-15")); // No space after #
+    }
+
+    fn is_date_header(line: &str) -> bool {
+        extract_date(line).is_ok()
     }
 
     struct LineSpec {

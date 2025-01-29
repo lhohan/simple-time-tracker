@@ -1,3 +1,6 @@
+use chrono::NaiveDate;
+use std::collections::HashMap;
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct TimeEntry {
     pub project: String,
@@ -40,22 +43,26 @@ impl std::error::Error for ParseError {}
 
 #[derive(Debug, PartialEq)]
 pub struct ParseResult {
-    entries: Vec<TimeEntry>,
     errors: Vec<ParseError>,
     days: u32,
+    entries2: HashMap<NaiveDate, Vec<TimeEntry>>,
 }
 
 impl ParseResult {
-    pub fn new(entries: Vec<TimeEntry>, errors: Vec<ParseError>, days: u32) -> Self {
+    pub fn new(entries: HashMap<NaiveDate, Vec<TimeEntry>>, errors: Vec<ParseError>) -> Self {
         Self {
-            entries,
             errors,
-            days,
+            days: entries.len() as u32,
+            entries2: entries,
         }
     }
 
-    pub fn entries(&self) -> &Vec<TimeEntry> {
-        &self.entries
+    pub fn entries(&self) -> Vec<TimeEntry> {
+        self.entries2
+            .values()
+            .into_iter()
+            .flat_map(|vec| vec.iter().cloned())
+            .collect()
     }
 
     pub fn errors(&self) -> &Vec<ParseError> {
