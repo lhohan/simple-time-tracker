@@ -48,7 +48,7 @@ impl Report {
         days: u32,
     ) -> Self {
         let period = ReportPeriod::new(start, end, days);
-        let summarized = summarize_tasks(&entries, &project);
+        let summarized = summarize_tasks(&entries);
         let total_minutes: u32 = summarized.iter().map(|(_, minutes)| minutes).sum();
 
         Report::ProjectDetail {
@@ -125,13 +125,10 @@ fn summarize_entries(entries: &[TimeEntry]) -> Vec<(String, u32)> {
     summary.into_iter().collect()
 }
 
-fn summarize_tasks(entries: &[TimeEntry], project: &str) -> Vec<(String, u32)> {
+fn summarize_tasks(entries: &[TimeEntry]) -> Vec<(String, u32)> {
     let mut summary = HashMap::new();
 
-    for entry in entries
-        .iter()
-        .filter(|e| e.project.eq_ignore_ascii_case(project))
-    {
+    for entry in entries.iter() {
         let key = entry
             .description
             .clone()

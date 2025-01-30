@@ -1,9 +1,13 @@
-use crate::domain::{ParseError, ParseResult, TimeEntry};
+use crate::domain::{EntryDate, ParseError, ParseResult, TimeEntry};
 use chrono::NaiveDate;
 use std::{
     collections::{HashMap, VecDeque},
     str::FromStr,
 };
+
+mod filter;
+
+pub use filter::Filter;
 
 #[derive(Default)]
 struct ParseState {
@@ -12,7 +16,7 @@ struct ParseState {
     errors: Vec<ParseError>,
 }
 
-pub fn get_entries(content: &str) -> ParseResult {
+pub fn get_entries(content: &str, filter: &Option<Filter>) -> ParseResult {
     let final_state = content
         .lines()
         .map(str::trim)
@@ -25,7 +29,14 @@ pub fn get_entries(content: &str) -> ParseResult {
                 (line, Some(date)) if line.starts_with("- #") => match parse_line(line) {
                     Ok(entry) => {
                         let mut entries = state.entries;
-                        entries.entry(date).or_default().push(entry);
+                        match filter {
+                            None => entries.entry(date).or_default().push(entry),
+                            Some(filter) => {
+                                if filter.matches(&entry, &EntryDate(date)) {
+                                    entries.entry(date).or_default().push(entry);
+                                }
+                            }
+                        }
                         ParseState { entries, ..state }
                     }
                     Err(e) => {

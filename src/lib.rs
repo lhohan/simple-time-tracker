@@ -4,6 +4,7 @@ mod parsing;
 mod reporting;
 
 use domain::ParseError;
+use parsing::Filter;
 use reporting::Report;
 use std::fs::read_to_string;
 use std::path::Path;
@@ -17,10 +18,11 @@ pub fn run(input_path: &Path, project_filter: Option<&str>) -> Result<(), ParseE
                 .to_string(),
         )
     })?;
-    let parse_result = parsing::get_entries(&content);
-
-    let entries = parse_result.entries().clone();
     let project_filter = project_filter.map(String::from);
+    let filter: Option<Filter> = { project_filter.clone().map(Filter::Project) };
+    let parse_result = parsing::get_entries(&content, &filter);
+
+    let entries = parse_result.entries().clone(); // todo: fix clone, make ParseResult return reference or immutable structure?
     let report = if let Some(project) = project_filter {
         Report::new_project_detail(
             entries,

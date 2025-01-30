@@ -1,4 +1,3 @@
-mod filter;
 mod format;
 mod model;
 #[cfg(test)]
