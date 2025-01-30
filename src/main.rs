@@ -8,6 +8,9 @@ fn main() -> Result<()> {
         println!("Processing path: {}", args.input.display());
     }
 
-    time_tracker::run(&args.input, args.project.as_deref()).map_err(anyhow::Error::from)?;
+    let from_date = args.from_date()?;
+
+    time_tracker::run(&args.input, args.project.as_deref(), from_date)
+        .map_err(anyhow::Error::from)?;
     Ok(())
 }

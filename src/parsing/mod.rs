@@ -7,6 +7,7 @@ use std::{
 
 mod filter;
 
+pub use filter::DateRange;
 pub use filter::Filter;
 
 #[derive(Default)]

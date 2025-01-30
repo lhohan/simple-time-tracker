@@ -44,6 +44,16 @@ impl CommandSpec {
         }
     }
 
+    pub fn with_from_date_filter(self, from_date: &str) -> Self {
+        let mut args = self.args;
+        args.push("--from".to_string());
+        args.push(from_date.to_string());
+        Self {
+            args,
+            content: self.content,
+        }
+    }
+
     pub fn with_content(self, content: &str) -> Self {
         Self {
             args: self.args,
