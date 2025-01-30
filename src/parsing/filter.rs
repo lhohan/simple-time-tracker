@@ -30,9 +30,7 @@ impl DateRange {
     }
 
     fn matches(&self, date: &EntryDate) -> bool {
-        dbg!(self);
-        dbg!(date);
-        dbg!(date.0 >= self.0 .0 && date.0 <= self.1 .0)
+        date.0 >= self.0 .0 && date.0 <= self.1 .0
     }
 }
 

@@ -183,7 +183,6 @@ fn test_when_errors_should_report_warnings() -> Result<(), Box<dyn std::error::E
 
 #[test]
 fn test_report_should_include_interval_start() -> Result<(), Box<dyn std::error::Error>> {
-    // interval Jan 1st to Jan 31st
     let content = r#"## TT 2025-01-01
 - #dev 5h Task1
 ## TT 2025-01-02
@@ -236,14 +235,18 @@ fn test_combined_filtering_project_and_from_date() -> Result<(), Box<dyn std::er
     let content = r#"## TT 2025-01-01
 - #prj-1 3h Task 1
 ## TT 2025-01-02
+- #prj-1 7h Task 3
 - #prj-2 2h Task 2"#;
 
     CommandSpec::new()
         .with_content(content)
         .with_from_date_filter("2025-01-02")
+        .with_project_filter("prj-1")
         .when_run()
         .should_succeed()
-        .expect_start_date("2025-01-02");
+        .expect_start_date("2025-01-02")
+        .expect_output("Project: prj-1")
+        .expect_task_with_duration("Task 3", "7h  0m");
 
     Ok(())
 }
