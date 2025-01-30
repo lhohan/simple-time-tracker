@@ -20,15 +20,23 @@ pub fn run(input_path: &Path, project_filter: Option<&str>) -> Result<(), ParseE
     let parse_result = parsing::get_entries(&content);
 
     let entries = parse_result.entries().clone();
-    let days = parse_result.days();
     let project_filter = project_filter.map(String::from);
-    let report = Report::new(
-        entries,
-        days,
-        project_filter,
-        parse_result.start_date(),
-        parse_result.end_date(),
-    );
+    let report = if let Some(project) = project_filter {
+        Report::new_project_detail(
+            entries,
+            project.to_string(),
+            parse_result.start_date(),
+            parse_result.end_date(),
+            parse_result.days(),
+        )
+    } else {
+        Report::new_overview(
+            entries,
+            parse_result.start_date(),
+            parse_result.end_date(),
+            parse_result.days(),
+        )
+    };
     println!("{}", report);
 
     let errors = parse_result.errors();

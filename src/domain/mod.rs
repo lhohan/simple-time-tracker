@@ -41,7 +41,9 @@ impl std::fmt::Display for ParseError {
 
 impl std::error::Error for ParseError {}
 
+#[derive(Debug, Clone)]
 pub struct StartDate(pub NaiveDate);
+#[derive(Debug, Clone)]
 pub struct EndDate(pub NaiveDate);
 
 #[derive(Debug, PartialEq)]
