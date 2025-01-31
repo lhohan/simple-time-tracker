@@ -18,7 +18,7 @@ impl TimeEntry {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ParseError {
     ErrorReading(String),
     InvalidLineFormat(String),
@@ -72,24 +72,23 @@ impl ParseResult {
             .collect()
     }
 
-    pub fn errors(&self) -> &Vec<ParseError> {
-        &self.errors
+    pub fn errors(&self) -> Vec<ParseError> {
+        self.errors.clone() // todo: look into this, can clone be avoided?
     }
 
     pub fn days(&self) -> u32 {
         self.days
     }
 
-    // TODO: Turn into Option, entries can be empty!
     pub fn start_date(&self) -> StartDate {
         let earliest = self.entries.keys().min_by_key(|date| *date).copied();
-        let earliest = earliest.expect("There should always be a start date");
+        let earliest = earliest.expect("There should always be a start date for a parse result");
         StartDate(earliest)
     }
 
     pub fn end_date(&self) -> EndDate {
         let latest = self.entries.keys().max_by_key(|date| *date).copied();
-        let latest = latest.expect("There should always be an end date");
+        let latest = latest.expect("There should always be an end date for a parse result");
         EndDate(latest)
     }
 }

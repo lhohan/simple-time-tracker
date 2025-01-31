@@ -17,7 +17,8 @@ struct ParseState {
     errors: Vec<ParseError>,
 }
 
-pub fn get_entries(content: &str, filter: &Option<Filter>) -> ParseResult {
+// design decision: When no entries are found, no ParseResult can exist.
+pub fn get_entries(content: &str, filter: &Option<Filter>) -> Option<ParseResult> {
     let final_state = content
         .lines()
         .map(str::trim)
@@ -50,7 +51,11 @@ pub fn get_entries(content: &str, filter: &Option<Filter>) -> ParseResult {
             }
         });
 
-    ParseResult::new(final_state.entries, final_state.errors)
+    if final_state.entries.is_empty() {
+        None
+    } else {
+        Some(ParseResult::new(final_state.entries, final_state.errors))
+    }
 }
 
 // struct LineEntry<'a>(&'a str);

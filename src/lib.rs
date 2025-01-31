@@ -36,31 +36,37 @@ pub fn run(
         }
     };
 
-    let parse_result = parsing::get_entries(&content, &filter);
+    let report = parsing::get_entries(&content, &filter).map(|parse_result| {
+        let entries = parse_result.entries().clone(); // todo: fix clone, make ParseResult return reference or immutable structure?
+        let report = if let Some(project) = filter_project {
+            Report::new_project_detail(
+                entries,
+                project.to_string(),
+                parse_result.start_date(),
+                parse_result.end_date(),
+                parse_result.days(),
+            )
+        } else {
+            Report::new_overview(
+                entries,
+                parse_result.start_date(),
+                parse_result.end_date(),
+                parse_result.days(),
+            )
+        };
+        (report, parse_result.errors().clone())
+    });
 
-    let entries = parse_result.entries().clone(); // todo: fix clone, make ParseResult return reference or immutable structure?
-    let report = if let Some(project) = filter_project {
-        Report::new_project_detail(
-            entries,
-            project.to_string(),
-            parse_result.start_date(),
-            parse_result.end_date(),
-            parse_result.days(),
-        )
-    } else {
-        Report::new_overview(
-            entries,
-            parse_result.start_date(),
-            parse_result.end_date(),
-            parse_result.days(),
-        )
-    };
-    println!("{}", report);
+    match report {
+        Some((report, errors)) => {
+            println!("{}", report);
 
-    let errors = parse_result.errors();
-    errors
-        .into_iter()
-        .for_each(|error| println!("Warning: {}", error));
+            errors
+                .into_iter()
+                .for_each(|error| println!("Warning: {}", error));
+        }
+        None => println!("No data found."),
+    }
 
     Ok(())
 }

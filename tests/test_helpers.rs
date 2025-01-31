@@ -205,6 +205,17 @@ impl CommandResult {
         }
     }
 
+    pub fn expect_no_data_found(self) -> Self {
+        let new_output = self
+            .output
+            .stdout(predicate::str::contains("No data found."));
+
+        Self {
+            output: new_output,
+            ..self
+        }
+    }
+
     fn assert_project(self, project_name: &str, expectations: &[(&str, String)]) -> Self {
         let project_name_with_delimiter = format!("{}.", project_name);
 

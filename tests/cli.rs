@@ -1,9 +1,23 @@
 mod test_helpers;
+use rstest::rstest;
 use test_helpers::*;
 
 #[test]
 fn shows_help_information() -> Result<(), Box<dyn std::error::Error>> {
     CommandSpec::new().with_help().when_run().should_succeed();
+
+    Ok(())
+}
+
+#[rstest]
+fn test_empties(
+    #[values("", "## TT 2025-01-15")] empty_input: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    CommandSpec::new()
+        .with_content(empty_input)
+        .when_run()
+        .should_succeed()
+        .expect_no_data_found();
 
     Ok(())
 }
