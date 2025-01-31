@@ -49,7 +49,11 @@ mod tests {
             minutes: u32,
             description: Option<&str>,
         ) -> TimeEntry {
-            TimeEntry::new(project.to_string(), minutes, description.map(String::from))
+            TimeEntry::new(
+                vec![project.to_string()],
+                minutes,
+                description.map(String::from),
+            )
         }
 
         pub(crate) fn default_period() -> (StartDate, EndDate) {

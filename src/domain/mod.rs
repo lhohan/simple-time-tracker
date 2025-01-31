@@ -3,18 +3,22 @@ use std::collections::HashMap;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct TimeEntry {
-    pub project: String,
+    projects: Vec<String>,
     pub minutes: u32,
     pub description: Option<String>,
 }
 
 impl TimeEntry {
-    pub fn new(project: String, minutes: u32, description: Option<String>) -> Self {
+    pub fn new(projects: Vec<String>, minutes: u32, description: Option<String>) -> Self {
         Self {
-            project,
+            projects,
             minutes,
             description,
         }
+    }
+
+    pub fn main_project(&self) -> &String {
+        &self.projects[0]
     }
 }
 

@@ -13,7 +13,7 @@ pub enum Filter {
 impl Filter {
     pub fn matches(&self, entry: &TimeEntry, date: &EntryDate) -> bool {
         match self {
-            Filter::Project(project) => entry.project.eq_ignore_ascii_case(project),
+            Filter::Project(project) => entry.main_project().eq_ignore_ascii_case(project),
             Filter::DateRange(date_range) => date_range.matches(date),
             Filter::And(f1, f2) => f1.matches(entry, date) && f2.matches(entry, date),
         }

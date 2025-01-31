@@ -94,13 +94,17 @@ fn parse_line(line: &str) -> Result<TimeEntry, ParseError> {
     if !time_found {
         return Err(ParseError::MissingTime(line.to_string()));
     }
-    let project = projects
-        .pop_front() // we ignore all projects except first (for now)
-        .ok_or(ParseError::InvalidLineFormat("Missing project".to_string()))?
-        .to_string();
+
+    // check if there is at least one project:
+    if projects.is_empty() {
+        return Err(ParseError::InvalidLineFormat("Missing project".to_string()));
+    }
+
     let description =
         (!description.is_empty()).then(|| description.into_iter().collect::<Vec<_>>().join(" "));
-    Ok(TimeEntry::new(project, minutes, description))
+    let projects: Vec<String> = projects.into();
+
+    Ok(TimeEntry::new(projects, minutes, description))
 }
 
 fn parse_part(part: &str) -> Result<LinePart, ParseError> {
@@ -345,7 +349,7 @@ mod tests {
             self
         }
         fn expect_project(self, expected_project: &str) -> TimeEntry {
-            assert_eq!(self.project, expected_project.to_string());
+            assert_eq!(*self.main_project(), expected_project.to_string());
             self
         }
         fn expect_description(self, expected_description: &str) -> TimeEntry {
