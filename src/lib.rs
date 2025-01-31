@@ -12,7 +12,7 @@ use std::path::Path;
 
 pub fn run(
     input_path: &Path,
-    filter_project: Option<&str>,
+    project_detail_request: Option<&str>,
     from_date: Option<StartDate>,
 ) -> Result<(), ParseError> {
     let content = read_to_string(input_path).map_err(|_| {
@@ -23,22 +23,18 @@ pub fn run(
                 .to_string(),
         )
     })?;
-    let filter_project = filter_project.map(String::from);
-    let project_filter: Option<Filter> = { filter_project.clone().map(Filter::Project) };
-    let date_filter: Option<Filter> =
-        from_date.map(|date| Filter::DateRange(DateRange::new_from_date(date)));
-    let filter = match (project_filter, date_filter) {
-        (None, None) => None,
-        (None, Some(filter)) => Some(filter),
-        (Some(filter), None) => Some(filter),
-        (Some(filter_1), Some(filter_2)) => {
-            Some(Filter::And(Box::new(filter_1), Box::new(filter_2)))
-        }
-    };
+    // note: something is not quite right with project_detail_request: it serves 2 purposes which may be clearly encoded: selecting the tasks overview for a project + filtering entries
+    let filter = project_detail_request
+        .map(String::from)
+        .clone()
+        .map(Filter::Project)
+        .into_iter()
+        .chain(from_date.map(|date| Filter::DateRange(DateRange::new_from_date(date))))
+        .reduce(|acc, filter| Filter::And(Box::new(acc), Box::new(filter)));
 
     let report = parsing::get_entries(&content, &filter).map(|parse_result| {
         let entries = parse_result.entries().clone(); // todo: fix clone, make ParseResult return reference or immutable structure?
-        let report = if let Some(project) = filter_project {
+        let report = if let Some(project) = project_detail_request.map(String::from) {
             Report::new_project_detail(
                 entries,
                 project.to_string(),
