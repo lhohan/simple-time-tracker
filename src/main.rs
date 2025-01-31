@@ -10,7 +10,11 @@ fn main() -> Result<()> {
 
     let from_date = args.from_date()?;
 
-    time_tracker::run(&args.input, args.project.as_deref(), from_date)
-        .map_err(anyhow::Error::from)?;
+    time_tracker::run(
+        &args.input,
+        args.project.as_deref().map(String::from),
+        from_date,
+    )
+    .map_err(anyhow::Error::from)?;
     Ok(())
 }

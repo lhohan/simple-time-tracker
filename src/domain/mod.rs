@@ -92,3 +92,8 @@ impl ParseResult {
         EndDate(latest)
     }
 }
+
+pub enum ReportType {
+    Projects,
+    ProjectDetails(String),
+}
