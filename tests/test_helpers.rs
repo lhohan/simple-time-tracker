@@ -153,11 +153,27 @@ impl CommandResult {
         }
     }
 
-    pub fn expect_warning(self, expected_output: &str) -> Self {
-        let expected_warning = format!("Warning: {}", expected_output);
+    pub fn expect_warning(self, expected_message: &str) -> Self {
+        let pattern = if expected_message.contains("line") {
+            format!("Warning: {}", expected_message)
+        } else {
+            format!("Warning: line \\d+: {}", expected_message)
+        };
+
         let new_output = self
             .output
-            .stdout(predicate::str::contains(expected_warning));
+            .stdout(predicate::str::is_match(pattern).unwrap());
+        Self {
+            output: new_output,
+            _temp_dir: self._temp_dir,
+        }
+    }
+
+    pub fn expect_warning_at_line(self, line_number: usize, message: &str) -> Self {
+        let warning_pattern = format!("Warning: line {}: {}", line_number, message);
+        let new_output = self
+            .output
+            .stdout(predicate::str::contains(warning_pattern));
         Self {
             output: new_output,
             _temp_dir: self._temp_dir,

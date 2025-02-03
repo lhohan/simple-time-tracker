@@ -21,8 +21,9 @@ struct ParseState {
 pub fn get_entries(content: &str, filter: &Option<Filter>) -> Option<ParseResult> {
     let final_state = content
         .lines()
-        .map(str::trim)
-        .fold(ParseState::default(), |state, line| {
+        .enumerate()
+        .map(|(line_number, line)| (line_number + 1, line.trim())) // Make line reporting 1-based instead 0-based
+        .fold(ParseState::default(), |state, (line_number, line)| {
             match (line, state.current_date) {
                 (line, _) if line.starts_with('#') => ParseState {
                     current_date: extract_date(line).ok(),
@@ -43,7 +44,10 @@ pub fn get_entries(content: &str, filter: &Option<Filter>) -> Option<ParseResult
                     }
                     Err(e) => {
                         let mut errors = state.errors;
-                        errors.push(e);
+                        errors.push(ParseError::WithLocation {
+                            error: Box::new(e),
+                            line_number,
+                        });
                         ParseState { errors, ..state }
                     }
                 },

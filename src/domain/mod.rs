@@ -29,6 +29,10 @@ pub enum ParseError {
     InvalidTime(String),
     InvalidDate(String),
     MissingTime(String),
+    WithLocation {
+        error: Box<ParseError>,
+        line_number: usize,
+    },
 }
 
 impl std::fmt::Display for ParseError {
@@ -39,6 +43,9 @@ impl std::fmt::Display for ParseError {
             ParseError::InvalidDate(date) => write!(f, "invalid date format: {}", date),
             ParseError::MissingTime(line) => write!(f, "missing time: {}", line),
             ParseError::ErrorReading(file) => write!(f, "error reading file: {}", file),
+            ParseError::WithLocation { error, line_number } => {
+                write!(f, "line {}: {}", line_number, error)
+            }
         }
     }
 }

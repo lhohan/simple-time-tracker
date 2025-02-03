@@ -264,3 +264,19 @@ fn test_combined_filtering_project_and_from_date() -> Result<(), Box<dyn std::er
 
     Ok(())
 }
+
+#[test]
+fn test_parsing_errors_should_show_line_numbers() -> Result<(), Box<dyn std::error::Error>> {
+    let content = r#"## TT 2025-01-01
+- #dev 1h Task1
+- #dev invalid time format
+- #dev 2h Task3"#;
+
+    CommandSpec::new()
+        .with_content(content)
+        .when_run()
+        .should_succeed()
+        .expect_warning_at_line(3, "missing time: - #dev invalid time format");
+
+    Ok(())
+}
