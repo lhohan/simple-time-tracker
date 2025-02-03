@@ -280,3 +280,36 @@ fn test_parsing_errors_should_show_line_numbers() -> Result<(), Box<dyn std::err
 
     Ok(())
 }
+
+#[test]
+#[ignore] // todo: we should report wrong dates
+fn test_invalid_date_format_shows_line_number() -> Result<(), Box<dyn std::error::Error>> {
+    let content = r#"## TT invalid-date
+- #dev 1h Task1"#;
+
+    CommandSpec::new()
+        .with_content(content)
+        .when_run()
+        .should_succeed()
+        .expect_warning_at_line(1, "invalid date format: invalid-date");
+
+    Ok(())
+}
+
+#[test]
+fn test_multiple_errors_show_correct_line_numbers() -> Result<(), Box<dyn std::error::Error>> {
+    let content = r#"## TT 2025-01-01
+- #dev 1h Task1
+- #dev Task2
+- #dev 2x Task3
+- #dev 1h Task4"#;
+
+    CommandSpec::new()
+        .with_content(content)
+        .when_run()
+        .should_succeed()
+        .expect_warning_at_line(3, "missing time: - #dev Task2")
+        .expect_warning_at_line(4, "missing time: - #dev 2x Task3");
+
+    Ok(())
+}

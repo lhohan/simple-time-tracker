@@ -69,6 +69,7 @@ pub fn get_entries(content: &str, filter: &Option<Filter>) -> Option<ParseResult
 
 fn parse_line(line: &str) -> Result<TimeEntry, ParseError> {
     if !line.starts_with("- #") {
+        // This check could be removed because we check this condition before calling this function. TODO: improve by introducing type?
         return Err(ParseError::InvalidLineFormat(line.to_string()));
     }
     let line_no_prefix = line
