@@ -3,55 +3,61 @@ use assert_fs::prelude::*;
 use predicates::prelude::*;
 use std::sync::Arc;
 
-pub struct CommandSpec {
+#[derive(Default)]
+struct CommandArgs {
     args: Vec<String>,
+}
+
+impl CommandArgs {
+    fn new() -> Self {
+        Self::default()
+    }
+
+    fn add_flag(&mut self, flag: &str) {
+        self.args.push(format!("--{}", flag));
+    }
+
+    fn add_option(&mut self, option: &str, value: &str) {
+        self.args.push(format!("--{}", option));
+        self.args.push(value.to_string());
+    }
+
+    fn into_vec(self) -> Vec<String> {
+        self.args
+    }
+}
+
+pub struct CommandSpec {
+    args: CommandArgs,
     content: Option<String>,
 }
 
 impl CommandSpec {
     pub fn new() -> Self {
         Self {
-            args: Vec::new(),
+            args: CommandArgs::new(),
             content: None,
         }
     }
 
-    pub fn with_help(self) -> Self {
-        let mut args = self.args;
-        args.push("--help".to_string());
-        Self {
-            args,
-            content: self.content,
-        }
+    pub fn with_help(mut self) -> Self {
+        self.args.add_flag("help");
+        self
     }
 
-    pub fn with_verbose(self) -> Self {
-        let mut args = self.args;
-        args.push("--verbose".to_string());
-        Self {
-            args,
-            content: self.content,
-        }
+    pub fn with_verbose(mut self) -> Self {
+        self.args.add_flag("verbose");
+        self
     }
 
-    pub fn with_project_filter(self, project_name: &str) -> Self {
-        let mut args = self.args;
-        args.push("--project".to_string());
-        args.push(project_name.to_string());
-        Self {
-            args,
-            content: self.content,
-        }
+    pub fn with_project_filter(mut self, project_name: &str) -> Self {
+        self.args.add_option("project", project_name);
+        self
     }
 
-    pub fn with_from_date_filter(self, from_date: &str) -> Self {
-        let mut args = self.args;
-        args.push("--from".to_string());
-        args.push(from_date.to_string());
-        Self {
-            args,
-            content: self.content,
-        }
+    pub fn with_from_date_filter(mut self, from_date: &str) -> Self {
+        self.args.add_option("from", from_date);
+        self
     }
 
     pub fn with_content(self, content: &str) -> Self {
@@ -74,16 +80,17 @@ impl CommandSpec {
 
                 let mut cmd = Command::cargo_bin("tt").expect("Failed to create cargo command");
                 cmd.arg("--input").arg(input_file.path());
-                cmd.args(&self.args);
 
                 (Some(temp), cmd)
             }
             None => {
-                let mut cmd = Command::cargo_bin("tt").expect("Failed to create cargo command");
-                cmd.args(&self.args);
+                let cmd = Command::cargo_bin("tt").expect("Failed to create cargo command");
                 (None, cmd)
             }
         };
+
+        // Add all accumulated arguments
+        command.args(self.args.into_vec());
 
         let output = command.assert();
 
@@ -91,6 +98,42 @@ impl CommandSpec {
             output,
             _temp_dir: temp_dir,
         }
+    }
+}
+
+#[derive(Debug)]
+struct Warning {
+    file: String,
+    line: Option<usize>,
+    message: String,
+}
+
+impl Warning {
+    fn new(message: &str) -> Self {
+        Self {
+            file: "test.md".to_string(), // default file
+            line: None,
+            message: message.to_string(),
+        }
+    }
+
+    fn with_line(mut self, line: usize) -> Self {
+        self.line = Some(line);
+        self
+    }
+
+    fn with_file(mut self, file: &str) -> Self {
+        self.file = file.to_string();
+        self
+    }
+
+    fn to_pattern(&self) -> String {
+        let line_part = match self.line {
+            Some(line) => format!("line {}", line),
+            None => "line \\d+".to_string(),
+        };
+
+        format!("Warning: {}: {}: {}", self.file, line_part, self.message)
     }
 }
 
@@ -153,38 +196,28 @@ impl CommandResult {
         }
     }
 
-    pub fn expect_warning(self, expected_message: &str) -> Self {
-        let pattern = format!("Warning: test.md: line \\d+: {}", expected_message);
-
-        let new_output = self
-            .output
-            .stdout(predicate::str::is_match(pattern).unwrap());
+    fn expect_warning_pattern(self, pattern: &str) -> Self {
         Self {
-            output: new_output,
+            output: self
+                .output
+                .stdout(predicate::str::is_match(pattern).unwrap()),
             _temp_dir: self._temp_dir,
         }
     }
 
-    pub fn expect_warning_at_line(self, line_number: usize, message: &str) -> Self {
-        let warning_pattern = format!("Warning: test.md: line {}: {}", line_number, message);
-        let new_output = self
-            .output
-            .stdout(predicate::str::contains(warning_pattern));
-        Self {
-            output: new_output,
-            _temp_dir: self._temp_dir,
-        }
+    pub fn expect_warning(self, message: &str) -> Self {
+        let warning = Warning::new(message);
+        self.expect_warning_pattern(&warning.to_pattern())
+    }
+
+    pub fn expect_warning_at_line(self, line: usize, message: &str) -> Self {
+        let warning = Warning::new(message).with_line(line);
+        self.expect_warning_pattern(&warning.to_pattern())
     }
 
     pub fn expect_warning_with_file(self, file: &str, message: &str) -> Self {
-        let warning_pattern = format!("Warning: {}: line \\d+: {}", file, message);
-        let new_output = self
-            .output
-            .stdout(predicate::str::is_match(warning_pattern).unwrap());
-        Self {
-            output: new_output,
-            _temp_dir: self._temp_dir,
-        }
+        let warning = Warning::new(message).with_file(file);
+        self.expect_warning_pattern(&warning.to_pattern())
     }
 
     pub fn expect_start_date(self, expected_start_date: &str) -> Self {
