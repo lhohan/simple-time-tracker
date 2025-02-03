@@ -1,4 +1,4 @@
-use crate::domain::{EntryDate, ParseError, ParseResult, TimeEntry};
+use crate::domain::{EntryDate, Location, ParseError, ParseResult, TimeEntry};
 use chrono::NaiveDate;
 use std::{
     collections::{HashMap, VecDeque},
@@ -44,9 +44,12 @@ pub fn get_entries(content: &str, filter: &Option<Filter>) -> Option<ParseResult
                     }
                     Err(e) => {
                         let mut errors = state.errors;
-                        errors.push(ParseError::WithLocation {
+                        errors.push(ParseError::Located {
                             error: Box::new(e),
-                            line_number,
+                            location: Location {
+                                file: String::new(), // Will be filled in later in lib.rs
+                                line: line_number,
+                            },
                         });
                         ParseState { errors, ..state }
                     }

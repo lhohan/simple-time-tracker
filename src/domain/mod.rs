@@ -23,19 +23,21 @@ impl TimeEntry {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub struct Location {
+    pub file: String,
+    pub line: usize,
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum ParseError {
     ErrorReading(String),
     InvalidLineFormat(String),
     InvalidTime(String),
     InvalidDate(String),
     MissingTime(String),
-    WithLocation {
+    Located {
         error: Box<ParseError>,
-        line_number: usize,
-    },
-    WithFile {
-        error: Box<ParseError>,
-        file: String,
+        location: Location,
     },
 }
 
@@ -47,10 +49,9 @@ impl std::fmt::Display for ParseError {
             ParseError::InvalidDate(date) => write!(f, "invalid date format: {}", date),
             ParseError::MissingTime(line) => write!(f, "missing time: {}", line),
             ParseError::ErrorReading(file) => write!(f, "error reading file: {}", file),
-            ParseError::WithLocation { error, line_number } => {
-                write!(f, "line {}: {}", line_number, error)
+            ParseError::Located { error, location } => {
+                write!(f, "{}: line {}: {}", location.file, location.line, error)
             }
-            ParseError::WithFile { error, file } => write!(f, "{}: {}", file, error),
         }
     }
 }

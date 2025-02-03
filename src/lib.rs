@@ -3,7 +3,7 @@ mod domain;
 mod parsing;
 mod reporting;
 
-use domain::ReportType;
+use domain::{Location, ReportType};
 use domain::{ParseError, StartDate};
 use parsing::DateRange;
 use parsing::Filter;
@@ -91,9 +91,23 @@ fn create_report(
         let errors: Vec<_> = parse_result
             .errors()
             .into_iter()
-            .map(|e| ParseError::WithFile {
-                error: Box::new(e),
-                file: file_name.to_string(),
+            .map(|e| {
+                match e {
+                    ParseError::Located { error, location } => ParseError::Located {
+                        error,
+                        location: Location {
+                            file: file_name.to_string(),
+                            ..location
+                        },
+                    },
+                    other => ParseError::Located {
+                        error: Box::new(other),
+                        location: Location {
+                            file: file_name.to_string(),
+                            line: 0, // Default for errors without line numbers
+                        },
+                    },
+                }
             })
             .collect();
 
