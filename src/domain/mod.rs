@@ -33,6 +33,10 @@ pub enum ParseError {
         error: Box<ParseError>,
         line_number: usize,
     },
+    WithFile {
+        error: Box<ParseError>,
+        file: String,
+    },
 }
 
 impl std::fmt::Display for ParseError {
@@ -46,6 +50,7 @@ impl std::fmt::Display for ParseError {
             ParseError::WithLocation { error, line_number } => {
                 write!(f, "line {}: {}", line_number, error)
             }
+            ParseError::WithFile { error, file } => write!(f, "{}: {}", file, error),
         }
     }
 }

@@ -16,6 +16,12 @@ pub fn run(
     project_details_selected: Option<String>,
     from_date: Option<StartDate>,
 ) -> Result<(), ParseError> {
+    let file_name = input_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("unknown")
+        .to_string();
+
     let content = read_to_string(input_path).map_err(|_| {
         ParseError::ErrorReading(
             input_path
@@ -30,7 +36,7 @@ pub fn run(
         .unwrap_or(ReportType::Projects);
 
     let filter = create_filter(&report_type, from_date);
-    let report_result = create_report(&content, &report_type, &filter);
+    let report_result = create_report(&content, &report_type, &filter, &file_name);
 
     match report_result {
         Some((report, errors)) => {
@@ -62,6 +68,7 @@ fn create_report(
     content: &str,
     report_type: &ReportType,
     filter: &Option<Filter>,
+    file_name: &str,
 ) -> Option<(Report, Vec<ParseError>)> {
     parsing::get_entries(content, filter).map(|parse_result| {
         let entries = parse_result.entries().clone();
@@ -80,6 +87,16 @@ fn create_report(
                 parse_result.days(),
             ),
         };
-        (report, parse_result.errors().clone())
+
+        let errors: Vec<_> = parse_result
+            .errors()
+            .into_iter()
+            .map(|e| ParseError::WithFile {
+                error: Box::new(e),
+                file: file_name.to_string(),
+            })
+            .collect();
+
+        (report, errors)
     })
 }

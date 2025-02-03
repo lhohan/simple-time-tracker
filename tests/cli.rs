@@ -313,3 +313,18 @@ fn test_multiple_errors_show_correct_line_numbers() -> Result<(), Box<dyn std::e
 
     Ok(())
 }
+
+#[test]
+fn test_errors_show_file_name() -> Result<(), Box<dyn std::error::Error>> {
+    let content = r#"## TT 2025-01-01
+- #dev 1h Task1
+- #dev missing_time_entry"#;
+
+    CommandSpec::new()
+        .with_content(content)
+        .when_run()
+        .should_succeed()
+        .expect_warning_with_file("test.md", "missing time: - #dev missing_time_entry");
+
+    Ok(())
+}
