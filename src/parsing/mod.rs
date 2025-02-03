@@ -18,7 +18,7 @@ struct ParseState {
 }
 
 // design decision: When no entries are found, no ParseResult can exist.
-pub fn get_entries(content: &str, filter: &Option<Filter>) -> Option<ParseResult> {
+pub fn get_entries(content: &str, filter: &Option<Filter>, file_name: &str) -> Option<ParseResult> {
     let final_state = content
         .lines()
         .enumerate()
@@ -47,7 +47,7 @@ pub fn get_entries(content: &str, filter: &Option<Filter>) -> Option<ParseResult
                         errors.push(ParseError::Located {
                             error: Box::new(e),
                             location: Location {
-                                file: String::new(), // Will be filled in later in lib.rs
+                                file: file_name.to_string(),
                                 line: line_number,
                             },
                         });
