@@ -14,7 +14,7 @@ fn test_empties(
     #[values("", "## TT 2025-01-15")] empty_input: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     CommandSpec::new()
-        .with_content(empty_input)
+        .with_file(empty_input)
         .when_run()
         .should_succeed()
         .expect_no_data_found();
@@ -25,7 +25,7 @@ fn test_empties(
 #[test]
 fn test_basic_time_tracking() -> Result<(), Box<dyn std::error::Error>> {
     CommandSpec::new()
-        .with_content(
+        .with_file(
             r#"
         ## TT 2025-01-15
         - #sport 30m
@@ -54,7 +54,7 @@ fn test_basic_time_tracking() -> Result<(), Box<dyn std::error::Error>> {
 fn test_verbose_output() -> Result<(), Box<dyn std::error::Error>> {
     CommandSpec::new()
         .with_verbose()
-        .with_content(
+        .with_file(
             r#"## TT 2025-01-15
     - #test 30m"#,
         )
@@ -69,7 +69,7 @@ fn test_verbose_output() -> Result<(), Box<dyn std::error::Error>> {
 fn should_only_process_entries_in_time_tracking_sections() -> Result<(), Box<dyn std::error::Error>>
 {
     CommandSpec::new()
-        .with_content(
+        .with_file(
             r#"# Random Header
 Some random content
 - #not-tracked 1h
@@ -104,7 +104,7 @@ fn test_summary_statistics() -> Result<(), Box<dyn std::error::Error>> {
     - #exercise 1h"#;
 
     CommandSpec::new()
-        .with_content(content)
+        .with_file(content)
         .when_run()
         .should_succeed()
         .expect_project("work")
@@ -128,7 +128,7 @@ fn test_project_filter() -> Result<(), Box<dyn std::error::Error>> {
 - #sport 30m"#;
 
     CommandSpec::new()
-        .with_content(content)
+        .with_file(content)
         .with_project_filter("dev")
         .when_run()
         .should_succeed()
@@ -149,7 +149,7 @@ fn test_when_project_filter_should_total_task_with_same_name(
 - #dev 1h My task"#;
 
     CommandSpec::new()
-        .with_content(content)
+        .with_file(content)
         .with_project_filter("dev")
         .when_run()
         .should_succeed()
@@ -166,7 +166,7 @@ fn test_when_project_filter_should_default_task_description_if_empty(
 - #dev 2h"#;
 
     CommandSpec::new()
-        .with_content(content)
+        .with_file(content)
         .with_project_filter("dev")
         .when_run()
         .should_succeed()
@@ -184,7 +184,7 @@ fn test_when_errors_should_report_warnings() -> Result<(), Box<dyn std::error::E
 - #dev Task 2 - Forgot to add time"#;
 
     CommandSpec::new()
-        .with_content(content)
+        .with_file(content)
         .when_run()
         .should_succeed()
         .expect_project("dev")
@@ -203,7 +203,7 @@ fn test_report_should_include_interval_start() -> Result<(), Box<dyn std::error:
 - #dev 5h Task2"#;
 
     CommandSpec::new()
-        .with_content(content)
+        .with_file(content)
         .when_run()
         .should_succeed()
         .expect_start_date("2025-01-01");
@@ -219,7 +219,7 @@ fn test_report_should_include_interval_end() -> Result<(), Box<dyn std::error::E
 - #dev 5h Task2"#;
 
     CommandSpec::new()
-        .with_content(content)
+        .with_file(content)
         .when_run()
         .should_succeed()
         .expect_end_date("2025-01-02");
@@ -235,7 +235,7 @@ fn test_date_filtering_from_date() -> Result<(), Box<dyn std::error::Error>> {
 - #prj-2 2h Task 2"#;
 
     CommandSpec::new()
-        .with_content(content)
+        .with_file(content)
         .with_from_date_filter("2025-01-02")
         .when_run()
         .should_succeed()
@@ -253,7 +253,7 @@ fn test_combined_filtering_project_and_from_date() -> Result<(), Box<dyn std::er
 - #prj-2 2h Task 2"#;
 
     CommandSpec::new()
-        .with_content(content)
+        .with_file(content)
         .with_from_date_filter("2025-01-02")
         .with_project_filter("prj-1")
         .when_run()
@@ -273,7 +273,7 @@ fn test_parsing_errors_should_show_line_numbers() -> Result<(), Box<dyn std::err
 - #dev 2h Task3"#;
 
     CommandSpec::new()
-        .with_content(content)
+        .with_file(content)
         .when_run()
         .should_succeed()
         .expect_warning_at_line(3, "missing time: - #dev invalid time format");
@@ -288,7 +288,7 @@ fn test_invalid_date_format_shows_line_number() -> Result<(), Box<dyn std::error
 - #dev 1h Task1"#;
 
     CommandSpec::new()
-        .with_content(content)
+        .with_file(content)
         .when_run()
         .should_succeed()
         .expect_warning_at_line(1, "invalid date format: invalid-date");
@@ -305,7 +305,7 @@ fn test_multiple_errors_show_correct_line_numbers() -> Result<(), Box<dyn std::e
 - #dev 1h Task4"#;
 
     CommandSpec::new()
-        .with_content(content)
+        .with_file(content)
         .when_run()
         .should_succeed()
         .expect_warning_at_line(3, "missing time: - #dev Task2")
@@ -321,10 +321,45 @@ fn test_errors_show_file_name() -> Result<(), Box<dyn std::error::Error>> {
 - #dev missing_time_entry"#;
 
     CommandSpec::new()
-        .with_content(content)
+        .with_file(content)
         .when_run()
         .should_succeed()
         .expect_warning_with_file("test.md", "missing time: - #dev missing_time_entry");
+
+    Ok(())
+}
+
+#[test]
+fn test_process_directory() -> Result<(), Box<dyn std::error::Error>> {
+    CommandSpec::new()
+        .with_directory_containing_files(&[
+            ("file1.md", "## TT 2024-01-01\n- #prj-1 2h Task1"),
+            ("file2.md", "## TT 2025-01-01\n- #prj-2 1h Task2"),
+        ])
+        .when_run()
+        .should_succeed()
+        .expect_project("prj-1")
+        .taking("2h  0m")
+        .expect_project("prj-2")
+        .taking("1h  0m")
+        .validate();
+
+    Ok(())
+}
+
+#[test]
+fn test_process_directory_with_multiple_files_should_merge_days(
+) -> Result<(), Box<dyn std::error::Error>> {
+    CommandSpec::new()
+        .with_directory_containing_files(&[
+            ("file1.md", "## TT 2025-01-15\n- #dev 1h Task1"),
+            ("file2.md", "## TT 2025-01-15\n- #dev 2h Task2"), // same day, same project!
+        ])
+        .when_run()
+        .should_succeed()
+        .expect_project("dev")
+        .taking("3h  0m")
+        .validate();
 
     Ok(())
 }

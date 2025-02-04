@@ -27,16 +27,44 @@ impl CommandArgs {
     }
 }
 
+#[derive(Debug)]
+enum InputSource {
+    File { content: String, name: String },
+    Directory { files: Vec<InputSource> },
+}
+
+impl InputSource {
+    fn file(content: &str) -> Self {
+        Self::File {
+            content: content.to_string(),
+            name: "test.md".to_string(), // default name
+        }
+    }
+
+    fn named_file(name: &str, content: &str) -> Self {
+        Self::File {
+            content: content.to_string(),
+            name: name.to_string(),
+        }
+    }
+
+    fn directory(files: Vec<InputSource>) -> Self {
+        Self::Directory { files }
+    }
+}
+
 pub struct CommandSpec {
     args: CommandArgs,
-    content: Option<String>,
+    input: Option<InputSource>,
+    _temp_dir: Option<Arc<assert_fs::TempDir>>,
 }
 
 impl CommandSpec {
     pub fn new() -> Self {
         Self {
             args: CommandArgs::new(),
-            content: None,
+            input: None,
+            _temp_dir: None,
         }
     }
 
@@ -60,26 +88,64 @@ impl CommandSpec {
         self
     }
 
-    pub fn with_content(self, content: &str) -> Self {
+    pub fn with_directory_containing_files(self, files: &[(&str, &str)]) -> Self {
+        let files = files
+            .iter()
+            .map(|(name, content)| InputSource::named_file(name, content))
+            .collect();
+
         Self {
-            args: self.args,
-            content: Some(content.to_string()),
+            input: Some(InputSource::directory(files)),
+            ..self
+        }
+    }
+
+    pub fn with_file(self, content: &str) -> Self {
+        Self {
+            input: Some(InputSource::file(content)),
+            ..self
         }
     }
 
     pub fn when_run(self) -> CommandResult {
-        let (temp_dir, mut command) = match self.content {
-            Some(content) => {
+        let (temp_dir, mut command) = match self.input {
+            Some(InputSource::File { content, name }) => {
                 let temp = Arc::new(
                     assert_fs::TempDir::new().expect("Failed to create temporary directory"),
                 );
-                let input_file = temp.child("test.md");
+                let input_file = temp.child(&name);
                 input_file
                     .write_str(&content)
                     .expect("Failed to write to test file");
 
-                let mut cmd = Command::cargo_bin("tt").expect("Failed to create cargo command");
+                let mut cmd = Command::cargo_bin("tt").expect("Failed to create 'tt' command");
                 cmd.arg("--input").arg(input_file.path());
+
+                (Some(temp), cmd)
+            }
+            Some(InputSource::Directory { files }) => {
+                let temp = Arc::new(
+                    assert_fs::TempDir::new().expect("Failed to create temporary directory"),
+                );
+
+                // Create all files in the directory
+                for file in files {
+                    match file {
+                        InputSource::File { content, name } => {
+                            let file_path = temp.child(&name);
+                            dbg!(file_path.to_str());
+                            file_path
+                                .write_str(&content)
+                                .expect("Failed to write to test file");
+                        }
+                        InputSource::Directory { .. } => {
+                            panic!("Nested directories not supported yet");
+                        }
+                    }
+                }
+
+                let mut cmd = Command::cargo_bin("tt").expect("Failed to create cargo command");
+                cmd.arg("--input").arg(temp.path());
 
                 (Some(temp), cmd)
             }
@@ -89,9 +155,7 @@ impl CommandSpec {
             }
         };
 
-        // Add all accumulated arguments
         command.args(self.args.into_vec());
-
         let output = command.assert();
 
         CommandResult {

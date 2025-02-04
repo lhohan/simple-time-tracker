@@ -97,6 +97,10 @@ impl ParseResult {
         self.days
     }
 
+    pub fn entries_by_date(&self) -> &HashMap<NaiveDate, Vec<TimeEntry>> {
+        &self.entries
+    }
+
     pub fn start_date(&self) -> StartDate {
         let earliest = self.entries.keys().min_by_key(|date| *date).copied();
         let earliest = earliest.expect("There should always be a start date for a parse result");
@@ -107,6 +111,24 @@ impl ParseResult {
         let latest = self.entries.keys().max_by_key(|date| *date).copied();
         let latest = latest.expect("There should always be an end date for a parse result");
         EndDate(latest)
+    }
+
+    pub fn merge(&self, other: &ParseResult) -> ParseResult {
+        let mut merged_entries = self.entries.clone();
+
+        // Merge entries from other
+        for (date, entries) in &other.entries {
+            merged_entries
+                .entry(*date)
+                .or_insert_with(Vec::new)
+                .extend(entries.iter().cloned());
+        }
+
+        // Combine errors
+        let mut merged_errors = self.errors.clone();
+        merged_errors.extend(other.errors.clone());
+
+        ParseResult::new(merged_entries, merged_errors)
     }
 }
 
