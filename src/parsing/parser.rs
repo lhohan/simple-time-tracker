@@ -1,4 +1,3 @@
-use crate::parsing::filter::DateRange;
 use crate::parsing::filter::Filter;
 
 use crate::domain::{EntryDate, Location, ParseError, ParseResult, TimeEntry};

@@ -29,22 +29,31 @@ impl CommandArgs {
 
 #[derive(Debug)]
 enum InputSource {
-    File { content: String, name: String },
-    Directory { files: Vec<InputSource> },
+    File {
+        content: String,
+        path: std::path::PathBuf,
+    },
+    Directory {
+        files: Vec<InputSource>,
+    },
 }
 
 impl InputSource {
     fn file(content: &str) -> Self {
+        Self::named_file("test.md", content)
+    }
+
+    fn path_file(path: impl AsRef<std::path::Path>, content: &str) -> Self {
         Self::File {
             content: content.to_string(),
-            name: "test.md".to_string(), // default name
+            path: path.as_ref().to_path_buf(),
         }
     }
 
     fn named_file(name: &str, content: &str) -> Self {
         Self::File {
             content: content.to_string(),
-            name: name.to_string(),
+            path: name.into(),
         }
     }
 
@@ -91,7 +100,7 @@ impl CommandSpec {
     pub fn with_directory_containing_files(self, files: &[(&str, &str)]) -> Self {
         let files = files
             .iter()
-            .map(|(name, content)| InputSource::named_file(name, content))
+            .map(|(name, content)| InputSource::path_file(name, content))
             .collect();
 
         Self {
@@ -109,7 +118,10 @@ impl CommandSpec {
 
     pub fn when_run(self) -> CommandResult {
         let (temp_dir, mut command) = match self.input {
-            Some(InputSource::File { content, name }) => {
+            Some(InputSource::File {
+                content,
+                path: name,
+            }) => {
                 let temp = Arc::new(
                     assert_fs::TempDir::new().expect("Failed to create temporary directory"),
                 );
@@ -131,9 +143,14 @@ impl CommandSpec {
                 // Create all files in the directory
                 for file in files {
                     match file {
-                        InputSource::File { content, name } => {
-                            let file_path = temp.child(&name);
-                            dbg!(file_path.to_str());
+                        InputSource::File { content, path } => {
+                            // create parent directories if not exist
+                            if let Some(parent) = path.parent() {
+                                temp.child(parent)
+                                    .create_dir_all()
+                                    .expect("Failed to create parent directories");
+                            }
+                            let file_path = temp.child(&path);
                             file_path
                                 .write_str(&content)
                                 .expect("Failed to write to test file");

@@ -363,3 +363,54 @@ fn test_process_directory_with_multiple_files_should_merge_days(
 
     Ok(())
 }
+
+#[test]
+fn test_process_nested_directories() -> Result<(), Box<dyn std::error::Error>> {
+    CommandSpec::new()
+        .with_directory_containing_files(&[
+            ("2024/jan.md", "## TT 2024-01-01\n- #prj-1 2h Task1"),
+            ("2025/jan.md", "## TT 2025-01-01\n- #prj-1 1h Task2"),
+        ])
+        .when_run()
+        .should_succeed()
+        .expect_project("prj-1")
+        .taking("3h  0m") // Should combine times across directories
+        .validate();
+
+    Ok(())
+}
+
+#[test]
+fn test_process_directory_file_filtering() -> Result<(), Box<dyn std::error::Error>> {
+    CommandSpec::new()
+        .with_directory_containing_files(&[
+            ("notes.md", "## TT 2024-01-01\n- #prj-1 2h Task1"),
+            ("ignored.txt", "## TT 2024-01-01\n- #prj-2 1h Task2"),
+            ("also_ignored.doc", "## TT 2024-01-01\n- #prj-3 1h Task3"),
+        ])
+        .when_run()
+        .should_succeed()
+        .expect_project("prj-1")
+        .taking("2h  0m")
+        .validate();
+
+    Ok(())
+}
+
+#[test]
+#[ignore] // invalid date should print a warning
+fn test_directory_processing_with_invalid_files() -> Result<(), Box<dyn std::error::Error>> {
+    CommandSpec::new()
+        .with_directory_containing_files(&[
+            ("valid.md", "## TT 2024-01-01\n- #prj-1 2h Task1"),
+            ("invalid.md", "## TT invalid-date\n- #prj-2 1h Task2"),
+        ])
+        .when_run()
+        .should_succeed()
+        .expect_project("prj-1")
+        .taking("2h  0m")
+        .validate()
+        .expect_warning_with_file("invalid.md", "invalid date format: invalid-date");
+
+    Ok(())
+}

@@ -13,7 +13,6 @@ use crate::domain::ParseError;
 use crate::domain::ParseResult;
 use crate::domain::ReportType;
 use crate::domain::TimeEntry;
-use crate::parsing;
 use crate::reporting::Report;
 use std::borrow::BorrowMut;
 

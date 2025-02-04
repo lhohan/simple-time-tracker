@@ -81,14 +81,6 @@ impl ParseResult {
         }
     }
 
-    pub fn entries(&self) -> Vec<TimeEntry> {
-        self.entries
-            .values()
-            .into_iter()
-            .flat_map(|vec| vec.iter().cloned())
-            .collect()
-    }
-
     pub fn errors(&self) -> Vec<ParseError> {
         self.errors.clone() // todo: look into this, can clone be avoided?
     }
