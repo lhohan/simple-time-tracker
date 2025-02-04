@@ -3,113 +3,106 @@ use std::fs::read_to_string;
 use std::path::Path;
 use walkdir::WalkDir;
 
-pub(super) trait FileProcessor {
-    fn process<F>(&self, path: &Path, process_content: F) -> Result<(), ParseError>
-    where
-        F: FnMut(&str, &str) -> Result<(), ParseError>;
-}
+mod processors {
+    use super::*;
+    #[derive(Debug)]
+    pub(crate) struct SingleFileProcessor;
 
-#[derive(Debug)]
-pub(super) struct SingleFileProcessor;
+    #[derive(Debug)]
+    pub(crate) struct DirectoryProcessor {
+        file_processor: SingleFileProcessor,
+    }
 
-impl FileProcessor for SingleFileProcessor {
-    fn process<F>(&self, path: &Path, mut process_content: F) -> Result<(), ParseError>
-    where
-        F: FnMut(&str, &str) -> Result<(), ParseError>,
-    {
-        let file_name = path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("unknown")
-            .to_string();
+    impl DirectoryProcessor {
+        pub(super) fn new() -> Self {
+            Self {
+                file_processor: SingleFileProcessor,
+            }
+        }
+    }
 
-        let content = read_to_string(path).map_err(|_| {
-            ParseError::ErrorReading(
-                path.to_str()
-                    .expect("Could not get path to file")
-                    .to_string(),
-            )
-        })?;
+    impl FileProcessor for SingleFileProcessor {
+        fn process<F>(&self, path: &Path, mut process_content: F) -> Result<(), ParseError>
+        where
+            F: FnMut(&str, &str) -> Result<(), ParseError>,
+        {
+            let file_name = path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("unknown")
+                .to_string();
 
-        process_content(&content, &file_name)
+            let content = read_to_string(path).map_err(|_| {
+                ParseError::ErrorReading(
+                    path.to_str()
+                        .expect("Could not get path to file")
+                        .to_string(),
+                )
+            })?;
+
+            process_content(&content, &file_name)
+        }
+    }
+
+    impl FileProcessor for DirectoryProcessor {
+        fn process<F>(&self, path: &Path, mut process_content: F) -> Result<(), ParseError>
+        where
+            F: FnMut(&str, &str) -> Result<(), ParseError>,
+        {
+            for entry in WalkDir::new(path)
+                .follow_links(true)
+                .into_iter()
+                .filter_map(|e| e.ok())
+                .filter(|e| {
+                    e.path()
+                        .extension()
+                        .and_then(|ext| ext.to_str())
+                        .map(|ext| ext == "md" || ext == "txt")
+                        .unwrap_or(false)
+                })
+            {
+                self.file_processor
+                    .process(entry.path(), &mut process_content)?;
+            }
+            Ok(())
+        }
+    }
+
+    impl FileProcessor for InputProcessor {
+        fn process<F>(&self, path: &Path, process_content: F) -> Result<(), ParseError>
+        where
+            F: FnMut(&str, &str) -> Result<(), ParseError>,
+        {
+            match self {
+                InputProcessor::File(processor) => processor.process(path, process_content),
+                InputProcessor::Directory(processor) => processor.process(path, process_content),
+            }
+        }
     }
 }
 
+use processors::*;
+
 #[derive(Debug)]
-pub enum ProcessType {
+pub enum InputProcessor {
     File(SingleFileProcessor),
     Directory(DirectoryProcessor),
 }
 
-impl FileProcessor for ProcessType {
-    fn process<F>(&self, path: &Path, mut process_content: F) -> Result<(), ParseError>
+impl InputProcessor {
+    pub fn from_path(path: &Path) -> Self {
+        if path.is_dir() {
+            InputProcessor::Directory(DirectoryProcessor::new())
+        } else {
+            InputProcessor::File(SingleFileProcessor)
+        }
+    }
+}
+
+pub(super) trait FileProcessor {
+    fn process<F>(&self, path: &Path, process_content: F) -> Result<(), ParseError>
     where
-        F: FnMut(&str, &str) -> Result<(), ParseError>,
-    {
-        match &self {
-            ProcessType::File(single_file_processor) => {
-                single_file_processor.process(path, process_content)
-            }
-            ProcessType::Directory(directory_processor) => {
-                dbg!("PROCESSONG DIR");
-                for entry in WalkDir::new(path)
-                    .follow_links(true)
-                    .into_iter()
-                    .filter_map(|e| e.ok())
-                    .filter(|e| {
-                        dbg!(e);
-                        e.path()
-                            .extension()
-                            .and_then(|ext| ext.to_str())
-                            .map(|ext| ext == "md" || ext == "txt")
-                            .unwrap_or(false)
-                    })
-                {
-                    directory_processor
-                        .file_processor
-                        .process(entry.path(), &mut process_content)?;
-                }
-                Ok(())
-            }
-        }
-    }
-}
-
-#[derive(Debug)]
-pub(super) struct DirectoryProcessor {
-    file_processor: SingleFileProcessor,
-}
-
-impl DirectoryProcessor {
-    pub fn new() -> Self {
-        Self {
-            file_processor: SingleFileProcessor,
-        }
-    }
-}
-
-impl FileProcessor for DirectoryProcessor {
-    fn process<F>(&self, path: &Path, mut process_content: F) -> Result<(), ParseError>
-    where
-        F: FnMut(&str, &str) -> Result<(), ParseError>,
-    {
-        for entry in WalkDir::new(path)
-            .follow_links(true)
-            .into_iter()
-            .filter_map(|e| e.ok())
-            .filter(|e| {
-                e.path()
-                    .extension()
-                    .and_then(|ext| ext.to_str())
-                    .map(|ext| ext == "md" || ext == "txt")
-                    .unwrap_or(false)
-            })
-        {
-            self.file_processor
-                .process(entry.path(), &mut process_content)?;
-        }
-        Ok(())
-    }
+        F: FnMut(&str, &str) -> Result<(), ParseError>;
 }
 
 #[cfg(test)]
@@ -179,8 +172,41 @@ mod tests {
         files: Vec<(String, String)>,
     }
 
+    impl ProcessingTest {
+        fn new() -> Result<Self, Box<dyn std::error::Error>> {
+            Ok(Self {
+                temp_dir: assert_fs::TempDir::new()?,
+            })
+        }
+
+        fn with_file(
+            &self,
+            name: &str,
+            content: &str,
+        ) -> Result<&Self, Box<dyn std::error::Error>> {
+            self.temp_dir.child(name).write_str(content)?;
+            Ok(self)
+        }
+
+        fn with_directory(&self, name: &str) -> Result<&Self, Box<dyn std::error::Error>> {
+            self.temp_dir.child(name).create_dir_all()?;
+            Ok(self)
+        }
+
+        fn process(&self, path: &Path) -> Result<ProcessingResults, ParseError> {
+            let processor = InputProcessor::from_path(path);
+
+            let mut files = Vec::new();
+            processor.process(path, |content, name| {
+                files.push((name.to_string(), content.to_string()));
+                Ok(())
+            })?;
+
+            Ok(ProcessingResults { files })
+        }
+    }
+
     impl ProcessingResults {
-        // Each assertion method now returns self for chaining
         fn expect_processed_exactly(self, expected_count: usize) -> Self {
             assert_eq!(
                 self.files.len(),
@@ -217,44 +243,6 @@ mod tests {
                 );
             }
             self
-        }
-    }
-
-    impl ProcessingTest {
-        fn new() -> Result<Self, Box<dyn std::error::Error>> {
-            Ok(Self {
-                temp_dir: assert_fs::TempDir::new()?,
-            })
-        }
-
-        fn with_file(
-            &self,
-            name: &str,
-            content: &str,
-        ) -> Result<&Self, Box<dyn std::error::Error>> {
-            self.temp_dir.child(name).write_str(content)?;
-            Ok(self)
-        }
-
-        fn with_directory(&self, name: &str) -> Result<&Self, Box<dyn std::error::Error>> {
-            self.temp_dir.child(name).create_dir_all()?;
-            Ok(self)
-        }
-
-        fn process(&self, path: &Path) -> Result<ProcessingResults, ParseError> {
-            let processor = if path.is_dir() {
-                ProcessType::Directory(DirectoryProcessor::new())
-            } else {
-                ProcessType::File(SingleFileProcessor)
-            };
-
-            let mut files = Vec::new();
-            processor.process(path, |content, name| {
-                files.push((name.to_string(), content.to_string()));
-                Ok(())
-            })?;
-
-            Ok(ProcessingResults { files })
         }
     }
 }

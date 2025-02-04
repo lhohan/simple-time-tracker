@@ -4,13 +4,10 @@ mod processor;
 
 use std::path::Path;
 
+use crate::parsing::processor::FileProcessor;
 pub use filter::DateRange;
 pub use filter::Filter;
-pub use parser::parse_content;
-use processor::DirectoryProcessor;
-use processor::FileProcessor;
-use processor::ProcessType;
-use processor::SingleFileProcessor;
+use processor::InputProcessor;
 
 use crate::domain::ParseError;
 use crate::domain::ParseResult;
@@ -27,11 +24,7 @@ pub fn process_input(
 ) -> Result<Option<(Report, Vec<ParseError>)>, ParseError> {
     let mut combined_result: Option<ParseResult> = None;
 
-    let processor = if path.is_dir() {
-        ProcessType::Directory(DirectoryProcessor::new())
-    } else {
-        ProcessType::File(SingleFileProcessor)
-    };
+    let processor = InputProcessor::from_path(path);
 
     processor.process(path, |content, file_name| {
         if let Some(result) = parser::parse_content(content, filter, file_name) {
