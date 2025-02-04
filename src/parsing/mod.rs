@@ -25,8 +25,8 @@ pub fn process_input(
 
     let processor = InputProcessor::from_path(path);
 
-    processor.process(path, |content, file_name| {
-        if let Some(result) = parser::parse_content(content, filter, file_name) {
+    processor.process(path, |input| {
+        if let Some(result) = parser::parse_content(input.content(), filter, input.file_name()) {
             let current = combined_result.borrow_mut();
             *current = Some(match &*current {
                 None => result,
