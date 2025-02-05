@@ -21,23 +21,23 @@ pub fn run(
 
     let filter = create_filter(&report_type, from_date);
 
-    let tracked_time_and_errors = parsing::process_input(input_path, &filter)?;
-    match tracked_time_and_errors {
-        Some((time_report, errors)) => {
-            let report = match report_type {
-                ReportType::Projects => Report::new_overview(time_report),
-                ReportType::ProjectDetails(project) => {
-                    Report::new_project_detail(time_report, project)
-                }
-            };
+    let tracking_result = parsing::process_input(input_path, &filter)?;
+    if let Some(time_report) = tracking_result.time_entries {
+        let report = match report_type {
+            ReportType::Projects => Report::new_overview(time_report),
+            ReportType::ProjectDetails(project) => Report::new_project_detail(time_report, project),
+        };
 
-            println!("{}", report);
-            errors
-                .into_iter()
-                .for_each(|error| println!("Warning: {}", error));
-        }
-        None => println!("No data found."),
+        println!("{}", report);
+    } else {
+        println!("No data found.");
     }
+
+    // always print warnings
+    tracking_result
+        .errors
+        .iter()
+        .for_each(|error| println!("Warning: {}", error));
 
     Ok(())
 }

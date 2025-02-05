@@ -1,5 +1,5 @@
 mod aggregates;
-pub use aggregates::{ParseResult, ReportType, TrackedTime, TrackingPeriod};
+pub use aggregates::{ParseResult, ReportType, TimeTrackingResult, TrackedTime, TrackingPeriod};
 
 use chrono::NaiveDate;
 

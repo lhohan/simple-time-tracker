@@ -14,21 +14,34 @@ struct ParseState {
     errors: Vec<ParseError>,
 }
 
-// design decision: When no entries are found, no ParseResult can exist.
-pub fn parse_content(
-    content: &str,
-    filter: &Option<Filter>,
-    file_name: &str,
-) -> Option<ParseResult> {
+pub fn parse_content(content: &str, filter: &Option<Filter>, file_name: &str) -> ParseResult {
     let final_state = content
         .lines()
         .enumerate()
         .map(|(line_number, line)| (line_number + 1, line.trim())) // Make line reporting 1-based instead 0-based
         .fold(ParseState::default(), |state, (line_number, line)| {
             match (line, state.current_date) {
-                (line, _) if line.starts_with('#') => ParseState {
-                    current_date: extract_date(line).ok(),
-                    ..state
+                (line, _) if line.starts_with('#') => match extract_date(line) {
+                    Ok(date) => ParseState {
+                        current_date: Some(date),
+                        ..state
+                    },
+                    Err(e) => ParseState {
+                        current_date: None,
+                        errors: {
+                            dbg!(&e);
+                            let mut errors = state.errors;
+                            errors.push(ParseError::Located {
+                                error: Box::new(e),
+                                location: Location {
+                                    file: file_name.to_string(),
+                                    line: line_number,
+                                },
+                            });
+                            errors
+                        },
+                        ..state
+                    },
                 },
                 (line, Some(date)) if line.starts_with("- #") => match parse_line(line) {
                     Ok(entry) => {
@@ -58,11 +71,10 @@ pub fn parse_content(
                 _ => state,
             }
         });
-
     if final_state.entries.is_empty() {
-        None
+        ParseResult::errors_only(final_state.errors)
     } else {
-        Some(ParseResult::new(final_state.entries, final_state.errors))
+        ParseResult::new(final_state.entries, final_state.errors)
     }
 }
 
@@ -165,8 +177,10 @@ fn maybe_date_from_header(line: &str) -> Option<&str> {
 
 fn extract_date(line: &str) -> Result<NaiveDate, ParseError> {
     let date_str = maybe_date_from_header(line).ok_or(ParseError::InvalidDate(line.to_string()))?;
-    NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
-        .map_err(|e| ParseError::InvalidDate(e.to_string()))
+    NaiveDate::parse_from_str(date_str, "%Y-%m-%d").map_err(|e| {
+        let msg = format!("{}: {}", date_str, e.to_string());
+        ParseError::InvalidDate(msg)
+    })
 }
 
 #[cfg(test)]

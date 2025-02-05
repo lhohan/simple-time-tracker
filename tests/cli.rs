@@ -282,7 +282,6 @@ fn test_parsing_errors_should_show_line_numbers() -> Result<(), Box<dyn std::err
 }
 
 #[test]
-#[ignore] // todo: we should report wrong dates
 fn test_invalid_date_format_shows_line_number() -> Result<(), Box<dyn std::error::Error>> {
     let content = r#"## TT invalid-date
 - #dev 1h Task1"#;
@@ -398,7 +397,6 @@ fn test_process_directory_file_filtering() -> Result<(), Box<dyn std::error::Err
 }
 
 #[test]
-#[ignore] // invalid date should print a warning
 fn test_directory_processing_with_invalid_files() -> Result<(), Box<dyn std::error::Error>> {
     CommandSpec::new()
         .with_directory_containing_files(&[
