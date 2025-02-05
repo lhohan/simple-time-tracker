@@ -286,6 +286,15 @@ impl CommandResult {
         }
     }
 
+    pub fn expect_no_warnings(self) -> Self {
+        Self {
+            output: self
+                .output
+                .stdout(predicate::str::contains("Warning:").not()),
+            _temp_dir: self._temp_dir,
+        }
+    }
+
     pub fn expect_warning(self, message: &str) -> Self {
         let warning = Warning::new(message);
         self.expect_warning_pattern(&warning.to_pattern())

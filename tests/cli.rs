@@ -296,6 +296,20 @@ fn test_invalid_date_format_shows_line_number() -> Result<(), Box<dyn std::error
 }
 
 #[test]
+fn test_only_warnings_for_sections_with_TT_in() -> Result<(), Box<dyn std::error::Error>> {
+    let content = r#"## A section title without teetee in
+- #dev 1h Task1"#;
+
+    CommandSpec::new()
+        .with_file(content)
+        .when_run()
+        .should_succeed()
+        .expect_no_warnings();
+
+    Ok(())
+}
+
+#[test]
 fn test_multiple_errors_show_correct_line_numbers() -> Result<(), Box<dyn std::error::Error>> {
     let content = r#"## TT 2025-01-01
 - #dev 1h Task1
