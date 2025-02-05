@@ -2,93 +2,84 @@ use crate::parsing::filter::Filter;
 
 use crate::domain::{EntryDate, Location, ParseError, ParseResult, TimeEntry};
 use chrono::NaiveDate;
-use std::{
-    collections::{HashMap, VecDeque},
-    str::FromStr,
-};
+use std::{collections::VecDeque, str::FromStr};
 
-#[derive(Default)]
-struct ParseState {
-    entries: HashMap<NaiveDate, Vec<TimeEntry>>,
-    current_date: Option<NaiveDate>,
-    errors: Vec<ParseError>,
-    in_tt_section: bool,
-}
+use super::{LineType, ParseState, ParsedLine};
 
 pub fn parse_content(content: &str, filter: &Option<Filter>, file_name: &str) -> ParseResult {
     let final_state = content
         .lines()
         .enumerate()
-        .map(|(line_number, line)| (line_number + 1, line.trim()))
-        .fold(ParseState::default(), |state, (line_number, line)| {
-            match (line, state.current_date) {
-                (line, _) if line.starts_with('#') => {
-                    let is_tt_section = maybe_date_from_header(line).is_some();
-                    match extract_date(line) {
-                        Ok(Some(date)) => ParseState {
-                            current_date: Some(date),
-                            in_tt_section: is_tt_section, // Set this based on whether it's a TT section
-                            ..state
-                        },
-                        Ok(None) => ParseState {
-                            in_tt_section: false, // Not a TT section
-                            current_date: None,
-                            ..state
-                        },
-                        Err(e) => ParseState {
-                            current_date: None,
-                            in_tt_section: false,
-                            errors: {
-                                let mut errors = state.errors;
-                                errors.push(ParseError::Located {
-                                    error: Box::new(e),
-                                    location: Location {
-                                        file: file_name.to_string(),
-                                        line: line_number,
-                                    },
-                                });
-                                errors
-                            },
-                            ..state
-                        },
-                    }
-                }
-                (line, Some(date)) if line.starts_with("- #") && state.in_tt_section => {
-                    // Only process if in TT section
-                    match parse_line(line) {
-                        Ok(entry) => {
-                            let mut entries = state.entries;
-                            match filter {
-                                None => entries.entry(date).or_default().push(entry),
-                                Some(filter) => {
-                                    if filter.matches(&entry, &EntryDate(date)) {
-                                        entries.entry(date).or_default().push(entry);
-                                    }
-                                }
-                            }
-                            ParseState { entries, ..state }
-                        }
-                        Err(e) => {
-                            let mut errors = state.errors;
-                            errors.push(ParseError::Located {
-                                error: Box::new(e),
-                                location: Location {
-                                    file: file_name.to_string(),
-                                    line: line_number,
-                                },
-                            });
-                            ParseState { errors, ..state }
-                        }
-                    }
-                }
-                _ => state,
-            }
+        .map(|(line_number, line)| ParsedLine {
+            content: line.trim(),
+            line_number: line_number + 1,
+        })
+        .fold(ParseState::default(), |state, line| {
+            process_line(line, &state, filter, file_name)
         });
 
     if final_state.entries.is_empty() {
         ParseResult::errors_only(final_state.errors)
     } else {
         ParseResult::new(final_state.entries, final_state.errors)
+    }
+}
+
+fn process_line(
+    line: ParsedLine,
+    state: &ParseState,
+    filter: &Option<Filter>,
+    file_name: &str,
+) -> ParseState {
+    match parse_line_type(line.content) {
+        Ok(LineType::Header(maybe_date)) => ParseState {
+            current_date: maybe_date,
+            ..state.clone()
+        },
+        Ok(LineType::Entry(entry)) if state.current_date.is_some() => {
+            let mut new_state = state.clone();
+            if let Some(date) = state.current_date {
+                match filter {
+                    None => new_state.entries.entry(date).or_default().push(entry),
+                    Some(filter) if filter.matches(&entry, &EntryDate(date)) => {
+                        new_state.entries.entry(date).or_default().push(entry)
+                    }
+                    _ => {}
+                }
+            }
+            new_state
+        }
+        Err(error) => ParseState {
+            errors: {
+                let mut errors = state.errors.clone();
+                errors.push(ParseError::Located {
+                    error: Box::new(error),
+                    location: Location {
+                        file: file_name.to_string(),
+                        line: line.line_number,
+                    },
+                });
+                errors
+            },
+            ..state.clone()
+        },
+        _ => state.clone(),
+    }
+}
+
+fn parse_line_type(line: &str) -> Result<LineType, ParseError> {
+    if line.starts_with('#') {
+        let maybe_date = maybe_date_from_header(line);
+        let maybe_date = maybe_date.map(|date_str| {
+            NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
+                .map_err(|_| ParseError::InvalidDate(date_str.to_string()))
+        });
+        let maybe_date = maybe_date.transpose()?;
+        Ok(LineType::Header(maybe_date))
+    } else if line.starts_with("- #") {
+        parse_line(line).map(LineType::Entry)
+    } else {
+        Ok(LineType::Other)
     }
 }
 
@@ -186,18 +177,6 @@ fn maybe_date_from_header(line: &str) -> Option<&str> {
         words.next()
     } else {
         None
-    }
-}
-
-fn extract_date(line: &str) -> Result<Option<NaiveDate>, ParseError> {
-    match maybe_date_from_header(line) {
-        Some(date_str) => NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
-            .map_err(|e| {
-                let msg = format!("{}: {}", date_str, e.to_string());
-                ParseError::InvalidDate(msg)
-            })
-            .map(Some),
-        None => Ok(None),
     }
 }
 
@@ -344,8 +323,8 @@ mod tests {
     }
 
     fn is_date_header(line: &str) -> bool {
-        match extract_date(line) {
-            Ok(Some(_)) => true,
+        match parse_line_type(line) {
+            Ok(LineType::Header(Some(_))) => true,
             _ => false,
         }
     }

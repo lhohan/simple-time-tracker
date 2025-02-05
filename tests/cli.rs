@@ -296,7 +296,7 @@ fn test_invalid_date_format_shows_line_number() -> Result<(), Box<dyn std::error
 }
 
 #[test]
-fn test_only_warnings_for_sections_with_TT_in() -> Result<(), Box<dyn std::error::Error>> {
+fn test_only_warnings_for_sections_with_tt_in() -> Result<(), Box<dyn std::error::Error>> {
     let content = r#"## A section title without teetee in
 - #dev 1h Task1"#;
 
