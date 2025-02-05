@@ -1,4 +1,6 @@
-use super::model::{ProjectSummary, Report, ReportPeriod, TaskSummary};
+use crate::domain::TrackingPeriod;
+
+use super::model::{ProjectSummary, Report, TaskSummary};
 use std::fmt;
 
 pub struct TextFormatter;
@@ -22,7 +24,7 @@ impl TextFormatter {
 
     fn format_overview(
         entries: &[ProjectSummary],
-        period: &ReportPeriod,
+        period: &TrackingPeriod,
         total_minutes: u32,
     ) -> String {
         let mut result = String::new();
@@ -60,7 +62,7 @@ impl TextFormatter {
     fn format_project_detail(
         project: &str,
         tasks: &[TaskSummary],
-        period: &ReportPeriod,
+        period: &TrackingPeriod,
         total_minutes: u32,
     ) -> String {
         let mut result = String::new();

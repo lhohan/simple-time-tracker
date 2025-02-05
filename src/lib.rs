@@ -7,6 +7,7 @@ use domain::ReportType;
 use domain::{ParseError, StartDate};
 use parsing::DateRange;
 use parsing::Filter;
+use reporting::Report;
 use std::path::Path;
 
 pub fn run(
@@ -20,8 +21,16 @@ pub fn run(
 
     let filter = create_filter(&report_type, from_date);
 
-    match parsing::process_input(input_path, &filter, &report_type)? {
-        Some((report, errors)) => {
+    let tracked_time_and_errors = parsing::process_input(input_path, &filter)?;
+    match tracked_time_and_errors {
+        Some((time_report, errors)) => {
+            let report = match report_type {
+                ReportType::Projects => Report::new_overview(time_report),
+                ReportType::ProjectDetails(project) => {
+                    Report::new_project_detail(time_report, project)
+                }
+            };
+
             println!("{}", report);
             errors
                 .into_iter()

@@ -1,5 +1,11 @@
+mod aggregates;
+pub use aggregates::{ParseResult, ReportType, TrackedTime, TrackingPeriod};
+
 use chrono::NaiveDate;
-use std::collections::HashMap;
+
+// Organisation:
+// - Core domain primitives in `mod.rs`
+// - Aggregates and composite structures in `aggregates.rs`
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct TimeEntry {
@@ -64,67 +70,3 @@ pub struct StartDate(pub NaiveDate);
 pub struct EndDate(pub NaiveDate);
 #[derive(Debug, Clone)]
 pub struct EntryDate(pub NaiveDate);
-
-#[derive(Debug, PartialEq)]
-pub struct ParseResult {
-    errors: Vec<ParseError>,
-    days: u32,
-    entries: HashMap<NaiveDate, Vec<TimeEntry>>,
-}
-
-impl ParseResult {
-    pub fn new(entries: HashMap<NaiveDate, Vec<TimeEntry>>, errors: Vec<ParseError>) -> Self {
-        Self {
-            errors,
-            days: entries.len() as u32,
-            entries,
-        }
-    }
-
-    pub fn errors(&self) -> Vec<ParseError> {
-        self.errors.clone() // todo: look into this, can clone be avoided?
-    }
-
-    pub fn days(&self) -> u32 {
-        self.days
-    }
-
-    pub fn entries_by_date(&self) -> &HashMap<NaiveDate, Vec<TimeEntry>> {
-        &self.entries
-    }
-
-    pub fn start_date(&self) -> StartDate {
-        let earliest = self.entries.keys().min_by_key(|date| *date).copied();
-        let earliest = earliest.expect("There should always be a start date for a parse result");
-        StartDate(earliest)
-    }
-
-    pub fn end_date(&self) -> EndDate {
-        let latest = self.entries.keys().max_by_key(|date| *date).copied();
-        let latest = latest.expect("There should always be an end date for a parse result");
-        EndDate(latest)
-    }
-
-    pub fn merge(&self, other: &ParseResult) -> ParseResult {
-        let mut merged_entries = self.entries.clone();
-
-        // Merge entries from other
-        for (date, entries) in &other.entries {
-            merged_entries
-                .entry(*date)
-                .or_insert_with(Vec::new)
-                .extend(entries.iter().cloned());
-        }
-
-        // Combine errors
-        let mut merged_errors = self.errors.clone();
-        merged_errors.extend(other.errors.clone());
-
-        ParseResult::new(merged_entries, merged_errors)
-    }
-}
-
-pub enum ReportType {
-    Projects,
-    ProjectDetails(String),
-}

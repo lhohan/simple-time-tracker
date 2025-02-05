@@ -11,16 +11,14 @@ use processor::InputProcessor;
 
 use crate::domain::ParseError;
 use crate::domain::ParseResult;
-use crate::domain::ReportType;
 use crate::domain::TimeEntry;
-use crate::reporting::Report;
+use crate::domain::TrackedTime;
 use std::borrow::BorrowMut;
 
 pub fn process_input(
     path: &Path,
     filter: &Option<Filter>,
-    report_type: &ReportType,
-) -> Result<Option<(Report, Vec<ParseError>)>, ParseError> {
+) -> Result<Option<(TrackedTime, Vec<ParseError>)>, ParseError> {
     let mut combined_result: Option<ParseResult> = None;
 
     let processor = InputProcessor::from_path(path);
@@ -44,23 +42,14 @@ pub fn process_input(
             .collect();
         let errors = parse_result.errors();
 
-        let report = match report_type {
-            ReportType::ProjectDetails(project) => Report::new_project_detail(
-                entries,
-                project.clone(),
-                parse_result.start_date(),
-                parse_result.end_date(),
-                parse_result.days(),
-            ),
-            ReportType::Projects => Report::new_overview(
-                entries,
-                parse_result.start_date(),
-                parse_result.end_date(),
-                parse_result.days(),
-            ),
-        };
+        let time_report = TrackedTime::new(
+            entries,
+            parse_result.start_date(),
+            parse_result.end_date(),
+            parse_result.days(),
+        );
 
-        (report, errors)
+        (time_report, errors)
     }))
 }
 

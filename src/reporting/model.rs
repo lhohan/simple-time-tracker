@@ -1,65 +1,52 @@
 use std::collections::HashMap;
 
-use crate::domain::{EndDate, StartDate, TimeEntry};
+use crate::domain::{TimeEntry, TrackedTime, TrackingPeriod};
 use itertools::Itertools;
 
 #[derive(Debug)]
 pub enum Report {
     Overview {
         entries: Vec<ProjectSummary>,
-        period: ReportPeriod,
+        period: TrackingPeriod,
         total_minutes: u32,
     },
     ProjectDetail {
         project: String,
         tasks: Vec<TaskSummary>,
-        period: ReportPeriod,
+        period: TrackingPeriod,
         total_minutes: u32,
     },
 }
 
 impl Report {
-    pub fn new_overview(
-        entries: Vec<TimeEntry>,
-        start: StartDate,
-        end: EndDate,
-        days: u32,
-    ) -> Self {
-        let period = ReportPeriod::new(start, end, days);
-        let summarized = summarize_entries(&entries);
-        let total_minutes: u32 = summarized.iter().map(|(_, minutes)| minutes).sum();
+    pub fn new_overview(time_report: TrackedTime) -> Self {
+        let summarized = summarize_entries(&time_report.entries);
 
         Report::Overview {
             entries: summarized
                 .into_iter()
-                .map(|(project, minutes)| ProjectSummary::new(project, minutes, total_minutes))
+                .map(|(project, minutes)| {
+                    ProjectSummary::new(project, minutes, time_report.total_minutes)
+                })
                 .sorted_by(|a, b| b.minutes.cmp(&a.minutes).then(a.project.cmp(&b.project)))
                 .collect(),
-            period,
-            total_minutes,
+            period: time_report.period,
+            total_minutes: time_report.total_minutes,
         }
     }
 
-    pub fn new_project_detail(
-        entries: Vec<TimeEntry>,
-        project: String,
-        start: StartDate,
-        end: EndDate,
-        days: u32,
-    ) -> Self {
-        let period = ReportPeriod::new(start, end, days);
-        let summarized = summarize_tasks(&entries);
-        let total_minutes: u32 = summarized.iter().map(|(_, minutes)| minutes).sum();
+    pub fn new_project_detail(time_report: TrackedTime, project: String) -> Self {
+        let summarized = summarize_tasks(&time_report.entries);
 
         Report::ProjectDetail {
             project: project.clone(),
             tasks: summarized
                 .into_iter()
-                .map(|(desc, minutes)| TaskSummary::new(desc, minutes, total_minutes))
+                .map(|(desc, minutes)| TaskSummary::new(desc, minutes, time_report.total_minutes))
                 .sorted_by(|a, b| b.minutes.cmp(&a.minutes))
                 .collect(),
-            period,
-            total_minutes,
+            period: time_report.period,
+            total_minutes: time_report.total_minutes,
         }
     }
 }
@@ -95,19 +82,6 @@ impl TaskSummary {
             minutes,
             percentage: calculate_percentage(minutes, total_minutes),
         }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct ReportPeriod {
-    pub(crate) start: StartDate,
-    pub(crate) end: EndDate,
-    pub(crate) days: u32,
-}
-
-impl ReportPeriod {
-    pub fn new(start: StartDate, end: EndDate, days: u32) -> Self {
-        Self { start, end, days }
     }
 }
 

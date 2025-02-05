@@ -6,6 +6,8 @@ mod tests {
     use crate::reporting::Report;
     mod report_tests {
 
+        use crate::domain::TrackedTime;
+
         use super::helpers::*;
         use super::*;
 
@@ -19,7 +21,8 @@ mod tests {
             ];
 
             let (start, end) = default_period();
-            let report = Report::new_overview(entries, start, end, 1);
+            let time_report = TrackedTime::new(entries, start, end, 1);
+            let report = Report::new_overview(time_report);
 
             if let Report::Overview { entries, .. } = report {
                 let projects: Vec<_> = entries.iter().map(|e| e.project.as_str()).collect();

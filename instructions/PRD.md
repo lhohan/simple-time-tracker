@@ -13,7 +13,7 @@ This application reads markdown files, parses time entries associated with proje
 ## 3. Features
 
 ### 3.1 Input:
-* **File Reading:** The application will read `.txt` and `.md` files.  It will recursively process files within a specified input directory (Task 009). Error messages will indicate the file and line number where parsing errors occur.
+* **File Reading:** The application will read `.txt` and `.md` files.  It will recursively process files within a specified input directory. Error messages will indicate the file and line number where parsing errors occur.
 * **Markdown Parsing:**  Time entries are specified in markdown using a heading of any level starting with `TT` followed by the date YYYY-MM-DD.  Entries are indicated by top-level bullet points (`-`). Each entry includes at least one project identifier (#project) and a time value (e.g., `20m`, `1h`, `4p` for minutes, hours, and pomodoros (1 pomodoro = 30 minutes), respectively). Multiple project identifiers (separated by spaces) are allowed.  Projects can be nested implicitly by including multiple identifiers in a single entry (left-to-right order implies sub-project). (Addresses Tasks 001, 002).  See examples below.
 * **Time Units:** Minutes (m), hours (h), pomodoros (p).
 ### 3.2 Processing:
@@ -74,7 +74,6 @@ An entry for a sub-project 'sub-proj' below main project 'proj'. Further nesting
 * Implement core markdown parsing focusing on the core time-tracking elements.
 * Implement daily, weekly, and monthly reporting.
 * Develop a robust CLI.
-* Implement recursive file parsing from an input directory (Task 009).
 * Implement CI/CD (Task 000).  Nix will be used for package management and reproducible builds.  Just will be used for task automation.
 ### Phase 2: Enhancements and Refinements:
 * Implement support for handling and reporting outcomes/goals (Task 001). This functionality will provide context and higher level view of time allocation and progress on projects.
@@ -130,7 +129,3 @@ An entry for a sub-project 'sub-proj' below main project 'proj'. Further nesting
 
 * **Task 008: Implement reporting for last week, last month, between dates, etc (Integrated into Section 3.3 Output and Phase 1 & 2 of the Development Roadmap):**
     * Implement reporting for specified periods (last week, last month) in addition to daily/weekly/monthly reports and custom date ranges.
-
-* **Task 009: Parse time entries from directory location (Integrated into Section 3.1 Input and Phase 1 of Development Roadmap):**
-    * Implement recursive parsing from an input directory containing multiple markdown files, handling various extensions.
-    * Improve error reporting to include file and line number of parsing errors.
