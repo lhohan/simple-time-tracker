@@ -29,6 +29,23 @@ impl TextFormatter {
     ) -> String {
         let mut result = String::new();
 
+        // Format header
+        result.push_str("Time tracking report:");
+        result.push_str("\n");
+        result.push_str(&Self::format_header(period));
+        result.push_str("\n");
+
+        // Format summary
+        let hours_per_day = (total_minutes as f64 / 60.0) / period.days as f64;
+        result.push_str(&format!(
+            "{} days, {:.1} h/day,{} total\n",
+            period.days,
+            hours_per_day,
+            format_duration(total_minutes)
+        ));
+
+        result.push_str("\n");
+
         // Format entries
         for entry in entries {
             result.push_str(&format!(
@@ -39,24 +56,15 @@ impl TextFormatter {
             ));
         }
 
-        // Format summary
-        result.push_str(&"-".repeat(40));
-        result.push('\n');
+        result
+    }
 
-        let hours_per_day = (total_minutes as f64 / 60.0) / period.days as f64;
-        result.push_str(&format!(
-            "{} days, {:.1} h/day\n",
-            period.days, hours_per_day
-        ));
-
-        // Add date range
-        result.push_str(&format!(
+    fn format_header(period: &TrackingPeriod) -> String {
+        format!(
             "{} -> {}",
             period.start.0.format("%Y-%m-%d"),
             period.end.0.format("%Y-%m-%d")
-        ));
-
-        result
+        )
     }
 
     fn format_project_detail(
@@ -110,5 +118,5 @@ fn format_padded_description(desc: &str) -> String {
 pub(crate) fn format_duration(minutes: u32) -> String {
     let hours = minutes / 60;
     let remaining_minutes = minutes % 60;
-    format!("{:2}h {:2}m", hours, remaining_minutes)
+    format!("{:2}h {:02}m", hours, remaining_minutes)
 }

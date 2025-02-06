@@ -40,7 +40,7 @@ fn test_basic_time_tracking() -> Result<(), Box<dyn std::error::Error>> {
         .taking("1h 30")
         .with_percentage("53")
         .expect_project("coding")
-        .taking("1h  0m")
+        .taking("1h 00m")
         .with_percentage("35")
         .expect_project("journaling")
         .taking("0h 20m")
@@ -84,10 +84,10 @@ Some random content
         .when_run()
         .should_succeed()
         .expect_project("coding")
-        .taking("1h  0m")
+        .taking("1h 00m")
         .with_percentage("50")
         .expect_project("sport")
-        .taking("1h  0m")
+        .taking("1h 00m")
         .with_percentage("50")
         .validate();
 
@@ -124,10 +124,10 @@ fn test_summary_statistics() -> Result<(), Box<dyn std::error::Error>> {
         .should_succeed()
         .expect_project("work")
         .with_percentage("63")
-        .taking("5h  0m")
+        .taking("5h 00m")
         .expect_project("exercise")
         .with_percentage("38") // todo: sum of both percentages should be 100%
-        .taking("3h  0m")
+        .taking("3h 00m")
         .validate()
         .expect_output("2 days")
         .expect_output("4.0 h/day");
@@ -169,7 +169,7 @@ fn test_when_project_filter_should_total_task_with_same_name(
         .when_run()
         .should_succeed()
         .expect_output("Project: dev")
-        .expect_task_with_duration("My task", "2h  0m");
+        .expect_task_with_duration("My task", "2h 00m");
 
     Ok(())
 }
@@ -275,7 +275,7 @@ fn test_combined_filtering_project_and_from_date() -> Result<(), Box<dyn std::er
         .should_succeed()
         .expect_start_date("2025-01-02")
         .expect_output("Project: prj-1")
-        .expect_task_with_duration("Task 3", "7h  0m");
+        .expect_task_with_duration("Task 3", "7h 00m");
 
     Ok(())
 }
@@ -367,9 +367,9 @@ fn test_process_directory() -> Result<(), Box<dyn std::error::Error>> {
         .when_run()
         .should_succeed()
         .expect_project("prj-1")
-        .taking("2h  0m")
+        .taking("2h 00m")
         .expect_project("prj-2")
-        .taking("1h  0m")
+        .taking("1h 00m")
         .validate();
 
     Ok(())
@@ -386,7 +386,7 @@ fn test_process_directory_with_multiple_files_should_merge_days(
         .when_run()
         .should_succeed()
         .expect_project("dev")
-        .taking("3h  0m")
+        .taking("3h 00m")
         .validate();
 
     Ok(())
@@ -402,7 +402,7 @@ fn test_process_nested_directories() -> Result<(), Box<dyn std::error::Error>> {
         .when_run()
         .should_succeed()
         .expect_project("prj-1")
-        .taking("3h  0m") // Should combine times across directories
+        .taking("3h 00m") // Should combine times across directories
         .validate();
 
     Ok(())
@@ -419,7 +419,7 @@ fn test_process_directory_file_filtering() -> Result<(), Box<dyn std::error::Err
         .when_run()
         .should_succeed()
         .expect_project("prj-1")
-        .taking("2h  0m")
+        .taking("2h 00m")
         .validate();
 
     Ok(())
@@ -435,9 +435,26 @@ fn test_directory_processing_with_invalid_files() -> Result<(), Box<dyn std::err
         .when_run()
         .should_succeed()
         .expect_project("prj-1")
-        .taking("2h  0m")
+        .taking("2h 00m")
         .validate()
         .expect_warning_with_file("invalid.md", "invalid date format: invalid-date");
 
     Ok(())
+}
+
+#[test]
+fn report_header_format_should_include_date_when_no_period_filter() {
+    let content = r#"## TT 2025-01-15
+- #dev 1h Task1
+## TT 2025-01-16
+- #dev 1h Task1"#;
+
+    CommandSpec::new()
+        .with_file(content)
+        .when_run()
+        .should_succeed()
+        .expect_start_date("2025-01-15")
+        .expect_end_date("2025-01-16")
+        // todo?: expect_days(..), etc -> do when more extensive or targeted testing is aimed at this functionality
+        .expect_output("2 days, 1.0 h/day, 2h 00m total");
 }

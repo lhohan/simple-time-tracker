@@ -39,7 +39,7 @@ mod tests {
         #[test]
         fn test_format_duration() {
             assert_eq!(format_duration(90), " 1h 30m");
-            assert_eq!(format_duration(60), " 1h  0m");
+            assert_eq!(format_duration(60), " 1h 00m");
             assert_eq!(format_duration(45), " 0h 45m");
         }
     }

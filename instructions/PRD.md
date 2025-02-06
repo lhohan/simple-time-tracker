@@ -22,6 +22,7 @@ This application reads markdown files, parses time entries associated with proje
 
 ### 3.3 Output:
 * **Report Generation:** The application will generate reports summarizing time spent on projects for daily, weekly, monthly periods, and custom date ranges (Task 008).  Reports clearly present a breakdown of time per project.
+* **Error reporting** The application will report warnings for detected TT headings that may contain wrong dates and time entries that may be wrong. Opposed to silently ignoring we prefer to help the user identify wrongly entered data.
 * **Report Format:** Reports will be generated as plain text files to maintain simplicity.  Each report will summarize total time spent on each project within the selected period.  The output will be human-readable and straightforward. (Decision made for initial release, other formats may be added later)
 * **Web Server:** A simple web server for viewing reports will be considered in a later phase (as per the PRD).
 
@@ -42,9 +43,9 @@ This application reads markdown files, parses time entries associated with proje
 ## TT 2025-01-15
 
 - #journaling  20m
-- #prj-time-tracking 4p
+- #prj-time-tracking #rust 4p
 - #sport 1h Cycle
-- #sport 30m Prepare
+- #sport 30m Get ready
 ```
 
 Time tracking entries are marked with markdown heading (any level deep) starting with TT followed by a date.
@@ -98,22 +99,66 @@ An entry for a sub-project 'sub-proj' below main project 'proj'. Further nesting
 
 ## 6. Open Tasks
 
-* **Task 000: Set up CI/CD (Integrated into Phase 1 of Development Roadmap):**
+### Task 000: Set up CI/CD (Integrated into Phase 1 of Development Roadmap):**
     * Set up Nix for package management.
     * Set up Just for task automation.
 
-* **Task 001: Add support for outcomes or goals (Integrated into Phase 2 of Development Roadmap):**
+### Task 001: Add support for outcomes or goals (Integrated into Phase 2 of Development Roadmap):**
     * Allow users to associate tasks with broader outcomes or goals.
     * Explore the use of "domains" as a hierarchical structure above projects.
 
-* **Task 002: Add support for multiple 'projects' (Integrated into Phase 2 of Development Roadmap):**
-    * Allow for multiple project identifiers within a single entry.
-    * Improve clarity in handling and reporting of nested projects (sub-projects).
+### Task 002: Support for Multiple Projects and Activities
 
-* **Task 003: Support extended and full-day entries (Integrated into Phase 2 of Development Roadmap):**
+#### Status: Design Phase Complete, Ready for Implementation
+
+#### Design Decisions:
+1. **Time Entry Model**
+   - Distinguish between Project-Based and Activity-Based entries
+   - Support multiple tags with left-to-right significance
+   - Maintain flexible context tagging
+
+2. **Tag Relationships**
+   - Primary tag (leftmost) determines entry type
+   - Supporting tags provide context/categorization
+   - Project tags use 'prj-' prefix
+
+3. **Validation Rules**
+   - Enforce project naming conventions
+   - Require at least one tag per entry
+   - Validate time format specifications
+
+#### Implementation Tasks:
+1. [ ] Core Data Structures
+   - Implement TimeEntry enum and supporting types
+   - Add validation rules
+   - Create tag relationship handling
+
+2. [ ] Parsing
+   - Implement markdown parser for new format
+   - Add validation during parsing
+   - Handle multiple tag scenarios
+
+3. [ ] Reporting
+   - Implement flexible tag-based querying
+   - Add project vs. activity filtering
+   - Support hierarchical time summaries
+
+4. [ ] Testing
+   - Unit tests for all tag patterns
+   - Integration tests with sample markdown
+   - Edge case validation
+
+#### Validation Criteria:
+- Can process entries with multiple tags
+- Correctly interprets project vs. activity entries
+- Generates accurate reports across tag combinations
+- Maintains backward compatibility with existing logs
+
+
+### Task 003: Support extended and full-day entries (Integrated into Phase 2 of Development Roadmap):**
     * Implement support for specifying full or extended day entries for projects.
 
-* **Task 004: Areas for improvement after project filtering (Integrated into Phase 2 of Development Roadmap):**
+### Task 004: Areas for improvement after project filtering (Integrated into Phase 2 of Development Roadmap):**
     * Enhance support for sub-projects (#dev #rust) in filtering.
     * Add support for multiple project filters simultaneously.
     * Refactor reporting logic to accommodate hierarchical project reporting.
@@ -121,11 +166,11 @@ An entry for a sub-project 'sub-proj' below main project 'proj'. Further nesting
     * Improve unit testing for edge cases.
     * Consider the builder pattern for Report construction.
 
-* **Task 006: Experiment with tests outputting specs... (Integrated into Phase 2 of Development Roadmap):**
+### Task 006: Experiment with tests outputting specs... (Integrated into Phase 2 of Development Roadmap):**
     * Explore the feasibility of tests outputting specifications that can serve as input for LLMs.
 
-* **Task 007: Add length-of-working days support (Integrated into Phase 2 of Development Roadmap):**
+### Task 007: Add length-of-working days support (Integrated into Phase 2 of Development Roadmap):**
     * Allow users to specify their typical working day length for better efficiency calculations including time spent on misc tasks.
 
-* **Task 008: Implement reporting for last week, last month, between dates, etc (Integrated into Section 3.3 Output and Phase 1 & 2 of the Development Roadmap):**
+### Task 008: Implement reporting for last week, last month, between dates, etc (Integrated into Section 3.3 Output and Phase 1 & 2 of the Development Roadmap):**
     * Implement reporting for specified periods (last week, last month) in addition to daily/weekly/monthly reports and custom date ranges.
