@@ -31,12 +31,12 @@ fn process_line(
     filter: &Option<Filter>,
     file_name: &str,
 ) -> ParseState {
-    match parse_line_type(line.content) {
+    match parse_line_type(line.content, state.in_time_tracking_section()) {
         Ok(LineType::Header(maybe_date)) => ParseState {
             current_date: maybe_date,
             ..state.clone()
         },
-        Ok(LineType::Entry(entry)) if state.current_date.is_some() => {
+        Ok(LineType::Entry(entry)) if state.in_time_tracking_section() => {
             let mut new_state = state.clone();
             if let Some(date) = state.current_date {
                 match filter {
@@ -67,7 +67,7 @@ fn process_line(
     }
 }
 
-fn parse_line_type(line: &str) -> Result<LineType, ParseError> {
+fn parse_line_type(line: &str, in_tt_section: bool) -> Result<LineType, ParseError> {
     if line.starts_with('#') {
         let maybe_date = maybe_date_from_header(line);
         let maybe_date = maybe_date.map(|date_str| {
@@ -76,7 +76,7 @@ fn parse_line_type(line: &str) -> Result<LineType, ParseError> {
         });
         let maybe_date = maybe_date.transpose()?;
         Ok(LineType::Header(maybe_date))
-    } else if line.starts_with("- #") {
+    } else if line.starts_with("- #") && in_tt_section {
         parse_line(line).map(LineType::Entry)
     } else {
         Ok(LineType::Other)
@@ -323,7 +323,7 @@ mod tests {
     }
 
     fn is_date_header(line: &str) -> bool {
-        match parse_line_type(line) {
+        match parse_line_type(line, true) {
             Ok(LineType::Header(Some(_))) => true,
             _ => false,
         }

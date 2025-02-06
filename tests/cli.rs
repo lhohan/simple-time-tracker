@@ -72,14 +72,14 @@ fn should_only_process_entries_in_time_tracking_sections() -> Result<(), Box<dyn
         .with_file(
             r#"# Random Header
 Some random content
-- #not-tracked 1h
+- #coding 1h
 
 ## TT 2025-01-15
 - #sport 1h
 - #coding 2p
 
 # Another Section
-- #not-tracked 1h"#,
+- #sport 1h"#,
         )
         .when_run()
         .should_succeed()
@@ -90,6 +90,21 @@ Some random content
         .taking("1h  0m")
         .with_percentage("50")
         .validate();
+
+    Ok(())
+}
+
+#[test]
+fn when_entry_has_error_and_not_in_time_tracking_section_should_not_report_warning(
+) -> Result<(), Box<dyn std::error::Error>> {
+    CommandSpec::new()
+        .with_file(
+            r#"# Random Header
+            - #1. If you don’t get the requirements right"#,
+        )
+        .when_run()
+        .should_succeed()
+        .expect_no_warnings();
 
     Ok(())
 }
