@@ -25,34 +25,21 @@ pub fn run(
     let tracking_result = parsing::process_input(input_path, &filter)?;
 
     let period_description = period.map(|p| p.period_description());
-
-    let mut result = String::new();
-
-    // Format header
-    result.push_str("Time tracking report for ");
-    let period_description_str = period_description
-        .clone()
-        .map(format_period_description)
-        .unwrap_or_default();
-    result.push_str(period_description_str.as_str());
-    result.push_str("\n");
+    println!("{}", format_header(period_description));
 
     if let Some(time_report) = tracking_result.time_entries {
-        let tracking_result = time_report.period.clone();
-        result.push_str(&format_header(&tracking_result));
-        result.push_str("\n");
+        let tracked_interval = time_report.period.clone();
+        println!("{}", &format_interval(&tracked_interval));
 
         let report = match report_type {
             ReportType::Projects => Report::new_overview(time_report),
             ReportType::ProjectDetails(project) => Report::new_project_detail(time_report, project),
         };
 
-        result.push_str(report.to_string().as_str());
-        // println!("{}", report);
+        println!("{}", report);
     } else {
-        result.push_str("No data found.");
+        println!("No data found.");
     }
-    println!("{}", result);
 
     // always print warnings
     tracking_result
@@ -61,6 +48,19 @@ pub fn run(
         .for_each(|error| println!("Warning: {}", error));
 
     Ok(())
+}
+
+fn format_header(period_description: Option<RangeDescription>) -> String {
+    let mut result = String::new();
+
+    result.push_str("Time tracking report for ");
+    let period_description_str = period_description
+        .clone()
+        .map(format_period_description)
+        .unwrap_or_default();
+    result.push_str(period_description_str.as_str());
+    result.push_str("\n");
+    result
 }
 
 fn create_filter(
@@ -84,7 +84,7 @@ fn create_filter(
         .reduce(|acc, filter| Filter::And(Box::new(acc), Box::new(filter)))
 }
 
-fn format_header(period: &TrackingPeriod) -> String {
+fn format_interval(period: &TrackingPeriod) -> String {
     format!(
         "{} -> {}",
         period.start.0.format("%Y-%m-%d"),
