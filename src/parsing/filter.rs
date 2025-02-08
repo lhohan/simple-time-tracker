@@ -39,7 +39,7 @@ impl DateRange {
             .unwrap()
             .pred_opt()
             .unwrap();
-        dbg!(DateRange(StartDate(first), EndDate(last)))
+        DateRange(StartDate(first), EndDate(last))
     }
 }
 
