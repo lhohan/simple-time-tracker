@@ -89,6 +89,11 @@ impl RangeDescription {
         let d = format!("{:?}", week_str);
         RangeDescription(d)
     }
+    pub fn last_week(week: IsoWeek) -> Self {
+        let week_str = format_week(week);
+        let d = format!("{:?}", week_str);
+        RangeDescription(d)
+    }
 }
 
 fn format_week(week: IsoWeek) -> String {

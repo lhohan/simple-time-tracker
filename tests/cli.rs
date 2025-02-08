@@ -459,8 +459,10 @@ fn report_header_format_should_include_date_when_no_period_filter() {
         .expect_output("2 days, 1.0 h/day,  2h 00m total");
 }
 
-#[test]
-fn this_week_report() -> Result<(), Box<dyn std::error::Error>> {
+#[rstest]
+fn this_week_report(
+    #[values("this-week", "tw")] this_week_value: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
     let content = r#"## TT 2025-01-15
     - #dev 1h Task1
     ## TT 2025-01-16
@@ -471,12 +473,37 @@ fn this_week_report() -> Result<(), Box<dyn std::error::Error>> {
     CommandSpec::new()
         .with_file(content)
         .at_date("2025-01-15") // Testing as if we're running on Jan 15
-        .with_period("this-week")
+        .with_period(this_week_value)
         .when_run()
         .should_succeed()
         .expect_output("Week 3, 2025")
         .expect_project("dev")
         .taking("3h 00m") // Only tasks from Jan 15-16
+        .validate();
+
+    Ok(())
+}
+
+#[rstest]
+fn last_week_report(
+    #[values("last-week", "lw")] this_week_value: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let content = r#"## TT 2025-01-15
+    - #dev 1h Task1
+    ## TT 2025-01-16
+    - #dev 2h Task2
+    ## TT 2025-01-20
+    - #dev 1h Task3"#;
+
+    CommandSpec::new()
+        .with_file(content)
+        .at_date("2025-01-22") // Testing as if we're running on Jan 22
+        .with_period(this_week_value)
+        .when_run()
+        .should_succeed()
+        .expect_output("Week 3, 2025")
+        .expect_project("dev")
+        .taking("3h 00m") // Only tasks from Jan 15-16 (last week)
         .validate();
 
     Ok(())
