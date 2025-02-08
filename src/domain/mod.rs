@@ -85,8 +85,8 @@ pub struct EntryDate(pub NaiveDate);
 pub enum PeriodRequested {
     ThisWeek(NaiveDate),
     LastWeek(NaiveDate),
-    // LastWeek,
-    // ThisMonth,
+    ThisMonth(NaiveDate),
+    LastMonth(NaiveDate),
 }
 
 impl PeriodRequested {
@@ -101,9 +101,24 @@ impl PeriodRequested {
                 let previous_week_date = date - chrono::Duration::days(7);
                 Ok(PeriodRequested::LastWeek(previous_week_date))
             }
+            "this-month" | "tm" => {
+                let first_day_of_month = clock.today().with_day(1).unwrap();
+                Ok(PeriodRequested::ThisMonth(first_day_of_month))
+            }
+            "last-month" | "lm" => {
+                let first_day_of_last_month = match clock.today().with_day(1) {
+                    Some(first_day) => first_day
+                        .pred_opt()
+                        .expect("previous day should exist")
+                        .with_day(1)
+                        .unwrap(),
+                    None => {
+                        return Err(ParseError::InvalidPeriod(s.to_string()));
+                    }
+                };
+                Ok(PeriodRequested::LastMonth(first_day_of_last_month))
+            }
 
-            // "last-week" => Ok(Period::LastWeek),
-            // ... other cases
             _ => Err(ParseError::InvalidPeriod(s.to_string())), // Add InvalidPeriod variant to ParseError
         }
     }
@@ -111,8 +126,9 @@ impl PeriodRequested {
     pub fn date_range(&self) -> DateRange {
         match self {
             PeriodRequested::ThisWeek(date) => DateRange::week_of(&date),
-            PeriodRequested::LastWeek(date) => DateRange::week_of(&date), // Period::LastWeek => DateRange::last_week(today),
-                                                                          // ... other cases, using suitable algorithms.
+            PeriodRequested::LastWeek(date) => DateRange::week_of(&date),
+            PeriodRequested::ThisMonth(date) => DateRange::month_of(&date),
+            PeriodRequested::LastMonth(date) => DateRange::month_of(&date),
         }
     }
 
@@ -122,6 +138,8 @@ impl PeriodRequested {
                 RangeDescription::this_week(naive_date.iso_week())
             }
             PeriodRequested::LastWeek(date) => RangeDescription::last_week(date.iso_week()),
+            PeriodRequested::ThisMonth(date) => RangeDescription::this_month(*date),
+            PeriodRequested::LastMonth(date) => RangeDescription::last_month(*date),
         }
     }
 }

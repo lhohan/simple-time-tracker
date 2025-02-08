@@ -508,3 +508,53 @@ fn last_week_report(
 
     Ok(())
 }
+
+#[rstest]
+fn last_month_report(
+    #[values("last-month", "lm")] last_month_value: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let content = r#"## TT 2025-01-01
+    - #dev 1h Task1
+    ## TT 2025-01-31
+    - #dev 2h Task2
+    ## TT 2025-02-01
+    - #dev 1h Task3"#;
+
+    CommandSpec::new()
+        .with_file(content)
+        .at_date("2025-02-01")
+        .with_period(last_month_value)
+        .when_run()
+        .should_succeed()
+        .expect_output("2025-01")
+        .expect_project("dev")
+        .taking("3h 00m") // Only tasks from Jan (last month)
+        .validate();
+
+    Ok(())
+}
+
+#[rstest]
+fn this_month_report(
+    #[values("this-month", "tm")] last_month_value: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let content = r#"## TT 2025-01-01
+    - #dev 1h Task1
+    ## TT 2025-01-31
+    - #dev 2h Task2
+    ## TT 2025-02-01
+    - #dev 1h Task3"#;
+
+    CommandSpec::new()
+        .with_file(content)
+        .at_date("2025-01-01")
+        .with_period(last_month_value)
+        .when_run()
+        .should_succeed()
+        .expect_output("2025-01")
+        .expect_project("dev")
+        .taking("3h 00m") // Only tasks from Jan (last month)
+        .validate();
+
+    Ok(())
+}

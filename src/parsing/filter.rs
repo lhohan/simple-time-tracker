@@ -31,6 +31,16 @@ impl DateRange {
 
         DateRange(StartDate(monday), EndDate(sunday))
     }
+
+    pub(crate) fn month_of(date: &NaiveDate) -> DateRange {
+        let first = date.with_day(1).unwrap();
+        let last = date
+            .with_month0(date.month0() + 1)
+            .unwrap()
+            .pred_opt()
+            .unwrap();
+        dbg!(DateRange(StartDate(first), EndDate(last)))
+    }
 }
 
 impl DateRange {
