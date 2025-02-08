@@ -81,7 +81,7 @@ fn create_filter(
         .into_iter()
         .chain(from_date_filter)
         .chain(period_filter)
-        .reduce(|acc, filter| Filter::And(Box::new(acc), Box::new(filter)))
+        .reduce(Filter::combine)
 }
 
 fn format_interval(period: &TrackingPeriod) -> String {

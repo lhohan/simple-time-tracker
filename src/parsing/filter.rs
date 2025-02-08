@@ -19,6 +19,9 @@ impl Filter {
             Filter::And(f1, f2) => f1.matches(entry, date) && f2.matches(entry, date),
         }
     }
+    pub fn combine(self, other: Filter) -> Filter {
+        Filter::And(Box::new(self), Box::new(other))
+    }
 }
 
 #[derive(Debug, Clone)]
