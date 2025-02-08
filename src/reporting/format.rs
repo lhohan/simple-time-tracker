@@ -29,16 +29,10 @@ impl TextFormatter {
     ) -> String {
         let mut result = String::new();
 
-        // Format header
-        result.push_str("Time tracking report:");
-        result.push_str("\n");
-        result.push_str(&Self::format_header(period));
-        result.push_str("\n");
-
         // Format summary
         let hours_per_day = (total_minutes as f64 / 60.0) / period.days as f64;
         result.push_str(&format!(
-            "{} days, {:.1} h/day,{} total\n",
+            "{} days, {:.1} h/day, {} total\n",
             period.days,
             hours_per_day,
             format_duration(total_minutes)
@@ -57,14 +51,6 @@ impl TextFormatter {
         }
 
         result
-    }
-
-    fn format_header(period: &TrackingPeriod) -> String {
-        format!(
-            "{} -> {}",
-            period.start.0.format("%Y-%m-%d"),
-            period.end.0.format("%Y-%m-%d")
-        )
     }
 
     fn format_project_detail(

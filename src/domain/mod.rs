@@ -1,7 +1,15 @@
 mod aggregates;
-pub use aggregates::{ParseResult, ReportType, TimeTrackingResult, TrackedTime, TrackingPeriod};
+pub mod time;
+
+pub use aggregates::{
+    ParseResult, RangeDescription, ReportType, TimeTrackingResult, TrackedTime, TrackingPeriod,
+};
+use chrono::Datelike;
+use time::Clock;
 
 use chrono::NaiveDate;
+
+use crate::parsing::DateRange;
 
 // Organisation:
 // - Core domain primitives in `mod.rs`
@@ -41,6 +49,7 @@ pub enum ParseError {
     InvalidTime(String),
     InvalidDate(String),
     MissingTime(String),
+    InvalidPeriod(String),
     Located {
         error: Box<ParseError>,
         location: Location,
@@ -55,6 +64,7 @@ impl std::fmt::Display for ParseError {
             ParseError::InvalidDate(date) => write!(f, "invalid date format: {}", date),
             ParseError::MissingTime(line) => write!(f, "missing time: {}", line),
             ParseError::ErrorReading(file) => write!(f, "error reading file: {}", file),
+            ParseError::InvalidPeriod(period) => write!(f, "invalid period: {}", period),
             ParseError::Located { error, location } => {
                 write!(f, "{}: line {}: {}", location.file, location.line, error)
             }
@@ -70,3 +80,40 @@ pub struct StartDate(pub NaiveDate);
 pub struct EndDate(pub NaiveDate);
 #[derive(Debug, Clone)]
 pub struct EntryDate(pub NaiveDate);
+
+#[derive(Clone, Debug)]
+pub enum PeriodRequested {
+    ThisWeek(NaiveDate),
+    // LastWeek,
+    // ThisMonth,
+}
+
+impl PeriodRequested {
+    pub fn from_str(s: &str, clock: &Clock) -> Result<Self, ParseError> {
+        match s {
+            "this-week" => {
+                let date = clock.today();
+                Ok(PeriodRequested::ThisWeek(date))
+            }
+            // "last-week" => Ok(Period::LastWeek),
+            // ... other cases
+            _ => Err(ParseError::InvalidPeriod(s.to_string())), // Add InvalidPeriod variant to ParseError
+        }
+    }
+
+    pub fn date_range(&self) -> DateRange {
+        match self {
+            PeriodRequested::ThisWeek(date) => DateRange::week_of(&date),
+            // Period::LastWeek => DateRange::last_week(today),
+            // ... other cases, using suitable algorithms.
+        }
+    }
+
+    pub fn period_description(&self) -> RangeDescription {
+        match self {
+            PeriodRequested::ThisWeek(naive_date) => {
+                RangeDescription::this_week(naive_date.iso_week())
+            }
+        }
+    }
+}

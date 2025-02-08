@@ -2,6 +2,8 @@ use chrono::NaiveDate;
 use clap::Parser;
 use std::path::PathBuf;
 
+use crate::domain::time::Clock;
+use crate::domain::PeriodRequested;
 use crate::domain::{ParseError, StartDate};
 
 #[derive(Parser, Debug)]
@@ -22,6 +24,9 @@ pub struct Args {
     /// From date filter value
     #[arg(short, long, value_name = "YYYY-MM-DD")]
     pub from: Option<String>,
+
+    #[arg(long, value_name = "this-week, next-week, this-month, ...")]
+    period: Option<String>,
 }
 
 impl Args {
@@ -38,5 +43,12 @@ impl Args {
             }
             None => Ok(None),
         }
+    }
+
+    pub fn period(&self, clock: &Clock) -> Result<Option<PeriodRequested>, ParseError> {
+        Ok(self
+            .period
+            .as_ref()
+            .and_then(|s| PeriodRequested::from_str(s, &clock).ok()))
     }
 }

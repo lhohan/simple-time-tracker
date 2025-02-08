@@ -1,9 +1,10 @@
 use assert_cmd::Command;
 use assert_fs::prelude::*;
+use chrono::NaiveDate;
 use predicates::prelude::*;
 use std::sync::Arc;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 struct CommandArgs {
     args: Vec<String>,
 }
@@ -27,7 +28,7 @@ impl CommandArgs {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum InputSource {
     File {
         content: String,
@@ -62,9 +63,11 @@ impl InputSource {
     }
 }
 
+#[derive(Clone)]
 pub struct CommandSpec {
     args: CommandArgs,
     input: Option<InputSource>,
+    run_date: Option<NaiveDate>,
     _temp_dir: Option<Arc<assert_fs::TempDir>>,
 }
 
@@ -73,6 +76,7 @@ impl CommandSpec {
         Self {
             args: CommandArgs::new(),
             input: None,
+            run_date: None,
             _temp_dir: None,
         }
     }
@@ -87,6 +91,11 @@ impl CommandSpec {
         self
     }
 
+    pub fn with_period(mut self, period: &str) -> Self {
+        self.args.add_option("period", period);
+        self
+    }
+
     pub fn with_project_filter(mut self, project_name: &str) -> Self {
         self.args.add_option("project", project_name);
         self
@@ -97,27 +106,31 @@ impl CommandSpec {
         self
     }
 
-    pub fn with_directory_containing_files(self, files: &[(&str, &str)]) -> Self {
+    pub fn with_directory_containing_files(mut self, files: &[(&str, &str)]) -> Self {
         let files = files
             .iter()
             .map(|(name, content)| InputSource::path_file(name, content))
             .collect();
 
-        Self {
-            input: Some(InputSource::directory(files)),
-            ..self
-        }
+        self.input = Some(InputSource::directory(files));
+        self
     }
 
-    pub fn with_file(self, content: &str) -> Self {
-        Self {
-            input: Some(InputSource::file(content)),
-            ..self
-        }
+    pub fn with_file(mut self, content: &str) -> Self {
+        self.input = Some(InputSource::file(content));
+        self
+    }
+
+    pub fn at_date(mut self, date: &str) -> Self {
+        let date =
+            NaiveDate::parse_from_str(date, "%Y-%m-%d").expect("Invalid date format in test");
+        self.run_date = Some(date);
+        self
     }
 
     pub fn when_run(self) -> CommandResult {
-        let (temp_dir, mut command) = match self.input {
+        let mut cmd = Command::cargo_bin("tt").expect("Failed to create cargo command");
+        let (temp_dir, mut command) = match self.input.clone() {
             Some(InputSource::File {
                 content,
                 path: name,
@@ -130,7 +143,6 @@ impl CommandSpec {
                     .write_str(&content)
                     .expect("Failed to write to test file");
 
-                let mut cmd = Command::cargo_bin("tt").expect("Failed to create 'tt' command");
                 cmd.arg("--input").arg(input_file.path());
 
                 (Some(temp), cmd)
@@ -161,7 +173,6 @@ impl CommandSpec {
                     }
                 }
 
-                let mut cmd = Command::cargo_bin("tt").expect("Failed to create cargo command");
                 cmd.arg("--input").arg(temp.path());
 
                 (Some(temp), cmd)
@@ -172,8 +183,14 @@ impl CommandSpec {
             }
         };
 
-        command.args(self.args.into_vec());
+        if let Some(run_date) = self.run_date {
+            let today = run_date.format("%Y-%m-%d").to_string();
+            command.env("TT_TODAY", today);
+        }
+        command.args(self.args.clone().into_vec());
         let output = command.assert();
+
+        std::env::remove_var("TT_TODAY");
 
         CommandResult {
             output,
@@ -219,7 +236,7 @@ impl Warning {
 }
 
 pub struct CommandResult {
-    output: assert_cmd::assert::Assert,
+    pub output: assert_cmd::assert::Assert,
     _temp_dir: Option<Arc<assert_fs::TempDir>>,
 }
 

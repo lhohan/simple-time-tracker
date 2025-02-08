@@ -1,4 +1,5 @@
 use super::{EndDate, ParseError, StartDate, TimeEntry};
+use chrono::IsoWeek;
 use chrono::NaiveDate;
 use std::collections::HashMap;
 
@@ -77,6 +78,29 @@ impl ParseResult {
 pub enum ReportType {
     Projects,
     ProjectDetails(String),
+}
+
+#[derive(Debug, Clone)]
+pub struct RangeDescription(String);
+
+impl RangeDescription {
+    pub fn this_week(week: IsoWeek) -> Self {
+        let week_str = format_week(week);
+        let d = format!("{:?}", week_str);
+        RangeDescription(d)
+    }
+}
+
+fn format_week(week: IsoWeek) -> String {
+    let week_number = week.week();
+    let year = week.year();
+    format!("Week {}, {}", week_number, year)
+}
+
+impl ToString for RangeDescription {
+    fn to_string(&self) -> String {
+        self.0.clone()
+    }
 }
 
 #[derive(Debug, Clone)]

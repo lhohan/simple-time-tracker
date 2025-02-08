@@ -1,4 +1,5 @@
 use chrono::Datelike;
+use chrono::NaiveDate;
 use chrono::Utc;
 
 use crate::domain::{EndDate, EntryDate, StartDate, TimeEntry};
@@ -22,6 +23,15 @@ impl Filter {
 
 #[derive(Debug, Clone)]
 pub struct DateRange(pub StartDate, pub EndDate);
+
+impl DateRange {
+    pub fn week_of(date: &NaiveDate) -> Self {
+        let monday = *date - chrono::Duration::days(date.weekday().num_days_from_monday() as i64);
+        let sunday = monday + chrono::Duration::days(6);
+
+        DateRange(StartDate(monday), EndDate(sunday))
+    }
+}
 
 impl DateRange {
     pub fn new_from_date(from_date: StartDate) -> Self {
@@ -49,5 +59,30 @@ impl Default for DateRange {
             .expect("Failed going years in the future");
         let default_end = x_years_in_future;
         DateRange(StartDate(default_start), EndDate(default_end))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::NaiveDate;
+
+    #[test]
+    fn test_week_of_date_range() {
+        // Tuesday January 15th 2024
+        let current = NaiveDate::from_ymd_opt(2024, 1, 15).unwrap();
+
+        let range = DateRange::week_of(&current);
+
+        // Week should start on Monday January 15th
+        assert_eq!(
+            range.0 .0, // StartDate
+            NaiveDate::from_ymd_opt(2024, 1, 15).unwrap()
+        );
+        // Week should end on Sunday January 21st
+        assert_eq!(
+            range.1 .0, // EndDate
+            NaiveDate::from_ymd_opt(2024, 1, 21).unwrap()
+        );
     }
 }
