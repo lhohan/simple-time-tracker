@@ -98,7 +98,8 @@ impl PeriodRequested {
             }
             "last-week" | "lw" => {
                 let date = clock.today();
-                Ok(PeriodRequested::LastWeek(date))
+                let previous_week_date = date - chrono::Duration::days(7);
+                Ok(PeriodRequested::LastWeek(previous_week_date))
             }
 
             // "last-week" => Ok(Period::LastWeek),
@@ -110,11 +111,8 @@ impl PeriodRequested {
     pub fn date_range(&self) -> DateRange {
         match self {
             PeriodRequested::ThisWeek(date) => DateRange::week_of(&date),
-            PeriodRequested::LastWeek(date) => {
-                let previous_week_date = *date - chrono::Duration::days(7);
-                DateRange::week_of(&previous_week_date)
-            } // Period::LastWeek => DateRange::last_week(today),
-              // ... other cases, using suitable algorithms.
+            PeriodRequested::LastWeek(date) => DateRange::week_of(&date), // Period::LastWeek => DateRange::last_week(today),
+                                                                          // ... other cases, using suitable algorithms.
         }
     }
 
@@ -123,10 +121,7 @@ impl PeriodRequested {
             PeriodRequested::ThisWeek(naive_date) => {
                 RangeDescription::this_week(naive_date.iso_week())
             }
-            PeriodRequested::LastWeek(date) => {
-                let previous_week_date = *date - chrono::Duration::days(7);
-                RangeDescription::last_week(previous_week_date.iso_week())
-            }
+            PeriodRequested::LastWeek(date) => RangeDescription::last_week(date.iso_week()),
         }
     }
 }
