@@ -61,12 +61,12 @@ pub enum ParseError {
 impl std::fmt::Display for ParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ParseError::InvalidLineFormat(line) => write!(f, "invalid line format: {}", line),
-            ParseError::InvalidTime(time) => write!(f, "invalid time format: {}", time),
-            ParseError::InvalidDate(date) => write!(f, "invalid date format: {}", date),
-            ParseError::MissingTime(line) => write!(f, "missing time: {}", line),
-            ParseError::ErrorReading(file) => write!(f, "error reading file: {}", file),
-            ParseError::InvalidPeriod(period) => write!(f, "invalid period: {}", period),
+            ParseError::InvalidLineFormat(line) => write!(f, "invalid line format: {line}"),
+            ParseError::InvalidTime(time) => write!(f, "invalid time format: {time}"),
+            ParseError::InvalidDate(date) => write!(f, "invalid date format: {date}"),
+            ParseError::MissingTime(line) => write!(f, "missing time: {line}"),
+            ParseError::ErrorReading(file) => write!(f, "error reading file: {file}"),
+            ParseError::InvalidPeriod(period) => write!(f, "invalid period: {period}"),
             ParseError::Located { error, location } => {
                 write!(f, "{}: line {}: {}", location.file, location.line, error)
             }
@@ -93,6 +93,15 @@ pub enum PeriodRequested {
 
 impl PeriodRequested {
     /// Parses a string into a `PeriodRequested` enum variant.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `ParseError` if the string slice is not a valid period.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the `clock.today()` returns a date that is not valid.
+    #[allow(clippy::missing_errors_doc, clippy::missing_panics_doc)]
     pub fn from_str(s: &str, clock: &Clock) -> Result<Self, ParseError> {
         match s {
             "this-week" | "tw" => {
@@ -130,10 +139,10 @@ impl PeriodRequested {
     pub fn date_range(&self) -> DateRange {
         match self {
             PeriodRequested::ThisWeek(date) | PeriodRequested::LastWeek(date) => {
-                DateRange::week_of(&date)
+                DateRange::week_of(date)
             }
             PeriodRequested::ThisMonth(date) | PeriodRequested::LastMonth(date) => {
-                DateRange::month_of(&date)
+                DateRange::month_of(date)
             }
         }
     }
