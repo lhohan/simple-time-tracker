@@ -30,6 +30,7 @@ pub struct Args {
 }
 
 impl Args {
+    #[must_use]
     pub fn parse() -> Self {
         Self::parse_from(std::env::args())
     }

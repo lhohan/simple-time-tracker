@@ -313,9 +313,7 @@ mod tests {
                 self.files
                     .iter()
                     .any(|(n, c)| n.ends_with(name) && c == content),
-                "Expected to find file '{}' with content '{}'",
-                name,
-                content
+                "Expected to find file '{name}' with content '{content}'",
             );
             self
         }
@@ -328,8 +326,7 @@ mod tests {
                     .unwrap_or("");
                 assert!(
                     extensions.contains(&ext),
-                    "Processed file with unexpected extension: {}",
-                    name
+                    "Processed file with unexpected extension: {name}"
                 );
             }
             self

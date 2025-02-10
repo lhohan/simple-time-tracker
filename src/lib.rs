@@ -25,7 +25,7 @@ pub fn run(
     let tracking_result = parsing::process_input(input_path, &filter)?;
 
     let period_description = period.map(|p| p.period_description());
-    println!("{}", format_header(period_description));
+    println!("{}", format_header(period_description.as_ref()));
 
     if let Some(time_report) = tracking_result.time_entries {
         let tracked_interval = time_report.period.clone();
@@ -45,12 +45,12 @@ pub fn run(
     tracking_result
         .errors
         .iter()
-        .for_each(|error| println!("Warning: {}", error));
+        .for_each(|error| println!("Warning: {error}"));
 
     Ok(())
 }
 
-fn format_header(period_description: Option<RangeDescription>) -> String {
+fn format_header(period_description: Option<&RangeDescription>) -> String {
     let mut result = String::new();
 
     result.push_str("Time tracking report for ");
@@ -59,7 +59,7 @@ fn format_header(period_description: Option<RangeDescription>) -> String {
         .map(format_period_description)
         .unwrap_or_default();
     result.push_str(period_description_str.as_str());
-    result.push_str("\n");
+    result.push('\n');
     result
 }
 
@@ -92,6 +92,6 @@ fn format_interval(period: &TrackingPeriod) -> String {
     )
 }
 
-fn format_period_description(description: RangeDescription) -> String {
+fn format_period_description(description: &RangeDescription) -> String {
     description.to_string()
 }

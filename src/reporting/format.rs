@@ -61,7 +61,7 @@ impl TextFormatter {
     ) -> String {
         let mut result = String::new();
 
-        result.push_str(&format!("Project: {}\n", project));
+        result.push_str(&format!("Project: {project}\n"));
         result.push_str(&format!(
             "Total time: {}\n\n",
             format_duration(total_minutes)
@@ -104,5 +104,5 @@ fn format_padded_description(desc: &str) -> String {
 pub(crate) fn format_duration(minutes: u32) -> String {
     let hours = minutes / 60;
     let remaining_minutes = minutes % 60;
-    format!("{:2}h {:02}m", hours, remaining_minutes)
+    format!("{hours:2}h {remaining_minutes:02}m")
 }

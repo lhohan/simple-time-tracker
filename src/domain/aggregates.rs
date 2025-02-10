@@ -86,13 +86,11 @@ pub struct RangeDescription(String);
 impl RangeDescription {
     pub fn this_week(week: IsoWeek) -> Self {
         let week_str = format_week(week);
-        let d = format!("{}", week_str);
-        RangeDescription(d)
+        RangeDescription(week_str)
     }
     pub fn last_week(week: IsoWeek) -> Self {
         let week_str = format_week(week);
-        let d = format!("{}", week_str);
-        RangeDescription(d)
+        RangeDescription(week_str)
     }
     pub fn last_month(date: NaiveDate) -> Self {
         RangeDescription(format!("{}", date.format("%Y-%m")))
@@ -105,7 +103,7 @@ impl RangeDescription {
 fn format_week(week: IsoWeek) -> String {
     let week_number = week.week();
     let year = week.year();
-    format!("Week {}, {}", week_number, year)
+    format!("Week {week_number}, {year}")
 }
 
 impl ToString for RangeDescription {

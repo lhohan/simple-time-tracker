@@ -125,10 +125,12 @@ impl PeriodRequested {
 
     pub fn date_range(&self) -> DateRange {
         match self {
-            PeriodRequested::ThisWeek(date) => DateRange::week_of(&date),
-            PeriodRequested::LastWeek(date) => DateRange::week_of(&date),
-            PeriodRequested::ThisMonth(date) => DateRange::month_of(&date),
-            PeriodRequested::LastMonth(date) => DateRange::month_of(&date),
+            PeriodRequested::ThisWeek(date) | PeriodRequested::LastWeek(date) => {
+                DateRange::week_of(&date)
+            }
+            PeriodRequested::ThisMonth(date) | PeriodRequested::LastMonth(date) => {
+                DateRange::month_of(&date)
+            }
         }
     }
 

@@ -355,7 +355,7 @@ mod tests {
             self.entry.expect("Expected time entry but was error")
         }
 
-        fn expect_invalid_with(self, expected_error: ParseError) -> () {
+        fn expect_invalid_with(self, expected_error: ParseError) {
             let error = self.entry.expect_err("Expected error but was valid");
             assert_eq!(error, expected_error);
         }
