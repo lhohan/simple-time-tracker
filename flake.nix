@@ -2,7 +2,7 @@
   description = "Nix flake for Rust project with just support";
 
   inputs = {
-    nixpkgs.url = "nixpkgs-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/master";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
