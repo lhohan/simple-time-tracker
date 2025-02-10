@@ -11,15 +11,24 @@ use parsing::Filter;
 use reporting::Report;
 use std::path::Path;
 
+/// Run the time tracking report generation
+///
+/// # Errors
+///
+/// Returns `ParseError` if:
+/// - The input path cannot be read
+/// - The input contains invalid date formats
+/// - The input contains invalid time formats
+/// - The input contains invalid line formats
+/// - The requested period is invalid
 pub fn run(
     input_path: &Path,
     project_details_selected: Option<String>,
     from_date: Option<StartDate>,
     period: Option<PeriodRequested>,
 ) -> Result<(), ParseError> {
-    let report_type = project_details_selected
-        .map(ReportType::ProjectDetails)
-        .unwrap_or(ReportType::Projects);
+    let report_type =
+        project_details_selected.map_or(ReportType::Projects, ReportType::ProjectDetails);
 
     let filter = create_filter(&report_type, from_date, &period);
     let tracking_result = parsing::process_input(input_path, &filter)?;
@@ -36,7 +45,7 @@ pub fn run(
             ReportType::ProjectDetails(project) => Report::new_project_detail(time_report, project),
         };
 
-        println!("{}", report);
+        println!("{report}");
     } else {
         println!("No data found.");
     }
@@ -55,7 +64,6 @@ fn format_header(period_description: Option<&RangeDescription>) -> String {
 
     result.push_str("Time tracking report for ");
     let period_description_str = period_description
-        .clone()
         .map(format_period_description)
         .unwrap_or_default();
     result.push_str(period_description_str.as_str());
