@@ -12,4 +12,9 @@ target/
 
 # RustRover
 #.idea/
+
+# Aider
 .aider*
+
+# Project
+tarpaulin-report.html
