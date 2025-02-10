@@ -21,3 +21,4 @@ assert_fs = "1.0"
 assert_cmd = "2.0.16" # CLI testing
 predicates = "3.1.3"  # Assertions for testing
 rstest = "0.24.0"     # Table driven testing
+cargo-tarpaulin = "0.26" # Code coverage tool
