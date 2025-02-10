@@ -12,3 +12,4 @@ target/
 
 # RustRover
 #.idea/
+.aider*
