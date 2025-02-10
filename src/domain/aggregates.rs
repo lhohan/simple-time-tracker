@@ -17,14 +17,16 @@ pub struct ParseResult {
 }
 
 impl ParseResult {
+    #[must_use]
     pub fn new(entries: HashMap<NaiveDate, Vec<TimeEntry>>, errors: Vec<ParseError>) -> Self {
         Self {
             errors,
-            days: entries.len() as u32,
+            days: u32::try_from(entries.len()).unwrap_or(0),
             entries: Some(entries),
         }
     }
 
+    #[must_use]
     pub fn errors_only(errors: Vec<ParseError>) -> Self {
         Self {
             errors,
@@ -33,18 +35,22 @@ impl ParseResult {
         }
     }
 
+    #[must_use]
     pub fn errors(&self) -> Vec<ParseError> {
         self.errors.clone()
     }
 
+    #[must_use]
     pub fn days(&self) -> u32 {
         self.days
     }
 
+    #[must_use]
     pub fn entries_by_date(&self) -> Option<&HashMap<NaiveDate, Vec<TimeEntry>>> {
         self.entries.as_ref()
     }
 
+    #[must_use]
     pub fn merge(&self, other: &ParseResult) -> ParseResult {
         // Merge errors
         let mut merged_errors = self.errors.clone();
@@ -63,8 +69,7 @@ impl ParseResult {
                 }
                 Some(merged)
             }
-            (Some(entries), None) => Some(entries.clone()),
-            (None, Some(entries)) => Some(entries.clone()),
+            (Some(entries), None) | (None, Some(entries)) => Some(entries.clone()),
             (None, None) => None,
         };
 
@@ -84,17 +89,21 @@ pub enum ReportType {
 pub struct RangeDescription(String);
 
 impl RangeDescription {
+    #[must_use]
     pub fn this_week(week: IsoWeek) -> Self {
         let week_str = format_week(week);
         RangeDescription(week_str)
     }
+    #[must_use]
     pub fn last_week(week: IsoWeek) -> Self {
         let week_str = format_week(week);
         RangeDescription(week_str)
     }
+    #[must_use]
     pub fn last_month(date: NaiveDate) -> Self {
         RangeDescription(format!("{}", date.format("%Y-%m")))
     }
+    #[must_use]
     pub fn this_month(date: NaiveDate) -> Self {
         RangeDescription(format!("{}", date.format("%Y-%m")))
     }
@@ -106,9 +115,9 @@ fn format_week(week: IsoWeek) -> String {
     format!("Week {week_number}, {year}")
 }
 
-impl ToString for RangeDescription {
-    fn to_string(&self) -> String {
-        self.0.clone()
+impl std::fmt::Display for RangeDescription {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
@@ -120,6 +129,7 @@ pub struct TrackingPeriod {
 }
 
 impl TrackingPeriod {
+    #[must_use]
     pub fn new(start: StartDate, end: EndDate, days: u32) -> Self {
         Self { start, end, days }
     }
@@ -133,6 +143,7 @@ pub struct TrackedTime {
 }
 
 impl TrackedTime {
+    #[must_use]
     pub fn new(entries: Vec<TimeEntry>, start: StartDate, end: EndDate, days: u32) -> Self {
         let total_minutes = entries.iter().map(|e| e.minutes).sum();
         Self {

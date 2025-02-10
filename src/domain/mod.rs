@@ -23,6 +23,7 @@ pub struct TimeEntry {
 }
 
 impl TimeEntry {
+    #[must_use]
     pub fn new(projects: Vec<String>, minutes: u32, description: Option<String>) -> Self {
         Self {
             projects,
@@ -31,6 +32,7 @@ impl TimeEntry {
         }
     }
 
+    #[must_use]
     pub fn main_project(&self) -> &String {
         &self.projects[0]
     }
@@ -90,6 +92,7 @@ pub enum PeriodRequested {
 }
 
 impl PeriodRequested {
+    /// Parses a string into a `PeriodRequested` enum variant.
     pub fn from_str(s: &str, clock: &Clock) -> Result<Self, ParseError> {
         match s {
             "this-week" | "tw" => {
@@ -123,6 +126,7 @@ impl PeriodRequested {
         }
     }
 
+    #[must_use]
     pub fn date_range(&self) -> DateRange {
         match self {
             PeriodRequested::ThisWeek(date) | PeriodRequested::LastWeek(date) => {
@@ -134,6 +138,7 @@ impl PeriodRequested {
         }
     }
 
+    #[must_use]
     pub fn period_description(&self) -> RangeDescription {
         match self {
             PeriodRequested::ThisWeek(naive_date) => {
