@@ -30,7 +30,7 @@ impl TextFormatter {
         let mut result = String::new();
 
         // Format summary
-        let hours_per_day = (total_minutes as f64 / 60.0) / period.days as f64;
+        let hours_per_day = (f64::from(total_minutes) / 60.0) / f64::from(period.days);
         result.push_str(&format!(
             "{} days, {:.1} h/day, {} total\n",
             period.days,
@@ -38,7 +38,7 @@ impl TextFormatter {
             format_duration(total_minutes)
         ));
 
-        result.push_str("\n");
+        result.push('\n');
 
         // Format entries
         for entry in entries {
