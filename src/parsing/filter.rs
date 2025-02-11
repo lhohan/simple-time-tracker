@@ -1,4 +1,5 @@
 use chrono::Datelike;
+use chrono::Duration;
 use chrono::NaiveDate;
 use chrono::Utc;
 
@@ -29,20 +30,19 @@ pub struct DateRange(pub StartDate, pub EndDate);
 
 impl DateRange {
     pub fn week_of(date: &NaiveDate) -> Self {
-        let monday = *date - chrono::Duration::days(date.weekday().num_days_from_monday() as i64);
-        let sunday = monday + chrono::Duration::days(6);
-
+        let monday = *date - Duration::days(i64::from(date.weekday().num_days_from_monday()));
+        let sunday = monday + Duration::days(6);
         DateRange(StartDate(monday), EndDate(sunday))
     }
 
     pub(crate) fn month_of(date: &NaiveDate) -> DateRange {
-        let first = date.with_day(1).unwrap();
-        let last = date
+        let first_day = date.with_day(1).unwrap();
+        let last_day = first_day
             .with_month0(date.month0() + 1)
             .unwrap()
             .pred_opt()
             .unwrap();
-        DateRange(StartDate(first), EndDate(last))
+        DateRange(StartDate(first_day), EndDate(last_day))
     }
 }
 
