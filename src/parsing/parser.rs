@@ -15,7 +15,7 @@ pub fn parse_content(content: &str, filter: &Option<Filter>, file_name: &str) ->
             line_number: line_number + 1,
         })
         .fold(ParseState::default(), |state, line| {
-            process_line(line, &state, filter, file_name)
+            process_line(&line, &state, filter, file_name)
         });
 
     if final_state.entries.is_empty() {
@@ -26,7 +26,7 @@ pub fn parse_content(content: &str, filter: &Option<Filter>, file_name: &str) ->
 }
 
 fn process_line(
-    line: ParsedLine,
+    line: &ParsedLine,
     state: &ParseState,
     filter: &Option<Filter>,
     file_name: &str,
