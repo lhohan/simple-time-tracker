@@ -35,6 +35,11 @@ impl Args {
         Self::parse_from(std::env::args())
     }
 
+    /// Parses the from date from the command line arguments.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `ParseError::InvalidDate` if the date is not in the correct format.
     pub fn from_date(&self) -> Result<Option<StartDate>, ParseError> {
         match &self.from {
             Some(date) => {
@@ -46,10 +51,15 @@ impl Args {
         }
     }
 
+    /// Parses the period from the command line arguments.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `ParseError::InvalidPeriod` if the period is not valid.
     pub fn period(&self, clock: &Clock) -> Result<Option<PeriodRequested>, ParseError> {
         Ok(self
             .period
             .as_ref()
-            .and_then(|s| PeriodRequested::from_str(s, &clock).ok()))
+            .and_then(|s| PeriodRequested::from_str(s, clock).ok()))
     }
 }
