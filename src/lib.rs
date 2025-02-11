@@ -4,11 +4,11 @@ mod reporting;
 
 pub mod domain;
 
+use crate::reporting::Report;
 use domain::{ParseError, RangeDescription, StartDate, TrackingPeriod};
 use domain::{PeriodRequested, ReportType};
 use parsing::DateRange;
 use parsing::Filter;
-use reporting::Report;
 use std::path::Path;
 
 /// Run the time tracking report generation
@@ -42,7 +42,9 @@ pub fn run(
 
         let report = match report_type {
             ReportType::Projects => Report::new_overview(time_report),
-            ReportType::ProjectDetails(project) => Report::new_project_detail(time_report, &project),
+            ReportType::ProjectDetails(project) => {
+                Report::new_project_detail(time_report, &project)
+            }
         };
 
         println!("{report}");

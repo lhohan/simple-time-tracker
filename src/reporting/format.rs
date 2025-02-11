@@ -1,6 +1,6 @@
 use crate::domain::TrackingPeriod;
 
-use super::model::{ProjectSummary, Report, TaskSummary};
+use crate::reporting::model::{ProjectSummary, Report, TaskSummary};
 use std::fmt;
 
 pub struct TextFormatter;

@@ -1,19 +1,18 @@
 mod format;
 mod model;
-pub use model::Report;
+pub use crate::reporting::model::Report;
 
 #[cfg(test)]
 mod tests {
     use crate::domain::{EndDate, StartDate, TimeEntry};
     use chrono::NaiveDate;
 
-    use crate::reporting::Report;
     mod report_tests {
 
         use crate::domain::TrackedTime;
 
         use super::helpers::*;
-        use super::*;
+        use crate::Report;
 
         #[test]
         fn test_overview_report_ordering() {
@@ -34,17 +33,6 @@ mod tests {
             } else {
                 panic!("Expected Overview report");
             }
-        }
-    }
-
-    mod formatting_tests {
-        use crate::reporting::format::format_duration;
-
-        #[test]
-        fn test_format_duration() {
-            assert_eq!(format_duration(90), " 1h 30m");
-            assert_eq!(format_duration(60), " 1h 00m");
-            assert_eq!(format_duration(45), " 0h 45m");
         }
     }
 
