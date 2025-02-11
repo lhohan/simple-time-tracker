@@ -18,3 +18,4 @@ target/
 
 # Project
 tarpaulin-report.html
+.env
