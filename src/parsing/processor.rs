@@ -38,7 +38,7 @@ mod processors {
     impl SingleFileProcessor {
         fn read_file_content(path: &Path) -> Result<String, ParseError> {
             read_to_string(path).map_err(|err| {
-                ParseError::ErrorReading(format!("Failed to read {}: {}", path.display(), err))
+                ParseError::ErrorReading(format!("Failed to read {{path.diplay()}}: {err}"))
             })
         }
 
@@ -46,7 +46,7 @@ mod processors {
             path.file_name()
                 .and_then(|n| n.to_str())
                 .ok_or_else(|| {
-                    ParseError::ErrorReading(format!("Invalid filename: {}", path.display()))
+                    ParseError::ErrorReading("Invalid filename: {path.display()}".to_string())
                 })
                 .map(String::from)
         }
@@ -145,7 +145,7 @@ mod tests {
 
         test.with_file("test.md", "test content")?;
 
-        test.process(test.temp_dir.child("test.md").path())
+        ProcessingTest::process(test.temp_dir.child("test.md").path())
             .expect_success()
             .expect_processed_exactly(1)
             .expect_processed_file("test.md", "test content");
@@ -161,7 +161,7 @@ mod tests {
             .with_file("test.txt", "txt content")?
             .with_file("test.other", "other content")?;
 
-        test.process(test.temp_dir.path())
+        ProcessingTest::process(test.temp_dir.path())
             .expect_success()
             .expect_processed_exactly(2)
             .expect_only_processed_extensions(&["md", "txt"]);
@@ -173,7 +173,7 @@ mod tests {
     fn handles_empty_directory() -> Result<(), Box<dyn std::error::Error>> {
         let test = ProcessingTest::new()?;
 
-        test.process(test.temp_dir.path())
+        ProcessingTest::process(test.temp_dir.path())
             .expect_success()
             .expect_processed_exactly(0);
 
@@ -188,7 +188,7 @@ mod tests {
             .with_file("test.md", "root content")?
             .with_file("subdir/test.md", "nested content")?;
 
-        test.process(test.temp_dir.path())
+        ProcessingTest::process(test.temp_dir.path())
             .expect_success()
             .expect_processed_exactly(2)
             .expect_processed_file("test.md", "root content")
@@ -202,8 +202,7 @@ mod tests {
         let test = ProcessingTest::new()?;
         let non_existent = test.temp_dir.path().join("does_not_exist.md");
 
-        test.process(&non_existent)
-            .expect_error_containing("Failed to read");
+        ProcessingTest::process(&non_existent).expect_error_containing("Failed to read");
 
         Ok(())
     }
@@ -218,8 +217,7 @@ mod tests {
     }
 
     impl ProcessingTest {
-        // Modified to return our new ProcessingOutcome
-        fn process(&self, path: &Path) -> ProcessingOutcome {
+        fn process(path: &Path) -> ProcessingOutcome {
             let processor = Processor::from_path(path);
             let mut files = Vec::new();
 
@@ -244,7 +242,7 @@ mod tests {
         fn expect_success(self) -> ProcessingResults {
             match self {
                 ProcessingOutcome::Success(results) => results,
-                ProcessingOutcome::Error(e) => panic!("Expected success but got error: {:?}", e),
+                ProcessingOutcome::Error(e) => panic!("Expected success but got error: {e:?}"),
             }
         }
 
@@ -265,7 +263,7 @@ mod tests {
             let error = self.expect_error();
             match &error {
                 ParseError::ErrorReading(msg) if msg.contains(message) => error,
-                _ => panic!("Error message '{}' did not contain '{}'", error, message),
+                _ => panic!("Error message '{error}' did not contain '{message}'"),
             }
         }
     }
@@ -301,8 +299,7 @@ mod tests {
             assert_eq!(
                 self.files.len(),
                 expected_count,
-                "Expected to process {} files, but processed {}",
-                expected_count,
+                "Expected to process {expected_count} files, but processed {}",
                 self.files.len()
             );
             self

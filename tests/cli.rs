@@ -3,36 +3,30 @@ use rstest::rstest;
 use test_helpers::*;
 
 #[test]
-fn shows_help_information() -> Result<(), Box<dyn std::error::Error>> {
+fn shows_help_information() {
     CommandSpec::new().with_help().when_run().should_succeed();
-
-    Ok(())
 }
 
 #[rstest]
-fn test_empties(
-    #[values("", "## TT 2025-01-15")] empty_input: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn test_empties(#[values("", "## TT 2025-01-15")] empty_input: &str) {
     CommandSpec::new()
-        .with_file(empty_input)
+        .with_file(empty_input.trim())
         .when_run()
         .should_succeed()
         .expect_no_data_found();
-
-    Ok(())
 }
 
 #[test]
-fn test_basic_time_tracking() -> Result<(), Box<dyn std::error::Error>> {
+fn test_basic_time_tracking() {
     CommandSpec::new()
         .with_file(
-            r#"
+            r"
         ## TT 2025-01-15
         - #sport 30m
         - #coding 2p
         - #journaling 20m
         - #sport 1h
-        "#,
+        ",
         )
         .when_run()
         .should_succeed()
@@ -46,31 +40,26 @@ fn test_basic_time_tracking() -> Result<(), Box<dyn std::error::Error>> {
         .taking("0h 20m")
         .with_percentage("12")
         .validate();
-
-    Ok(())
 }
 
 #[test]
-fn test_verbose_output() -> Result<(), Box<dyn std::error::Error>> {
+fn test_verbose_output() {
     CommandSpec::new()
         .with_verbose()
         .with_file(
-            r#"## TT 2025-01-15
-    - #test 30m"#,
+            r"## TT 2025-01-15
+    - #test 30m",
         )
         .when_run()
         .should_succeed()
         .expect_processing_output();
-
-    Ok(())
 }
 
 #[test]
-fn should_only_process_entries_in_time_tracking_sections() -> Result<(), Box<dyn std::error::Error>>
-{
+fn should_only_process_entries_in_time_tracking_sections() {
     CommandSpec::new()
         .with_file(
-            r#"# Random Header
+            r"# Random Header
 Some random content
 - #coding 1h
 
@@ -79,7 +68,7 @@ Some random content
 - #coding 2p
 
 # Another Section
-- #sport 1h"#,
+- #sport 1h",
         )
         .when_run()
         .should_succeed()
@@ -90,33 +79,28 @@ Some random content
         .taking("1h 00m")
         .with_percentage("50")
         .validate();
-
-    Ok(())
 }
 
 #[test]
-fn when_entry_has_error_and_not_in_time_tracking_section_should_not_report_warning(
-) -> Result<(), Box<dyn std::error::Error>> {
+fn when_entry_has_error_and_not_in_time_tracking_section_should_not_report_warning() {
     CommandSpec::new()
         .with_file(
-            r#"# Random Header
-            - #1. If you don’t get the requirements right"#,
+            r"# Random Header
+            - #1. If you don’t get the requirements right",
         )
         .when_run()
         .should_succeed()
         .expect_no_warnings();
-
-    Ok(())
 }
 
 #[test]
-fn test_summary_statistics() -> Result<(), Box<dyn std::error::Error>> {
-    let content = r#"## TT 2025-01-15
+fn test_summary_statistics() {
+    let content = r"## TT 2025-01-15
     - #work 2h
     - #exercise 2h
     ## TT 2025-01-16
     - #work 3h
-    - #exercise 1h"#;
+    - #exercise 1h";
 
     CommandSpec::new()
         .with_file(content)
@@ -131,16 +115,14 @@ fn test_summary_statistics() -> Result<(), Box<dyn std::error::Error>> {
         .validate()
         .expect_output("2 days")
         .expect_output("4.0 h/day");
-
-    Ok(())
 }
 
 #[test]
-fn test_project_filter() -> Result<(), Box<dyn std::error::Error>> {
-    let content = r#"## TT 2025-01-15
+fn test_project_filter() {
+    let content = r"## TT 2025-01-15
 - #dev #rust 2h implementing filters
 - #dev 1h planning
-- #sport 30m"#;
+- #sport 30m";
 
     CommandSpec::new()
         .with_file(content)
@@ -152,16 +134,13 @@ fn test_project_filter() -> Result<(), Box<dyn std::error::Error>> {
         .expect_task("implementing filters")
         .expect_task("planning")
         .expect_output("Total time:  3h");
-
-    Ok(())
 }
 
 #[test]
-fn test_when_project_filter_should_total_task_with_same_name(
-) -> Result<(), Box<dyn std::error::Error>> {
-    let content = r#"## TT 2025-01-15
+fn test_when_project_filter_should_total_task_with_same_name() {
+    let content = r"## TT 2025-01-15
 - #dev 1h My task
-- #dev 1h My task"#;
+- #dev 1h My task";
 
     CommandSpec::new()
         .with_file(content)
@@ -170,15 +149,12 @@ fn test_when_project_filter_should_total_task_with_same_name(
         .should_succeed()
         .expect_output("Project: dev")
         .expect_task_with_duration("My task", "2h 00m");
-
-    Ok(())
 }
 
 #[test]
-fn test_when_project_filter_should_default_task_description_if_empty(
-) -> Result<(), Box<dyn std::error::Error>> {
-    let content = r#"## TT 2025-01-15
-- #dev 2h"#;
+fn test_when_project_filter_should_default_task_description_if_empty() {
+    let content = r"## TT 2025-01-15
+- #dev 2h";
 
     CommandSpec::new()
         .with_file(content)
@@ -188,15 +164,13 @@ fn test_when_project_filter_should_default_task_description_if_empty(
         // expectations could be more precise
         .expect_output("Project: dev")
         .expect_task("<no description>");
-
-    Ok(())
 }
 
 #[test]
-fn test_when_errors_should_report_warnings() -> Result<(), Box<dyn std::error::Error>> {
-    let content = r#"## TT 2025-01-01
+fn test_when_errors_should_report_warnings() {
+    let content = r"## TT 2025-01-01
 - #dev 1h Task1
-- #dev Task 2 - Forgot to add time"#;
+- #dev Task 2 - Forgot to add time";
 
     CommandSpec::new()
         .with_file(content)
@@ -206,48 +180,42 @@ fn test_when_errors_should_report_warnings() -> Result<(), Box<dyn std::error::E
         .taking("1h")
         .validate()
         .expect_warning("missing time: - #dev Task 2 - Forgot to add time");
-
-    Ok(())
 }
 
 #[test]
-fn test_report_should_include_interval_start() -> Result<(), Box<dyn std::error::Error>> {
-    let content = r#"## TT 2025-01-01
+fn test_report_should_include_interval_start() {
+    let content = r"## TT 2025-01-01
 - #dev 5h Task1
 ## TT 2025-01-02
-- #dev 5h Task2"#;
+- #dev 5h Task2";
 
     CommandSpec::new()
         .with_file(content)
         .when_run()
         .should_succeed()
         .expect_start_date("2025-01-01");
-
-    Ok(())
 }
 
 #[test]
-fn test_report_should_include_interval_end() -> Result<(), Box<dyn std::error::Error>> {
-    let content = r#"## TT 2025-01-01
+fn test_report_should_include_interval_end() {
+    let content = r"## TT 2025-01-01
 - #dev 5h Task1
 ## TT 2025-01-02
-- #dev 5h Task2"#;
+- #dev 5h Task2";
 
     CommandSpec::new()
         .with_file(content)
         .when_run()
         .should_succeed()
         .expect_end_date("2025-01-02");
-
-    Ok(())
 }
 
 #[test]
-fn test_date_filtering_from_date() -> Result<(), Box<dyn std::error::Error>> {
-    let content = r#"## TT 2025-01-01
+fn test_date_filtering_from_date() {
+    let content = r"## TT 2025-01-01
 - #prj-1 3h Task 1
 ## TT 2025-02-01
-- #prj-2 2h Task 2"#;
+- #prj-2 2h Task 2";
 
     CommandSpec::new()
         .with_file(content)
@@ -255,17 +223,15 @@ fn test_date_filtering_from_date() -> Result<(), Box<dyn std::error::Error>> {
         .when_run()
         .should_succeed()
         .expect_start_date("2025-02-01");
-
-    Ok(())
 }
 
 #[test]
-fn test_combined_filtering_project_and_from_date() -> Result<(), Box<dyn std::error::Error>> {
-    let content = r#"## TT 2025-01-01
+fn test_combined_filtering_project_and_from_date() {
+    let content = r"## TT 2025-01-01
 - #prj-1 3h Task 1
 ## TT 2025-01-02
 - #prj-1 7h Task 3
-- #prj-2 2h Task 2"#;
+- #prj-2 2h Task 2";
 
     CommandSpec::new()
         .with_file(content)
@@ -276,61 +242,53 @@ fn test_combined_filtering_project_and_from_date() -> Result<(), Box<dyn std::er
         .expect_start_date("2025-01-02")
         .expect_output("Project: prj-1")
         .expect_task_with_duration("Task 3", "7h 00m");
-
-    Ok(())
 }
 
 #[test]
-fn test_parsing_errors_should_show_line_numbers() -> Result<(), Box<dyn std::error::Error>> {
-    let content = r#"## TT 2025-01-01
+fn test_parsing_errors_should_show_line_numbers() {
+    let content = r"## TT 2025-01-01
 - #dev 1h Task1
 - #dev invalid time format
-- #dev 2h Task3"#;
+- #dev 2h Task3";
 
     CommandSpec::new()
         .with_file(content)
         .when_run()
         .should_succeed()
         .expect_warning_at_line(3, "missing time: - #dev invalid time format");
-
-    Ok(())
 }
 
 #[test]
-fn test_invalid_date_format_shows_line_number() -> Result<(), Box<dyn std::error::Error>> {
-    let content = r#"## TT invalid-date
-- #dev 1h Task1"#;
+fn test_invalid_date_format_shows_line_number() {
+    let content = r"## TT invalid-date
+- #dev 1h Task1";
 
     CommandSpec::new()
         .with_file(content)
         .when_run()
         .should_succeed()
         .expect_warning_at_line(1, "invalid date format: invalid-date");
-
-    Ok(())
 }
 
 #[test]
-fn test_only_warnings_for_sections_with_tt_in() -> Result<(), Box<dyn std::error::Error>> {
-    let content = r#"## A section title without teetee in
-- #dev 1h Task1"#;
+fn test_only_warnings_for_sections_with_tt_in() {
+    let content = r"## A section title without teetee in
+- #dev 1h Task1";
 
     CommandSpec::new()
         .with_file(content)
         .when_run()
         .should_succeed()
         .expect_no_warnings();
-
-    Ok(())
 }
 
 #[test]
-fn test_multiple_errors_show_correct_line_numbers() -> Result<(), Box<dyn std::error::Error>> {
-    let content = r#"## TT 2025-01-01
+fn test_multiple_errors_show_correct_line_numbers() {
+    let content = r"## TT 2025-01-01
 - #dev 1h Task1
 - #dev Task2
 - #dev 2x Task3
-- #dev 1h Task4"#;
+- #dev 1h Task4";
 
     CommandSpec::new()
         .with_file(content)
@@ -338,27 +296,23 @@ fn test_multiple_errors_show_correct_line_numbers() -> Result<(), Box<dyn std::e
         .should_succeed()
         .expect_warning_at_line(3, "missing time: - #dev Task2")
         .expect_warning_at_line(4, "missing time: - #dev 2x Task3");
-
-    Ok(())
 }
 
 #[test]
-fn test_errors_show_file_name() -> Result<(), Box<dyn std::error::Error>> {
-    let content = r#"## TT 2025-01-01
+fn test_errors_show_file_name() {
+    let content = r"## TT 2025-01-01
 - #dev 1h Task1
-- #dev missing_time_entry"#;
+- #dev missing_time_entry";
 
     CommandSpec::new()
         .with_file(content)
         .when_run()
         .should_succeed()
         .expect_warning_with_file("test.md", "missing time: - #dev missing_time_entry");
-
-    Ok(())
 }
 
 #[test]
-fn test_process_directory() -> Result<(), Box<dyn std::error::Error>> {
+fn test_process_directory() {
     CommandSpec::new()
         .with_directory_containing_files(&[
             ("file1.md", "## TT 2024-01-01\n- #prj-1 2h Task1"),
@@ -371,13 +325,10 @@ fn test_process_directory() -> Result<(), Box<dyn std::error::Error>> {
         .expect_project("prj-2")
         .taking("1h 00m")
         .validate();
-
-    Ok(())
 }
 
 #[test]
-fn test_process_directory_with_multiple_files_should_merge_days(
-) -> Result<(), Box<dyn std::error::Error>> {
+fn test_process_directory_with_multiple_files_should_merge_days() {
     CommandSpec::new()
         .with_directory_containing_files(&[
             ("file1.md", "## TT 2025-01-15\n- #dev 1h Task1"),
@@ -388,12 +339,10 @@ fn test_process_directory_with_multiple_files_should_merge_days(
         .expect_project("dev")
         .taking("3h 00m")
         .validate();
-
-    Ok(())
 }
 
 #[test]
-fn test_process_nested_directories() -> Result<(), Box<dyn std::error::Error>> {
+fn test_process_nested_directories() {
     CommandSpec::new()
         .with_directory_containing_files(&[
             ("2024/jan.md", "## TT 2024-01-01\n- #prj-1 2h Task1"),
@@ -404,12 +353,10 @@ fn test_process_nested_directories() -> Result<(), Box<dyn std::error::Error>> {
         .expect_project("prj-1")
         .taking("3h 00m") // Should combine times across directories
         .validate();
-
-    Ok(())
 }
 
 #[test]
-fn test_process_directory_file_filtering() -> Result<(), Box<dyn std::error::Error>> {
+fn test_process_directory_file_filtering() {
     CommandSpec::new()
         .with_directory_containing_files(&[
             ("notes.md", "## TT 2024-01-01\n- #prj-1 2h Task1"),
@@ -421,12 +368,10 @@ fn test_process_directory_file_filtering() -> Result<(), Box<dyn std::error::Err
         .expect_project("prj-1")
         .taking("2h 00m")
         .validate();
-
-    Ok(())
 }
 
 #[test]
-fn test_directory_processing_with_invalid_files() -> Result<(), Box<dyn std::error::Error>> {
+fn test_directory_processing_with_invalid_files() {
     CommandSpec::new()
         .with_directory_containing_files(&[
             ("valid.md", "## TT 2024-01-01\n- #prj-1 2h Task1"),
@@ -438,16 +383,14 @@ fn test_directory_processing_with_invalid_files() -> Result<(), Box<dyn std::err
         .taking("2h 00m")
         .validate()
         .expect_warning_with_file("invalid.md", "invalid date format: invalid-date");
-
-    Ok(())
 }
 
 #[test]
 fn report_header_format_should_include_date_when_no_period_filter() {
-    let content = r#"## TT 2025-01-15
+    let content = r"## TT 2025-01-15
 - #dev 1h Task1
 ## TT 2025-01-16
-- #dev 1h Task1"#;
+- #dev 1h Task1";
 
     CommandSpec::new()
         .with_file(content)
@@ -460,15 +403,13 @@ fn report_header_format_should_include_date_when_no_period_filter() {
 }
 
 #[rstest]
-fn this_week_report(
-    #[values("this-week", "tw")] this_week_value: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let content = r#"## TT 2025-01-15
+fn this_week_report(#[values("this-week", "tw")] this_week_value: &str) {
+    let content = r"## TT 2025-01-15
     - #dev 1h Task1
     ## TT 2025-01-16
     - #dev 2h Task2
     ## TT 2025-01-20
-    - #dev 1h Task3"#;
+    - #dev 1h Task3";
 
     CommandSpec::new()
         .with_file(content)
@@ -480,20 +421,16 @@ fn this_week_report(
         .expect_project("dev")
         .taking("3h 00m") // Only tasks from Jan 15-16
         .validate();
-
-    Ok(())
 }
 
 #[rstest]
-fn last_week_report(
-    #[values("last-week", "lw")] this_week_value: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let content = r#"## TT 2025-01-15
+fn last_week_report(#[values("last-week", "lw")] this_week_value: &str) {
+    let content = r"## TT 2025-01-15
     - #dev 1h Task1
     ## TT 2025-01-16
     - #dev 2h Task2
     ## TT 2025-01-20
-    - #dev 1h Task3"#;
+    - #dev 1h Task3";
 
     CommandSpec::new()
         .with_file(content)
@@ -505,20 +442,16 @@ fn last_week_report(
         .expect_project("dev")
         .taking("3h 00m") // Only tasks from Jan 15-16 (last week)
         .validate();
-
-    Ok(())
 }
 
 #[rstest]
-fn last_month_report(
-    #[values("last-month", "lm")] last_month_value: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let content = r#"## TT 2025-01-01
+fn last_month_report(#[values("last-month", "lm")] last_month_value: &str) {
+    let content = r"## TT 2025-01-01
     - #dev 1h Task1
     ## TT 2025-01-31
     - #dev 2h Task2
     ## TT 2025-02-01
-    - #dev 1h Task3"#;
+    - #dev 1h Task3";
 
     CommandSpec::new()
         .with_file(content)
@@ -530,20 +463,16 @@ fn last_month_report(
         .expect_project("dev")
         .taking("3h 00m") // Only tasks from Jan (last month)
         .validate();
-
-    Ok(())
 }
 
 #[rstest]
-fn this_month_report(
-    #[values("this-month", "tm")] last_month_value: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let content = r#"## TT 2025-01-01
+fn this_month_report(#[values("this-month", "tm")] last_month_value: &str) {
+    let content = r"## TT 2025-01-01
     - #dev 1h Task1
     ## TT 2025-01-31
     - #dev 2h Task2
     ## TT 2025-02-01
-    - #dev 1h Task3"#;
+    - #dev 1h Task3";
 
     CommandSpec::new()
         .with_file(content)
@@ -555,6 +484,4 @@ fn this_month_report(
         .expect_project("dev")
         .taking("3h 00m") // Only tasks from Jan (last month)
         .validate();
-
-    Ok(())
 }

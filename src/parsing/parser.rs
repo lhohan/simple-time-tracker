@@ -259,7 +259,7 @@ mod tests {
         ) {
             LineSpec::new(input)
                 .when_parsed()
-                .expect_invalid_with(ParseError::InvalidLineFormat(input.to_string()));
+                .expect_invalid_with(&ParseError::InvalidLineFormat(input.to_string()));
         }
 
         #[test]
@@ -268,7 +268,7 @@ mod tests {
 
             LineSpec::new(input)
                 .when_parsed()
-                .expect_invalid_with(ParseError::InvalidTime(
+                .expect_invalid_with(&ParseError::InvalidTime(
                     "100000000000000000000h".to_string(),
                 ));
         }
@@ -279,7 +279,7 @@ mod tests {
 
             LineSpec::new(input)
                 .when_parsed()
-                .expect_invalid_with(ParseError::MissingTime("- #reading abch".to_string()));
+                .expect_invalid_with(&ParseError::MissingTime("- #reading abch".to_string()));
         }
 
         #[test]
@@ -288,7 +288,7 @@ mod tests {
 
             LineSpec::new(input)
                 .when_parsed()
-                .expect_invalid_with(ParseError::MissingTime(
+                .expect_invalid_with(&ParseError::MissingTime(
                     "- #my-project only description".to_string(),
                 ));
         }
@@ -323,10 +323,7 @@ mod tests {
     }
 
     fn is_date_header(line: &str) -> bool {
-        match parse_line_type(line, true) {
-            Ok(LineType::Header(Some(_))) => true,
-            _ => false,
-        }
+        matches!(parse_line_type(line, true), Ok(LineType::Header(Some(_))))
     }
 
     struct LineSpec {
@@ -355,9 +352,9 @@ mod tests {
             self.entry.expect("Expected time entry but was error")
         }
 
-        fn expect_invalid_with(self, expected_error: ParseError) {
+        fn expect_invalid_with(self, expected_error: &ParseError) {
             let error = self.entry.expect_err("Expected error but was valid");
-            assert_eq!(error, expected_error);
+            assert_eq!(error, *expected_error);
         }
     }
 

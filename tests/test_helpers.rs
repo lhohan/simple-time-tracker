@@ -1,3 +1,6 @@
+#![allow(clippy::return_self_not_must_use)]
+#![allow(clippy::must_use_candidate)]
+#![allow(clippy::missing_panics_doc)]
 use assert_cmd::Command;
 use assert_fs::prelude::*;
 use chrono::NaiveDate;
@@ -15,11 +18,11 @@ impl CommandArgs {
     }
 
     fn add_flag(&mut self, flag: &str) {
-        self.args.push(format!("--{}", flag));
+        self.args.push(format!("--{flag}"));
     }
 
     fn add_option(&mut self, option: &str, value: &str) {
-        self.args.push(format!("--{}", option));
+        self.args.push(format!("--{option}"));
         self.args.push(value.to_string());
     }
 
@@ -68,7 +71,12 @@ pub struct CommandSpec {
     args: CommandArgs,
     input: Option<InputSource>,
     run_date: Option<NaiveDate>,
-    _temp_dir: Option<Arc<assert_fs::TempDir>>,
+}
+
+impl Default for CommandSpec {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl CommandSpec {
@@ -77,7 +85,6 @@ impl CommandSpec {
             args: CommandArgs::new(),
             input: None,
             run_date: None,
-            _temp_dir: None,
         }
     }
 
@@ -192,10 +199,7 @@ impl CommandSpec {
 
         std::env::remove_var("TT_TODAY");
 
-        CommandResult {
-            output,
-            _temp_dir: temp_dir,
-        }
+        CommandResult { output, temp_dir }
     }
 }
 
@@ -227,7 +231,7 @@ impl Warning {
 
     fn to_pattern(&self) -> String {
         let line_part = match self.line {
-            Some(line) => format!("line {}", line),
+            Some(line) => format!("line {line}"),
             None => "line \\d+".to_string(),
         };
 
@@ -237,14 +241,14 @@ impl Warning {
 
 pub struct CommandResult {
     pub output: assert_cmd::assert::Assert,
-    _temp_dir: Option<Arc<assert_fs::TempDir>>,
+    temp_dir: Option<Arc<assert_fs::TempDir>>,
 }
 
 impl CommandResult {
     pub fn should_succeed(self) -> Self {
         Self {
             output: self.output.success(),
-            _temp_dir: self._temp_dir,
+            temp_dir: self.temp_dir,
         }
     }
 
@@ -254,13 +258,13 @@ impl CommandResult {
             .stdout(predicate::str::contains(expected_output));
         Self {
             output: new_output,
-            _temp_dir: self._temp_dir,
+            temp_dir: self.temp_dir,
         }
     }
 
     pub fn expect_task(self, task_description: &str) -> Self {
         let escaped_description = regex::escape(task_description);
-        let pattern = format!(r"\.*-\s+{}\.*", escaped_description);
+        let pattern = format!(r"\.*-\s+{escaped_description}\.*");
 
         let new_output = self
             .output
@@ -268,7 +272,7 @@ impl CommandResult {
 
         Self {
             output: new_output,
-            _temp_dir: self._temp_dir,
+            temp_dir: self.temp_dir,
         }
     }
 
@@ -279,10 +283,7 @@ impl CommandResult {
     ) -> Self {
         let escaped_description = regex::escape(task_description);
         let escaped_duration = regex::escape(expected_duration);
-        let pattern = format!(
-            r"-\s+{}\s*\.+\s*{}\s+\(\d+%\)",
-            escaped_description, escaped_duration
-        );
+        let pattern = format!(r"-\s+{escaped_description}\s*\.+\s*{escaped_duration}\s+\(\d+%\)",);
 
         let new_output = self
             .output
@@ -290,7 +291,7 @@ impl CommandResult {
 
         Self {
             output: new_output,
-            _temp_dir: self._temp_dir,
+            temp_dir: self.temp_dir,
         }
     }
 
@@ -299,7 +300,7 @@ impl CommandResult {
             output: self
                 .output
                 .stdout(predicate::str::is_match(pattern).unwrap()),
-            _temp_dir: self._temp_dir,
+            temp_dir: self.temp_dir,
         }
     }
 
@@ -308,7 +309,7 @@ impl CommandResult {
             output: self
                 .output
                 .stdout(predicate::str::contains("Warning:").not()),
-            _temp_dir: self._temp_dir,
+            temp_dir: self.temp_dir,
         }
     }
 
@@ -328,24 +329,24 @@ impl CommandResult {
     }
 
     pub fn expect_start_date(self, expected_start_date: &str) -> Self {
-        let expected_output = format!("{} ->", expected_start_date);
+        let expected_output = format!("{expected_start_date} ->");
         let new_output = self
             .output
             .stdout(predicate::str::contains(expected_output));
         Self {
             output: new_output,
-            _temp_dir: self._temp_dir,
+            temp_dir: self.temp_dir,
         }
     }
 
     pub fn expect_end_date(self, expected_date: &str) -> Self {
-        let expected_output = format!("-> {}", expected_date);
+        let expected_output = format!("-> {expected_date}");
         let new_output = self
             .output
             .stdout(predicate::str::contains(expected_output));
         Self {
             output: new_output,
-            _temp_dir: self._temp_dir,
+            temp_dir: self.temp_dir,
         }
     }
 
@@ -380,7 +381,7 @@ impl CommandResult {
     }
 
     fn assert_project(self, project_name: &str, expectations: &[(&str, String)]) -> Self {
-        let project_name_with_delimiter = format!("{}.", project_name);
+        let project_name_with_delimiter = format!("{project_name}.");
 
         let assert = self
             .output
@@ -390,40 +391,37 @@ impl CommandResult {
                         .lines()
                         .find(|line| line.contains(&project_name_with_delimiter));
 
-                    match project_line {
-                        Some(line) => {
-                            let failed_expectations: Vec<_> = expectations
-                                .iter()
-                                .filter(|(_, expected)| !line.contains(expected))
-                                .collect();
+                    if let Some(line) = project_line {
+                        let failed_expectations: Vec<_> = expectations
+                            .iter()
+                            .filter(|(_, expected)| !line.contains(expected))
+                            .collect();
 
-                            if !failed_expectations.is_empty() {
-                                println!("\nProject '{}' validation failed", project_name);
-                                println!("Found line: '{}'", line);
-                                println!("Failed expectations:");
-                                for (label, expected) in &failed_expectations {
-                                    println!("  - {}: Expected '{}'", label, expected);
-                                }
-                                false
-                            } else {
-                                true
+                        if failed_expectations.is_empty() {
+                            true
+                        } else {
+                            println!("\nProject '{project_name}' validation failed");
+                            println!("Found line: '{line}'");
+                            println!("Failed expectations:");
+                            for (label, expected) in &failed_expectations {
+                                println!("  - {label}: Expected '{expected}'");
                             }
-                        }
-                        None => {
-                            println!("\nProject '{}' not found in output", project_name);
                             false
                         }
+                    } else {
+                        println!("\nProject '{project_name}' not found in output");
+                        false
                     }
                 } else {
                     println!("\nInvalid UTF-8 in command output");
-                    println!("Raw output: {:?}", output);
+                    println!("Raw output: {output:?}");
                     false
                 }
             }));
 
         Self {
             output: assert,
-            _temp_dir: self._temp_dir,
+            temp_dir: self.temp_dir,
         }
     }
 }
@@ -446,7 +444,7 @@ impl ProjectAssertion {
     }
 
     pub fn with_percentage(self, percentage: &str) -> Self {
-        let formatted_percentage = format!("({:>3}%)", percentage);
+        let formatted_percentage = format!("({percentage:>3}%)");
         let mut new_expectations = self.expectations;
         new_expectations.push(("Percentage", formatted_percentage));
         Self {
@@ -471,9 +469,7 @@ impl ProjectAssertion {
     }
 
     pub fn validate(self) -> CommandResult {
-        let result = self
-            .cmd_result
-            .assert_project(&self.project_name, &self.expectations);
-        result
+        self.cmd_result
+            .assert_project(&self.project_name, &self.expectations)
     }
 }
