@@ -29,13 +29,13 @@ impl Filter {
 pub struct DateRange(pub StartDate, pub EndDate);
 
 impl DateRange {
-    pub fn week_of(date: &NaiveDate) -> Self {
-        let monday = *date - Duration::days(i64::from(date.weekday().num_days_from_monday()));
+    pub fn week_of(date: NaiveDate) -> Self {
+        let monday = date - Duration::days(i64::from(date.weekday().num_days_from_monday()));
         let sunday = monday + Duration::days(6);
         DateRange(StartDate(monday), EndDate(sunday))
     }
 
-    pub(crate) fn month_of(date: &NaiveDate) -> DateRange {
+    pub(crate) fn month_of(date: NaiveDate) -> DateRange {
         let first_day = date.with_day(1).unwrap();
         let last_day = first_day
             .with_month0(date.month0() + 1)
@@ -85,7 +85,7 @@ mod tests {
         // Tuesday January 15th 2024
         let current = NaiveDate::from_ymd_opt(2024, 1, 15).unwrap();
 
-        let range = DateRange::week_of(&current);
+        let range = DateRange::week_of(current);
 
         // Week should start on Monday January 15th
         assert_eq!(

@@ -1,5 +1,4 @@
 use crate::domain::ParseError;
-use std::fs::read_to_string;
 use std::path::Path;
 use walkdir::WalkDir;
 
@@ -10,7 +9,8 @@ pub(super) trait FileProcessor {
 }
 
 mod processors {
-    use super::*;
+    use super::{FileProcessor, ParseError, Path, Processor as InputProcessor, WalkDir};
+    use std::fs::read_to_string;
 
     #[derive(Debug)]
     pub struct ProcessingInput {
@@ -111,25 +111,25 @@ mod processors {
     fn is_supported_file(path: &Path) -> bool {
         path.extension()
             .and_then(|ext| ext.to_str())
-            .map(|ext| SUPPORTED_EXTENSIONS.contains(&ext))
-            .unwrap_or(false)
+            .is_some_and(|ext| SUPPORTED_EXTENSIONS.contains(&ext))
     }
 }
 
-use processors::*;
+use processors::{DirectoryProcessor, ProcessingInput, SingleFileProcessor};
 
 #[derive(Debug)]
-pub enum InputProcessor {
+#[allow(clippy::module_name_repetitions)]
+pub enum Processor {
     File(SingleFileProcessor),
     Directory(DirectoryProcessor),
 }
 
-impl InputProcessor {
+impl Processor {
     pub fn from_path(path: &Path) -> Self {
         if path.is_dir() {
-            InputProcessor::Directory(DirectoryProcessor::new())
+            Processor::Directory(DirectoryProcessor::new())
         } else {
-            InputProcessor::File(SingleFileProcessor)
+            Processor::File(SingleFileProcessor)
         }
     }
 }
@@ -220,7 +220,7 @@ mod tests {
     impl ProcessingTest {
         // Modified to return our new ProcessingOutcome
         fn process(&self, path: &Path) -> ProcessingOutcome {
-            let processor = InputProcessor::from_path(path);
+            let processor = Processor::from_path(path);
             let mut files = Vec::new();
 
             match processor.process(path, |input| {

@@ -42,7 +42,7 @@ fn process_line(
                 match filter {
                     None => new_state.entries.entry(date).or_default().push(entry),
                     Some(filter) if filter.matches(&entry, &EntryDate(date)) => {
-                        new_state.entries.entry(date).or_default().push(entry)
+                        new_state.entries.entry(date).or_default().push(entry);
                     }
                     _ => {}
                 }
@@ -129,7 +129,7 @@ fn parse_line(line: &str) -> Result<TimeEntry, ParseError> {
 }
 
 fn parse_part(part: &str) -> Result<LinePart, ParseError> {
-    if part.starts_with("#") {
+    if part.starts_with('#') {
         let project = LinePart::Project(
             part.strip_prefix("#")
                 .expect("project should have had '#' prefix")
@@ -169,7 +169,7 @@ fn parse_time(time: &str) -> Result<Option<u32>, ParseError> {
 }
 
 fn maybe_date_from_header(line: &str) -> Option<&str> {
-    let mut words = line.trim().split_whitespace();
+    let mut words = line.split_whitespace();
 
     if matches!(words.next(), Some(first) if first.starts_with('#'))
         && matches!(words.next(), Some("TT"))

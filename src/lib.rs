@@ -42,7 +42,7 @@ pub fn run(
 
         let report = match report_type {
             ReportType::Projects => Report::new_overview(time_report),
-            ReportType::ProjectDetails(project) => Report::new_project_detail(time_report, project),
+            ReportType::ProjectDetails(project) => Report::new_project_detail(time_report, &project),
         };
 
         println!("{report}");

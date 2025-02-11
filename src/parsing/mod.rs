@@ -4,6 +4,7 @@ mod parser;
 mod processor;
 
 pub(crate) use model::{LineType, ParseState, ParsedLine};
+use processor::Processor;
 
 use std::path::Path;
 
@@ -14,7 +15,6 @@ use crate::domain::TimeTrackingResult;
 use crate::parsing::processor::FileProcessor;
 pub use filter::DateRange;
 pub use filter::Filter;
-use processor::InputProcessor;
 
 use crate::domain::ParseError;
 use crate::domain::TrackedTime;
@@ -23,7 +23,7 @@ pub fn process_input(
     path: &Path,
     filter: &Option<Filter>,
 ) -> Result<TimeTrackingResult, ParseError> {
-    let processor = InputProcessor::from_path(path);
+    let processor = Processor::from_path(path);
 
     let mut parse_result = ParseResult::errors_only(vec![]);
     processor.process(path, |input| {

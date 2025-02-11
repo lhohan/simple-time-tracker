@@ -35,11 +35,11 @@ impl Report {
         }
     }
 
-    pub fn new_project_detail(time_report: TrackedTime, project: String) -> Self {
+    pub fn new_project_detail(time_report: TrackedTime, project: &str) -> Self {
         let summarized = summarize_tasks(&time_report.entries);
 
         Report::ProjectDetail {
-            project: project.clone(),
+            project: project.to_string(),
             tasks: summarized
                 .into_iter()
                 .map(|(desc, minutes)| TaskSummary::new(desc, minutes, time_report.total_minutes))
@@ -85,8 +85,9 @@ impl TaskSummary {
     }
 }
 
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 fn calculate_percentage(minutes: u32, total_minutes: u32) -> u32 {
-    ((minutes as f64 / total_minutes as f64) * 100.0).round() as u32
+    ((f64::from(minutes) / f64::from(total_minutes)) * 100.0).round() as u32
 }
 
 fn summarize_entries(entries: &[TimeEntry]) -> Vec<(String, u32)> {
@@ -102,7 +103,7 @@ fn summarize_entries(entries: &[TimeEntry]) -> Vec<(String, u32)> {
 fn summarize_tasks(entries: &[TimeEntry]) -> Vec<(String, u32)> {
     let mut summary = HashMap::new();
 
-    for entry in entries.iter() {
+    for entry in entries {
         let key = entry
             .description
             .clone()

@@ -43,8 +43,8 @@ impl TextFormatter {
         // Format entries
         for entry in entries {
             result.push_str(&format!(
-                "{}..{} ({:>3}%)\n",
-                format!("{:.<20}", entry.project),
+                "{:.<20}..{} ({:>3}%)\n",
+                entry.project,
                 format_duration(entry.minutes),
                 entry.percentage
             ));
