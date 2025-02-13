@@ -1,10 +1,9 @@
-pub mod aggregates;
 pub mod dates;
+pub mod reports;
 pub mod time;
 
-pub use aggregates::{
-    RangeDescription, TimeTrackingResult, TrackedTime, TrackingPeriod,
-};
+pub use dates::range::{DateRange, PeriodRequested};
+pub use reports::{RangeDescription, TimeTrackingResult, TrackedTime, TrackingPeriod};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct TimeEntry {
@@ -66,5 +65,3 @@ impl std::fmt::Display for ParseError {
 }
 
 impl std::error::Error for ParseError {}
-
-pub use dates::range::{DateRange, PeriodRequested};

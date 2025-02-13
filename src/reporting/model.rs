@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
-use crate::domain::{TimeEntry, TrackedTime};
-use crate::domain::aggregates::TrackingPeriod;
+use crate::domain::{TimeEntry, TrackedTime, TrackingPeriod};
 use itertools::Itertools;
 
 #[derive(Debug)]
