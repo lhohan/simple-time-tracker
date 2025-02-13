@@ -6,9 +6,8 @@ pub mod domain;
 
 use crate::reporting::Report;
 use domain::dates::StartDate;
-use domain::{ParseError, RangeDescription, TrackingPeriod};
+use domain::{DateRange, ParseError, RangeDescription, TrackingPeriod};
 use domain::{PeriodRequested, ReportType};
-use parsing::DateRange;
 use parsing::Filter;
 use std::path::Path;
 

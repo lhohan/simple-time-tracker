@@ -13,7 +13,6 @@ use crate::domain::dates::StartDate;
 use crate::domain::ParseResult;
 use crate::domain::TimeTrackingResult;
 use crate::parsing::processor::FileProcessor;
-pub use filter::DateRange;
 pub use filter::Filter;
 
 use crate::domain::ParseError;
