@@ -99,9 +99,8 @@ An entry for a sub-project 'sub-proj' below main project 'proj'. Further nesting
 
 ## 6. Open Tasks
 
-### Task 000: Set up CI/CD (Integrated into Phase 1 of Development Roadmap):**
-    * Set up Nix for package management.
-    * Set up Just for task automation.
+### Task 000: Set up CI/CD (Integrated into Phase 1 of Development Roadmap):
+  *  Use nix set-up in CI/CD pipeline
 
 ### Task 001: Add support for outcomes or goals (Integrated into Phase 2 of Development Roadmap):**
     * Allow users to associate tasks with broader outcomes or goals.
