@@ -3,7 +3,7 @@ pub mod dates;
 pub mod time;
 
 pub use aggregates::{
-    ParseResult, RangeDescription, ReportType, TimeTrackingResult, TrackedTime, TrackingPeriod,
+    RangeDescription, ReportType, TimeTrackingResult, TrackedTime, TrackingPeriod,
 };
 
 #[derive(Debug, PartialEq, Clone)]

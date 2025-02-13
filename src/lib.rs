@@ -4,11 +4,14 @@ mod reporting;
 
 pub mod domain;
 
-use crate::reporting::Report;
-use domain::dates::StartDate;
-use domain::{DateRange, ParseError, RangeDescription, TrackingPeriod};
-use domain::{PeriodRequested, ReportType};
-use parsing::Filter;
+use domain::DateRange;
+use reporting::Report;
+
+use crate::domain::dates::StartDate;
+use crate::domain::ParseError;
+use crate::domain::RangeDescription;
+use crate::domain::{PeriodRequested, ReportType, TrackingPeriod};
+use crate::parsing::filter::Filter;
 use std::path::Path;
 
 /// Run the time tracking report generation

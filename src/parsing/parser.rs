@@ -1,7 +1,8 @@
 use crate::parsing::filter::Filter;
+use crate::parsing::model::ParseResult;
 
 use crate::domain::dates::EntryDate;
-use crate::domain::{Location, ParseError, ParseResult, TimeEntry};
+use crate::domain::{Location, ParseError, TimeEntry};
 use chrono::NaiveDate;
 use std::{collections::VecDeque, str::FromStr};
 
