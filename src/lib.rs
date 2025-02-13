@@ -5,7 +5,8 @@ mod reporting;
 pub mod domain;
 
 use crate::reporting::Report;
-use domain::{ParseError, RangeDescription, StartDate, TrackingPeriod};
+use domain::dates::StartDate;
+use domain::{ParseError, RangeDescription, TrackingPeriod};
 use domain::{PeriodRequested, ReportType};
 use parsing::DateRange;
 use parsing::Filter;

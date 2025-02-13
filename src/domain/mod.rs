@@ -1,4 +1,5 @@
-mod aggregates;
+pub mod aggregates;
+pub mod dates;
 pub mod time;
 
 pub use aggregates::{
@@ -75,13 +76,6 @@ impl std::fmt::Display for ParseError {
 }
 
 impl std::error::Error for ParseError {}
-
-#[derive(Debug, Clone)]
-pub struct StartDate(pub NaiveDate);
-#[derive(Debug, Clone)]
-pub struct EndDate(pub NaiveDate);
-#[derive(Debug, Clone)]
-pub struct EntryDate(pub NaiveDate);
 
 #[derive(Clone, Debug)]
 pub enum PeriodRequested {

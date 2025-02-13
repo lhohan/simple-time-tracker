@@ -8,9 +8,9 @@ use processor::Processor;
 
 use std::path::Path;
 
-use crate::domain::EndDate;
+use crate::domain::dates::EndDate;
+use crate::domain::dates::StartDate;
 use crate::domain::ParseResult;
-use crate::domain::StartDate;
 use crate::domain::TimeTrackingResult;
 use crate::parsing::processor::FileProcessor;
 pub use filter::DateRange;

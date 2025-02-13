@@ -2,9 +2,10 @@ use chrono::NaiveDate;
 use clap::Parser;
 use std::path::PathBuf;
 
+use crate::domain::dates::StartDate;
 use crate::domain::time::Clock;
+use crate::domain::ParseError;
 use crate::domain::PeriodRequested;
-use crate::domain::{ParseError, StartDate};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about = "Simple time tracking from markdown files")]

@@ -1,4 +1,5 @@
-use super::{EndDate, ParseError, StartDate, TimeEntry};
+use super::{ParseError, TimeEntry};
+use super::dates::{EndDate, StartDate};
 use chrono::IsoWeek;
 use chrono::NaiveDate;
 use std::collections::HashMap;

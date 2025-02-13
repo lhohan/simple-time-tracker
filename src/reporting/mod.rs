@@ -4,7 +4,8 @@ pub use crate::reporting::model::Report;
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::{EndDate, StartDate, TimeEntry};
+    use crate::domain::dates::{EndDate, StartDate};
+    use crate::domain::TimeEntry;
     use chrono::NaiveDate;
 
     mod report_tests {

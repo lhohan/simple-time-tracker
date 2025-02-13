@@ -3,7 +3,8 @@ use chrono::Duration;
 use chrono::NaiveDate;
 use chrono::Utc;
 
-use crate::domain::{EndDate, EntryDate, StartDate, TimeEntry};
+use crate::domain::dates::{EndDate, EntryDate, StartDate};
+use crate::domain::TimeEntry;
 
 #[derive(Debug, Clone)]
 pub enum Filter {
