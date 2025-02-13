@@ -9,11 +9,6 @@ pub struct TimeTrackingResult {
     pub errors: Vec<ParseError>,
 }
 
-pub enum ReportType {
-    Projects,
-    ProjectDetails(String),
-}
-
 #[derive(Debug, Clone)]
 pub struct RangeDescription(String);
 

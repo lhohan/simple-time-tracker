@@ -19,6 +19,12 @@ pub enum Report {
     },
 }
 
+#[derive(Debug)]
+pub enum ReportType {
+    Projects,
+    ProjectDetails(String),
+}
+
 impl Report {
     pub fn new_overview(time_report: TrackedTime) -> Self {
         let summarized = summarize_entries(&time_report.entries);

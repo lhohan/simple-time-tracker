@@ -10,8 +10,9 @@ use reporting::Report;
 use crate::domain::dates::StartDate;
 use crate::domain::ParseError;
 use crate::domain::RangeDescription;
-use crate::domain::{PeriodRequested, ReportType, TrackingPeriod};
+use crate::domain::{PeriodRequested, TrackingPeriod};
 use crate::parsing::filter::Filter;
+use crate::reporting::ReportType;
 use std::path::Path;
 
 /// Run the time tracking report generation
