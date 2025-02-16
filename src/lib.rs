@@ -73,7 +73,6 @@ fn format_header(period_description: Option<&RangeDescription>) -> String {
         .map(format_period_description)
         .unwrap_or_default();
     result.push_str(period_description_str.as_str());
-    result.push('\n');
     result
 }
 
