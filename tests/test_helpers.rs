@@ -454,6 +454,16 @@ impl ProjectAssertion {
         }
     }
 
+    pub fn with_tag(self, expected_tag: &str) -> Self {
+        let mut new_expectations = self.expectations;
+        new_expectations.push(("Tag", expected_tag.to_string()));
+        Self {
+            cmd_result: self.cmd_result,
+            expectations: new_expectations,
+            project_name: self.project_name,
+        }
+    }
+
     pub fn expect_project(self, name: &str) -> Self {
         // First validate the current project
         let cmd_result = self
