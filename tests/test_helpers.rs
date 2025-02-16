@@ -5,7 +5,7 @@ use assert_cmd::Command;
 use assert_fs::prelude::*;
 use chrono::NaiveDate;
 use predicates::prelude::*;
-use std::sync::Arc;
+use std::{path::PathBuf, sync::Arc};
 
 #[derive(Default, Clone)]
 struct CommandArgs {
@@ -63,6 +63,26 @@ impl InputSource {
 
     fn directory(files: Vec<InputSource>) -> Self {
         Self::Directory { files }
+    }
+}
+
+// Group command and the test files location together to couple their life time.
+struct ExecutionContext {
+    command: Command,
+    _temp_dir: Option<Arc<assert_fs::TempDir>>,
+}
+
+impl ExecutionContext {
+    fn execute(mut self) -> CommandResult {
+        let output = self.command.assert();
+        std::env::remove_var("TT_TODAY"); // cleanup environment
+        CommandResult { output }
+    }
+
+    fn run_on_date(&mut self, date: NaiveDate) -> &Self {
+        let today = date.format("%Y-%m-%d").to_string();
+        self.command.env("TT_TODAY", today);
+        self
     }
 }
 
@@ -135,30 +155,26 @@ impl CommandSpec {
         self
     }
 
-    pub fn when_run(self) -> CommandResult {
-        let mut cmd = Command::cargo_bin("tt").expect("Failed to create cargo command");
-        let (temp_dir, mut command) = match self.input.clone() {
-            Some(InputSource::File {
+    fn create_base_command() -> Command {
+        Command::cargo_bin("tt").expect("Failed to create cargo command")
+    }
+
+    fn setup_test_files(input: InputSource) -> (Arc<assert_fs::TempDir>, PathBuf) {
+        let temp =
+            Arc::new(assert_fs::TempDir::new().expect("Failed to create temporary directory"));
+
+        match input {
+            InputSource::File {
                 content,
                 path: name,
-            }) => {
-                let temp = Arc::new(
-                    assert_fs::TempDir::new().expect("Failed to create temporary directory"),
-                );
+            } => {
                 let input_file = temp.child(&name);
                 input_file
                     .write_str(&content)
                     .expect("Failed to write to test file");
-
-                cmd.arg("--input").arg(input_file.path());
-
-                (Some(temp), cmd)
+                (temp, input_file.path().to_path_buf())
             }
-            Some(InputSource::Directory { files }) => {
-                let temp = Arc::new(
-                    assert_fs::TempDir::new().expect("Failed to create temporary directory"),
-                );
-
+            InputSource::Directory { files } => {
                 // Create all files in the directory
                 for file in files {
                     match file {
@@ -179,27 +195,29 @@ impl CommandSpec {
                         }
                     }
                 }
-
-                cmd.arg("--input").arg(temp.path());
-
-                (Some(temp), cmd)
+                (temp.clone(), temp.path().to_path_buf())
             }
-            None => {
-                let cmd = Command::cargo_bin("tt").expect("Failed to create cargo command");
-                (None, cmd)
-            }
-        };
-
-        if let Some(run_date) = self.run_date {
-            let today = run_date.format("%Y-%m-%d").to_string();
-            command.env("TT_TODAY", today);
         }
+    }
+
+    pub fn when_run(self) -> CommandResult {
+        let mut command = Self::create_base_command();
+        let temp_dir = self.input.map(|input| {
+            let (temp_dir, input_path) = Self::setup_test_files(input);
+            command.arg("--input").arg(input_path);
+            temp_dir
+        });
         command.args(self.args.clone().into_vec());
-        let output = command.assert();
 
-        std::env::remove_var("TT_TODAY");
+        let mut context = ExecutionContext {
+            command,
+            _temp_dir: temp_dir,
+        };
+        if let Some(run_date) = self.run_date {
+            context.run_on_date(run_date);
+        }
 
-        CommandResult { output, temp_dir }
+        context.execute()
     }
 }
 
@@ -241,14 +259,12 @@ impl Warning {
 
 pub struct CommandResult {
     pub output: assert_cmd::assert::Assert,
-    temp_dir: Option<Arc<assert_fs::TempDir>>,
 }
 
 impl CommandResult {
     pub fn should_succeed(self) -> Self {
         Self {
             output: self.output.success(),
-            temp_dir: self.temp_dir,
         }
     }
 
@@ -256,10 +272,7 @@ impl CommandResult {
         let new_output = self
             .output
             .stdout(predicate::str::contains(expected_output));
-        Self {
-            output: new_output,
-            temp_dir: self.temp_dir,
-        }
+        Self { output: new_output }
     }
 
     pub fn expect_task(self, task_description: &str) -> Self {
@@ -270,10 +283,7 @@ impl CommandResult {
             .output
             .stdout(predicate::str::is_match(pattern).unwrap());
 
-        Self {
-            output: new_output,
-            temp_dir: self.temp_dir,
-        }
+        Self { output: new_output }
     }
 
     pub fn expect_task_with_duration(
@@ -289,10 +299,7 @@ impl CommandResult {
             .output
             .stdout(predicate::str::is_match(pattern).unwrap());
 
-        Self {
-            output: new_output,
-            temp_dir: self.temp_dir,
-        }
+        Self { output: new_output }
     }
 
     fn expect_warning_pattern(self, pattern: &str) -> Self {
@@ -300,7 +307,6 @@ impl CommandResult {
             output: self
                 .output
                 .stdout(predicate::str::is_match(pattern).unwrap()),
-            temp_dir: self.temp_dir,
         }
     }
 
@@ -309,7 +315,6 @@ impl CommandResult {
             output: self
                 .output
                 .stdout(predicate::str::contains("Warning:").not()),
-            temp_dir: self.temp_dir,
         }
     }
 
@@ -333,10 +338,7 @@ impl CommandResult {
         let new_output = self
             .output
             .stdout(predicate::str::contains(expected_output));
-        Self {
-            output: new_output,
-            temp_dir: self.temp_dir,
-        }
+        Self { output: new_output }
     }
 
     pub fn expect_end_date(self, expected_date: &str) -> Self {
@@ -344,10 +346,7 @@ impl CommandResult {
         let new_output = self
             .output
             .stdout(predicate::str::contains(expected_output));
-        Self {
-            output: new_output,
-            temp_dir: self.temp_dir,
-        }
+        Self { output: new_output }
     }
 
     pub fn expect_project(self, name: &str) -> ProjectAssertion {
@@ -419,10 +418,7 @@ impl CommandResult {
                 }
             }));
 
-        Self {
-            output: assert,
-            temp_dir: self.temp_dir,
-        }
+        Self { output: assert }
     }
 }
 
