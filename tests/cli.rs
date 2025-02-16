@@ -133,7 +133,7 @@ fn test_project_filter() {
         .expect_output("Project: dev")
         .expect_task("implementing filters")
         .expect_task("planning")
-        .expect_output("Total time:  3h");
+        .expect_output("3h 00m total");
 }
 
 #[test]

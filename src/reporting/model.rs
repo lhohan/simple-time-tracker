@@ -13,7 +13,6 @@ pub enum Report {
     ProjectDetail {
         project: String,
         tasks: Vec<TaskSummary>,
-        period: TrackingPeriod,
         total_minutes: u32,
     },
 }
@@ -51,7 +50,6 @@ impl Report {
                 .map(|(desc, minutes)| TaskSummary::new(desc, minutes, time_report.total_minutes))
                 .sorted_by(|a, b| b.minutes.cmp(&a.minutes))
                 .collect(),
-            period: time_report.period,
             total_minutes: time_report.total_minutes,
         }
     }

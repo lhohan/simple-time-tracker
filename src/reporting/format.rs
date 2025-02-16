@@ -16,9 +16,8 @@ impl TextFormatter {
             Report::ProjectDetail {
                 project,
                 tasks,
-                period,
                 total_minutes,
-            } => Self::format_project_detail(project, tasks, period, *total_minutes),
+            } => Self::format_project_detail(project, tasks, *total_minutes),
         }
     }
 
@@ -53,19 +52,12 @@ impl TextFormatter {
         result
     }
 
-    fn format_project_detail(
-        project: &str,
-        tasks: &[TaskSummary],
-        period: &TrackingPeriod,
-        total_minutes: u32,
-    ) -> String {
+    fn format_project_detail(project: &str, tasks: &[TaskSummary], total_minutes: u32) -> String {
         let mut result = String::new();
 
         result.push_str(&format!("Project: {project}\n"));
-        result.push_str(&format!(
-            "Total time: {}\n\n",
-            format_duration(total_minutes)
-        ));
+        result.push_str(&format!("{} total\n", format_duration(total_minutes)));
+        result.push('\n');
 
         result.push_str("Tasks:\n");
         for task in tasks {
@@ -76,12 +68,6 @@ impl TextFormatter {
                 task.percentage
             ));
         }
-
-        result.push_str(&format!(
-            "{} -> {}",
-            period.start.0.format("%Y-%m-%d"),
-            period.end.0.format("%Y-%m-%d")
-        ));
 
         result
     }
