@@ -12,6 +12,7 @@ pub enum PeriodRequested {
 }
 
 impl PeriodRequested {
+    #[allow(clippy::missing_panics_doc)]
     pub fn from_str(s: &str, clock: &Clock) -> Result<Self, crate::domain::ParseError> {
         match s {
             "this-week" | "tw" => Ok(Self::ThisWeek(clock.today())),
@@ -31,6 +32,7 @@ impl PeriodRequested {
         }
     }
 
+    #[must_use]
     pub fn date_range(&self) -> DateRange {
         match self {
             Self::ThisWeek(date) | Self::LastWeek(date) => DateRange::week_of(*date),
@@ -38,6 +40,7 @@ impl PeriodRequested {
         }
     }
 
+    #[must_use]
     pub fn period_description(&self) -> RangeDescription {
         match self {
             Self::ThisWeek(date) => RangeDescription::this_week(date.iso_week()),
@@ -49,15 +52,19 @@ impl PeriodRequested {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[allow(clippy::module_name_repetitions)]
 pub struct DateRange(pub StartDate, pub EndDate);
 
 impl DateRange {
+    #[must_use]
     pub fn week_of(date: NaiveDate) -> Self {
-        let monday = date - Duration::days(date.weekday().num_days_from_monday() as i64);
+        let monday = date - Duration::days(i64::from(date.weekday().num_days_from_monday()));
         let sunday = monday + Duration::days(6);
         DateRange(StartDate(monday), EndDate(sunday))
     }
 
+    #[must_use]
+    #[allow(clippy::missing_panics_doc)]
     pub fn month_of(date: NaiveDate) -> Self {
         let first_day = date.with_day(1).unwrap();
         let last_day = first_day
@@ -68,10 +75,12 @@ impl DateRange {
         DateRange(StartDate(first_day), EndDate(last_day))
     }
 
+    #[must_use]
     pub fn matches(&self, date: &EntryDate) -> bool {
         date.0 >= self.0 .0 && date.0 <= self.1 .0
     }
 
+    #[must_use]
     pub fn new_from_date(from_date: StartDate) -> Self {
         let default = DateRange::default();
         DateRange(from_date, default.1)

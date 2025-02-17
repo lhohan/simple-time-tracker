@@ -40,7 +40,7 @@ impl Report {
         }
     }
 
-    pub fn new_project_detail(time_report: TrackedTime, project: &str) -> Self {
+    pub fn new_project_detail(time_report: &TrackedTime, project: &str) -> Self {
         let summarized = summarize_tasks(&time_report.entries);
 
         Report::ProjectDetail {

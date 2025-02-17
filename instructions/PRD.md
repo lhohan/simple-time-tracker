@@ -100,7 +100,8 @@ An entry for a sub-project 'sub-proj' below main project 'proj'. Further nesting
 ## 6. Open Tasks
 
 ### Task 000: Set up CI/CD (Integrated into Phase 1 of Development Roadmap):
-  *  Use nix set-up in CI/CD pipeline
+  * Use nix set-up in CI/CD pipeline
+  * Report and set treshholds for clippy warnings
 
 ### Task 001: Add support for outcomes or goals (Integrated into Phase 2 of Development Roadmap):**
     * Allow users to associate tasks with broader outcomes or goals.
@@ -181,3 +182,5 @@ Why?: To get an overview of finished projects and active projects. To get a sens
 - Projects are defined as: have an end-date.
 
 ### Task 010: Get overview per week of top activitities/projects worked on to get an high-level feel of what I worked on
+
+### Task 011: Log files containing time entries under --verbose flag, useful when entries are read from a directory and need to find where entry was defined
