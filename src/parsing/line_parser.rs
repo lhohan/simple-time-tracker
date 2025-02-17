@@ -1,19 +1,10 @@
 use super::line_part_parser::{parse_part, LinePart};
-use super::model::LineEntry;
+use super::model::EntryLine;
 use crate::domain::{ParseError, TimeEntry};
 use std::collections::VecDeque;
 
-pub(crate) fn parse_entry(line: LineEntry) -> Result<TimeEntry, ParseError> {
-    parse_entry_raw(line.get_str())
-}
-fn parse_entry_raw(line: &str) -> Result<TimeEntry, ParseError> {
-    // TODO: This check could be removed because we check this condition before calling this function. TODO: improve by introducing type?
-    if !line.starts_with("- #") {
-        return Err(ParseError::InvalidLineFormat(line.to_string()));
-    }
-    let line_no_prefix = line
-        .strip_prefix("- ")
-        .ok_or(ParseError::InvalidLineFormat(line.to_string()))?;
+pub(crate) fn parse_entry(line: EntryLine) -> Result<TimeEntry, ParseError> {
+    let line_no_prefix = line.entry();
     let parts = line_no_prefix.split_whitespace();
 
     let mut projects = VecDeque::new();
@@ -36,7 +27,7 @@ fn parse_entry_raw(line: &str) -> Result<TimeEntry, ParseError> {
     }
 
     if !time_found {
-        return Err(ParseError::MissingTime(line.to_string()));
+        return Err(ParseError::MissingTime(line.get_line().to_string()));
     }
 
     if projects.is_empty() {

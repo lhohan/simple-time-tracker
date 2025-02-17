@@ -39,7 +39,7 @@ impl LineType {
             let maybe_date = maybe_date.transpose()?;
             Ok(LineType::Header(maybe_date))
         } else if in_tt_section {
-            LineEntry::new(line).map_or(Ok(LineType::Other), |line| {
+            EntryLine::new(line).map_or(Ok(LineType::Other), |line| {
                 parse_entry(line).map(LineType::Entry)
             })
         } else {
@@ -119,14 +119,14 @@ impl ParseResult {
     }
 }
 
-pub(crate) struct LineEntry<'a>(pub(crate) &'a str);
+pub(crate) struct EntryLine<'a>(pub(crate) &'a str);
 
-impl LineEntry<'_> {
-    pub(crate) fn new(line: &str) -> Option<LineEntry> {
-        if LineEntry::is_line_entry(line) {
-            Some(LineEntry(line))
+impl EntryLine<'_> {
+    pub(crate) fn new(line: &str) -> Result<EntryLine, ParseError> {
+        if EntryLine::is_line_entry(line) {
+            Ok(EntryLine(line))
         } else {
-            None
+            Err(ParseError::InvalidLineFormat(line.to_string()))
         }
     }
 
@@ -134,7 +134,12 @@ impl LineEntry<'_> {
         line.starts_with("- #")
     }
 
-    pub(crate) fn get_str(&self) -> &str {
+    pub(crate) fn get_line(&self) -> &str {
         &self.0
+    }
+
+    // Return the actual content of the line, without the prefix that ids the line is an entry line.
+    pub(crate) fn entry(&self) -> &str {
+        &self.0.strip_prefix("- ").expect("invalid struct state")
     }
 }
