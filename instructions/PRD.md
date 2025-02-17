@@ -114,13 +114,13 @@ An entry for a sub-project 'sub-proj' below main project 'proj'. Further nesting
 #### Design Decisions:
 1. **Time Entry Model**
    - Distinguish between Project-Based and Activity-Based entries
-   - Support multiple tags with left-to-right significance
+   - Support multiple tags without left-to-right significance
    - Maintain flexible context tagging
 
 2. **Tag Relationships**
-   - Primary tag (leftmost) determines entry type
-   - Supporting tags provide context/categorization
    - Project tags use 'prj-' prefix
+   - If no tag starting with 'prj-' is present, the entry type is 'Activity'.
+   - Supporting tags provide context/categorization
 
 3. **Validation Rules**
    - Enforce project naming conventions
@@ -141,7 +141,6 @@ An entry for a sub-project 'sub-proj' below main project 'proj'. Further nesting
 3. [ ] Reporting
    - Implement flexible tag-based querying
    - Add project vs. activity filtering
-   - Support hierarchical time summaries
 
 4. [ ] Testing
    - Unit tests for all tag patterns
