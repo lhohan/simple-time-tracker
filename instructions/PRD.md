@@ -171,5 +171,13 @@ An entry for a sub-project 'sub-proj' below main project 'proj'. Further nesting
 ### Task 007: Add length-of-working days support (Integrated into Phase 2 of Development Roadmap):**
     * Allow users to specify their typical working day length for better efficiency calculations including time spent on misc tasks.
 
-### Task 008: Implement reporting for last week, last month, between dates, etc (Integrated into Section 3.3 Output and Phase 1 & 2 of the Development Roadmap):**
+### Task 008: Implement reporting for between dates, specific months, etc (Integrated into Section 3.3 Output and Phase 1 & 2 of the Development Roadmap):**
     * Implement reporting for specified periods (last week, last month) in addition to daily/weekly/monthly reports and custom date ranges.
+
+### Task 009: Active and finished project support.
+
+Why?: To get an overview of finished projects and active projects. To get a sense of how long projects are running (Could) but mostly listing achievements.
+
+- Projects are defined as: have an end-date.
+
+### Task 010: Get overview per week of top activitities/projects worked on to get an high-level feel of what I worked on
