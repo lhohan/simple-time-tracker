@@ -7,6 +7,9 @@ mod parser;
 mod processor;
 mod time_parser;
 
+#[cfg(test)]
+pub mod test_helpers;
+
 use model::ParseResult;
 pub(crate) use model::{LineType, ParseState, ParsedLine};
 use processor::Processor;

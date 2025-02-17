@@ -70,8 +70,7 @@ fn process_line(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::TimeEntry;
-    use crate::parsing::line_parser::parse_line;
+    use crate::parsing::test_helpers::LineSpec;
 
     mod line_parsing {
         use crate::domain::ParseError;
@@ -213,52 +212,5 @@ mod tests {
 
     fn is_date_header(line: &str) -> bool {
         matches!(LineType::parse(line, true), Ok(LineType::Header(Some(_))))
-    }
-
-    struct LineSpec {
-        line: String,
-    }
-
-    struct LineParsingResult {
-        entry: Result<TimeEntry, ParseError>,
-    }
-
-    impl LineSpec {
-        fn new(line: &str) -> Self {
-            LineSpec {
-                line: line.to_string(),
-            }
-        }
-
-        fn when_parsed(self) -> LineParsingResult {
-            let obtained = parse_line(&self.line);
-            LineParsingResult { entry: obtained }
-        }
-    }
-
-    impl LineParsingResult {
-        fn expect_valid(self) -> TimeEntry {
-            self.entry.expect("Expected time entry but was error")
-        }
-
-        fn expect_invalid_with(self, expected_error: &ParseError) {
-            let error = self.entry.expect_err("Expected error but was valid");
-            assert_eq!(error, *expected_error);
-        }
-    }
-
-    impl TimeEntry {
-        fn expect_minutes(self, expected_minutes: u32) -> TimeEntry {
-            assert_eq!(self.minutes, expected_minutes);
-            self
-        }
-        fn expect_project(self, expected_project: &str) -> TimeEntry {
-            assert_eq!(*self.main_project(), expected_project.to_string());
-            self
-        }
-        fn expect_description(self, expected_description: &str) -> TimeEntry {
-            assert_eq!(self.description, Some(expected_description.to_string()));
-            self
-        }
     }
 }
