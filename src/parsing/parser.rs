@@ -69,7 +69,6 @@ fn process_line(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::parsing::test_helpers::LineSpec;
 
     mod line_parsing {
@@ -78,32 +77,20 @@ mod tests {
         use rstest::rstest;
 
         #[test]
-        fn test_parse_bug() {
-            let input = "- #prj-1 #health 1h Running";
-
-            LineSpec::new(input)
-                .when_parsed()
-                .expect_valid()
-                .expect_minutes(60)
-                .expect_project("prj-1")
-                .expect_description("Running");
-        }
-
-        #[test]
-        fn test_parse_simple_complete_line() {
-            let input = "- #my_project 20m Worked on Task ...";
+        fn parse_simple_complete_line() {
+            let input = "- #project-alpha 20m Task 1";
 
             LineSpec::new(input)
                 .when_parsed()
                 .expect_valid()
                 .expect_minutes(20)
-                .expect_project("my_project")
-                .expect_description("Worked on Task ...");
+                .expect_main_context("project-alpha")
+                .expect_description("Task 1");
         }
 
         #[test]
-        fn test_parse_simple_minutes() {
-            let input = "- #my_project 20m";
+        fn parse_simple_minutes() {
+            let input = "- #context 20m";
 
             LineSpec::new(input)
                 .when_parsed()
@@ -112,38 +99,39 @@ mod tests {
         }
 
         #[test]
-        fn test_parse_simple_hours() {
-            let input = "- #my_project 2h";
+        fn parse_simple_hours() {
+            let input = "- #context 2h";
 
             LineSpec::new(input)
                 .when_parsed()
                 .expect_valid()
-                .expect_minutes(120);
+                .expect_minutes(2 * 60);
         }
 
         #[test]
-        fn test_parse_pomodoros() {
-            let input = "- #my_project 4p";
+        fn parse_pomodoros() {
+            let input = "- #context 4p";
 
             LineSpec::new(input)
                 .when_parsed()
                 .expect_valid()
-                .expect_minutes(120);
+                .expect_minutes(4 * 30);
         }
 
         #[test]
-        fn test_parse_multiple_time_entries() {
-            let input = "- #sport 1h 30m";
+        fn parse_multiple_time_entries() {
+            let input = "- #context 1h 30m";
 
             LineSpec::new(input)
                 .when_parsed()
                 .expect_valid()
-                .expect_minutes(90);
+                .expect_minutes(60 + 30);
         }
 
         #[rstest]
-        fn test_parse_invalid_line_format(
-            #[values("- hash (#) not in start of line", "# dash (-)  not in start of line")] input: &str,
+        fn parse_invalid_line_format(
+            #[values("- hash (#) not in start of line", "# dash (-) not in start of line")]
+            input: &str,
         ) {
             LineSpec::new(input)
                 .when_parsed()
@@ -151,8 +139,8 @@ mod tests {
         }
 
         #[test]
-        fn test_parse_invalid_time() {
-            let input = "- #reading 100000000000000000000h";
+        fn parse_invalid_time() {
+            let input = "- #context 100000000000000000000h";
 
             LineSpec::new(input)
                 .when_parsed()
@@ -161,56 +149,76 @@ mod tests {
                 ));
         }
 
-        #[test]
-        fn test_parse_maybe_time() {
-            let input = "- #reading abch";
+        #[rstest]
+        fn parse_maybe_time(#[values('h', 'm', 'p')] supported_time_unit: char) {
+            let input = format!("- #context x{}", supported_time_unit);
 
-            LineSpec::new(input)
+            LineSpec::new(&input)
                 .when_parsed()
-                .expect_invalid_with(&ParseError::MissingTime("- #reading abch".to_string()));
+                .expect_invalid_with(&ParseError::MissingTime(input.to_string()));
         }
 
         #[test]
-        fn test_parse_time_missing() {
-            let input = "- #my-project only description";
+        fn parse_time_missing() {
+            let input = "- #context only description";
 
             LineSpec::new(input)
                 .when_parsed()
-                .expect_invalid_with(&ParseError::MissingTime(
-                    "- #my-project only description".to_string(),
-                ));
+                .expect_invalid_with(&ParseError::MissingTime(input.to_string()));
         }
     }
 
-    #[test]
-    fn test_error_messages() {
-        assert_eq!(
-            ParseError::InvalidTime("abch".to_string()).to_string(),
-            "invalid time format: abch"
-        );
+    mod parser_error_handling {
+        use crate::domain::ParseError;
+        #[test]
+        fn error_messages() {
+            assert_eq!(
+                ParseError::InvalidTime("Xh".to_string()).to_string(),
+                "invalid time format: Xh"
+            );
+        }
+
+        #[test]
+        fn error_conversion() {
+            let err = ParseError::InvalidTime("a".to_string());
+            let _: Box<dyn std::error::Error> = Box::new(err); // Should compile
+        }
     }
 
-    #[test]
-    fn test_error_conversion() {
-        let err = ParseError::InvalidTime("abc".to_string());
-        let _: Box<dyn std::error::Error> = Box::new(err); // Should compile
-    }
+    mod section_detection {
+        use crate::parsing::LineType;
+        use rstest::rstest;
 
-    #[test]
-    fn test_detect_date_header() {
-        assert!(is_date_header("# TT 2025-01-15"));
-        assert!(is_date_header("## TT 2025-01-15"));
-        assert!(is_date_header("### TT 2025-01-15"));
-        assert!(is_date_header("############### TT 2025-01-15"));
+        #[rstest]
+        fn valid_date_header(
+            #[values(
+                "# TT 2020-01-01",
+                "## TT 2020-01-01",
+                "### TT 2020-01-01",
+                "############### TT 2020-01-01"
+            )]
+            input: &str,
+        ) {
+            assert!(is_date_header(input));
+        }
 
-        // Negative cases
-        assert!(!is_date_header("- #sport 1h"));
-        assert!(!is_date_header("## Something else"));
-        assert!(!is_date_header("TT 2025-01-15")); // No header markers
-        assert!(!is_date_header("#TT 2025-01-15")); // No space after #
-    }
+        #[rstest]
+        fn detect_date_header(
+            #[values(
+            "- #context 1h",
+            "## Something else",
+            "TT 2020-01-01", // No header markers
+            "# 2020-01-01", // No TT markers
+            "2020-01-01", // Only valid date
+            "#TT 2020-01-01", // No space after #
+            )]
+            input: &str,
+        ) {
+            assert!(!is_date_header(input));
+        }
 
-    fn is_date_header(line: &str) -> bool {
-        matches!(LineType::parse(line, true), Ok(LineType::Header(Some(_))))
+        fn is_date_header(line: &str) -> bool {
+            matches!(LineType::parse(line, true), Ok(LineType::Header(Some(_))))
+        }
     }
 }

@@ -98,7 +98,7 @@ fn summarize_entries(entries: &[TimeEntry]) -> Vec<(String, u32)> {
     let mut summary = HashMap::new();
 
     for entry in entries {
-        *summary.entry(entry.main_project().clone()).or_insert(0) += entry.minutes;
+        *summary.entry(entry.main_context().clone()).or_insert(0) += entry.minutes;
     }
 
     summary.into_iter().collect()

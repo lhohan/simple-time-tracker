@@ -23,7 +23,7 @@ impl TimeEntry {
     }
 
     #[must_use]
-    pub fn main_project(&self) -> &String {
+    pub fn main_context(&self) -> &String {
         let tags = &self.projects;
         let maybe_project = tags.iter().find(|t| t.starts_with("prj-"));
         maybe_project.unwrap_or_else(|| &self.projects[0])

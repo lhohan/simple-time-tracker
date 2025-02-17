@@ -40,8 +40,8 @@ impl TimeEntry {
         self
     }
 
-    pub fn expect_project(self, expected_project: &str) -> TimeEntry {
-        assert_eq!(*self.main_project(), expected_project.to_string());
+    pub fn expect_main_context(self, expected_project: &str) -> TimeEntry {
+        assert_eq!(*self.main_context(), expected_project.to_string());
         self
     }
 
