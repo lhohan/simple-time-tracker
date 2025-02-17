@@ -1,7 +1,11 @@
 pub mod filter;
+mod header_parser;
+mod line_parser;
+mod line_part_parser;
 mod model;
 mod parser;
 mod processor;
+mod time_parser;
 
 use model::ParseResult;
 pub(crate) use model::{LineType, ParseState, ParsedLine};

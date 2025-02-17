@@ -1,3 +1,5 @@
+use super::header_parser::maybe_date_from_header;
+use super::line_parser::parse_line;
 use crate::domain::{ParseError, TimeEntry};
 use chrono::NaiveDate;
 use std::collections::HashMap;
@@ -24,6 +26,24 @@ pub(crate) enum LineType {
     Header(Option<NaiveDate>),
     Entry(TimeEntry),
     Other,
+}
+
+impl LineType {
+    pub(crate) fn parse(line: &str, in_tt_section: bool) -> Result<Self, ParseError> {
+        if line.starts_with('#') {
+            let maybe_date = maybe_date_from_header(line);
+            let maybe_date = maybe_date.map(|date_str| {
+                NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
+                    .map_err(|_| ParseError::InvalidDate(date_str.to_string()))
+            });
+            let maybe_date = maybe_date.transpose()?;
+            Ok(LineType::Header(maybe_date))
+        } else if line.starts_with("- #") && in_tt_section {
+            parse_line(line).map(LineType::Entry)
+        } else {
+            Ok(LineType::Other)
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]

@@ -2,9 +2,7 @@ use crate::parsing::filter::Filter;
 use crate::parsing::model::ParseResult;
 
 use crate::domain::dates::EntryDate;
-use crate::domain::{Location, ParseError, TimeEntry};
-use chrono::NaiveDate;
-use std::{collections::VecDeque, str::FromStr};
+use crate::domain::{Location, ParseError};
 
 use super::{LineType, ParseState, ParsedLine};
 
@@ -33,7 +31,7 @@ fn process_line(
     filter: &Option<Filter>,
     file_name: &str,
 ) -> ParseState {
-    match parse_line_type(line.content, state.in_time_tracking_section()) {
+    match LineType::parse(line.content, state.in_time_tracking_section()) {
         Ok(LineType::Header(maybe_date)) => ParseState {
             current_date: maybe_date,
             ..state.clone()
@@ -69,122 +67,11 @@ fn process_line(
     }
 }
 
-fn parse_line_type(line: &str, in_tt_section: bool) -> Result<LineType, ParseError> {
-    if line.starts_with('#') {
-        let maybe_date = maybe_date_from_header(line);
-        let maybe_date = maybe_date.map(|date_str| {
-            NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
-                .map_err(|_| ParseError::InvalidDate(date_str.to_string()))
-        });
-        let maybe_date = maybe_date.transpose()?;
-        Ok(LineType::Header(maybe_date))
-    } else if line.starts_with("- #") && in_tt_section {
-        parse_line(line).map(LineType::Entry)
-    } else {
-        Ok(LineType::Other)
-    }
-}
-
-fn parse_line(line: &str) -> Result<TimeEntry, ParseError> {
-    if !line.starts_with("- #") {
-        // This check could be removed because we check this condition before calling this function. TODO: improve by introducing type?
-        return Err(ParseError::InvalidLineFormat(line.to_string()));
-    }
-    let line_no_prefix = line
-        .strip_prefix("- ")
-        .ok_or(ParseError::InvalidLineFormat(line.to_string()))?;
-    let parts = line_no_prefix.split_whitespace();
-
-    let mut projects = VecDeque::new();
-    let mut minutes = 0;
-    let mut description = Vec::new();
-    let mut time_found = false;
-
-    for part in parts {
-        match parse_part(part) {
-            Ok(LinePart::Time(time)) => {
-                minutes += time;
-                time_found = true;
-            }
-            Ok(LinePart::Project(project_found)) => {
-                projects.push_back(project_found);
-            }
-            Ok(LinePart::DescriptionPart(desc)) => description.push(desc),
-            Err(err) => return Err(err),
-        }
-    }
-
-    if !time_found {
-        return Err(ParseError::MissingTime(line.to_string()));
-    }
-
-    // check if there is at least one project:
-    if projects.is_empty() {
-        return Err(ParseError::InvalidLineFormat("Missing project".to_string()));
-    }
-
-    let description =
-        (!description.is_empty()).then(|| description.into_iter().collect::<Vec<_>>().join(" "));
-    let projects: Vec<String> = projects.into();
-
-    Ok(TimeEntry::new(projects, minutes, description))
-}
-
-fn parse_part(part: &str) -> Result<LinePart, ParseError> {
-    if part.starts_with('#') {
-        let project = LinePart::Project(
-            part.strip_prefix("#")
-                .expect("project should have had '#' prefix")
-                .to_string(),
-        );
-        Ok(project)
-    } else {
-        match parse_time(part) {
-            Ok(Some(minutes)) => Ok(LinePart::Time(minutes)),
-            Ok(None) => Ok(LinePart::DescriptionPart(part)),
-            Err(err) => Err(err),
-        }
-    }
-}
-
-enum LinePart<'a> {
-    Time(u32),
-    Project(String),
-    DescriptionPart(&'a str),
-}
-
-fn parse_time(time: &str) -> Result<Option<u32>, ParseError> {
-    let (value, multiplier) = match time.chars().last() {
-        Some('m') => (time.trim_end_matches('m'), 1),
-        Some('h') => (time.trim_end_matches('h'), 60),
-        Some('p') => (time.trim_end_matches('p'), 30),
-        _ => return Ok(None),
-    };
-
-    match u32::from_str(value) {
-        Ok(val) => Ok(Some(val * multiplier)),
-        Err(e) => match e.kind() {
-            std::num::IntErrorKind::InvalidDigit => Ok(None),
-            _ => Err(ParseError::InvalidTime(time.to_string())),
-        },
-    }
-}
-
-fn maybe_date_from_header(line: &str) -> Option<&str> {
-    let mut words = line.split_whitespace();
-
-    if matches!(words.next(), Some(first) if first.starts_with('#'))
-        && matches!(words.next(), Some("TT"))
-    {
-        words.next()
-    } else {
-        None
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::domain::TimeEntry;
+    use crate::parsing::line_parser::parse_line;
 
     mod line_parsing {
         use crate::domain::ParseError;
@@ -325,7 +212,7 @@ mod tests {
     }
 
     fn is_date_header(line: &str) -> bool {
-        matches!(parse_line_type(line, true), Ok(LineType::Header(Some(_))))
+        matches!(LineType::parse(line, true), Ok(LineType::Header(Some(_))))
     }
 
     struct LineSpec {
