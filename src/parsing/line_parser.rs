@@ -1,8 +1,12 @@
 use super::line_part_parser::{parse_part, LinePart};
+use super::model::LineEntry;
 use crate::domain::{ParseError, TimeEntry};
 use std::collections::VecDeque;
 
-pub(crate) fn parse_line(line: &str) -> Result<TimeEntry, ParseError> {
+pub(crate) fn parse_entry(line: LineEntry) -> Result<TimeEntry, ParseError> {
+    parse_entry_raw(line.get_str())
+}
+fn parse_entry_raw(line: &str) -> Result<TimeEntry, ParseError> {
     // TODO: This check could be removed because we check this condition before calling this function. TODO: improve by introducing type?
     if !line.starts_with("- #") {
         return Err(ParseError::InvalidLineFormat(line.to_string()));

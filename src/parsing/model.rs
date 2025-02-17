@@ -1,5 +1,5 @@
 use super::header_parser::maybe_date_from_header;
-use super::line_parser::parse_line;
+use super::line_parser::parse_entry;
 use crate::domain::{ParseError, TimeEntry};
 use chrono::NaiveDate;
 use std::collections::HashMap;
@@ -38,8 +38,10 @@ impl LineType {
             });
             let maybe_date = maybe_date.transpose()?;
             Ok(LineType::Header(maybe_date))
-        } else if line.starts_with("- #") && in_tt_section {
-            parse_line(line).map(LineType::Entry)
+        } else if in_tt_section {
+            LineEntry::new(line).map_or(Ok(LineType::Other), |line| {
+                parse_entry(line).map(LineType::Entry)
+            })
         } else {
             Ok(LineType::Other)
         }
@@ -114,5 +116,25 @@ impl ParseResult {
             Some(entries) => ParseResult::new(entries, merged_errors),
             None => ParseResult::errors_only(merged_errors),
         }
+    }
+}
+
+pub(crate) struct LineEntry<'a>(pub(crate) &'a str);
+
+impl LineEntry<'_> {
+    pub(crate) fn new(line: &str) -> Option<LineEntry> {
+        if LineEntry::is_line_entry(line) {
+            Some(LineEntry(line))
+        } else {
+            None
+        }
+    }
+
+    fn is_line_entry(line: &str) -> bool {
+        line.starts_with("- #")
+    }
+
+    pub(crate) fn get_str(&self) -> &str {
+        &self.0
     }
 }
