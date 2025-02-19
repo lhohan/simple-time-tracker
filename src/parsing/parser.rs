@@ -71,38 +71,49 @@ fn process_line(
 mod tests {
     use crate::parsing::test_helpers::LineSpec;
 
-    mod line_parsing {
+    // Module to test parsing of a plain string into a TimeEntry.
+    mod line_entry_parsing {
         use crate::domain::ParseError;
         use crate::parsing::parser::tests::LineSpec;
         use rstest::rstest;
 
         #[test]
         fn parse_simple_complete_line() {
-            let input = "- #project-alpha 20m Task 1";
+            let input = "- #project-alpha 10m Task A";
 
-            LineSpec::new(input)
+            LineSpec::line_is(input)
                 .when_parsed()
                 .expect_valid()
-                .expect_minutes(20)
+                .expect_minutes(10)
                 .expect_main_context("project-alpha")
-                .expect_description("Task 1");
+                .expect_description("Task A");
+        }
+
+        #[test]
+        fn parse_task_description_is_optional() {
+            let input = "- #project-alpha 20m";
+
+            LineSpec::line_is(input)
+                .when_parsed()
+                .expect_valid()
+                .expect_no_description();
         }
 
         #[test]
         fn parse_simple_minutes() {
-            let input = "- #context 20m";
+            let input = "- #context 10m";
 
-            LineSpec::new(input)
+            LineSpec::line_is(input)
                 .when_parsed()
                 .expect_valid()
-                .expect_minutes(20);
+                .expect_minutes(10);
         }
 
         #[test]
         fn parse_simple_hours() {
             let input = "- #context 2h";
 
-            LineSpec::new(input)
+            LineSpec::line_is(input)
                 .when_parsed()
                 .expect_valid()
                 .expect_minutes(2 * 60);
@@ -110,22 +121,22 @@ mod tests {
 
         #[test]
         fn parse_pomodoros() {
-            let input = "- #context 4p";
+            let input = "- #context 2p";
 
-            LineSpec::new(input)
+            LineSpec::line_is(input)
                 .when_parsed()
                 .expect_valid()
-                .expect_minutes(4 * 30);
+                .expect_minutes(2 * 30);
         }
 
         #[test]
         fn parse_multiple_time_entries() {
-            let input = "- #context 1h 30m";
+            let input = "- #context 1h 10m 1p";
 
-            LineSpec::new(input)
+            LineSpec::line_is(input)
                 .when_parsed()
                 .expect_valid()
-                .expect_minutes(60 + 30);
+                .expect_minutes(60 + 10 + 30);
         }
 
         #[rstest]
@@ -133,7 +144,7 @@ mod tests {
             #[values("- hash (#) not in start of line", "# dash (-) not in start of line")]
             input: &str,
         ) {
-            LineSpec::new(input)
+            LineSpec::line_is(input)
                 .when_parsed()
                 .expect_invalid_with(&ParseError::InvalidLineFormat(input.to_string()));
         }
@@ -142,7 +153,7 @@ mod tests {
         fn parse_invalid_time() {
             let input = "- #context 100000000000000000000h";
 
-            LineSpec::new(input)
+            LineSpec::line_is(input)
                 .when_parsed()
                 .expect_invalid_with(&ParseError::InvalidTime(
                     "100000000000000000000h".to_string(),
@@ -153,7 +164,7 @@ mod tests {
         fn parse_maybe_time(#[values('h', 'm', 'p')] supported_time_unit: char) {
             let input = format!("- #context x{}", supported_time_unit);
 
-            LineSpec::new(&input)
+            LineSpec::line_is(&input)
                 .when_parsed()
                 .expect_invalid_with(&ParseError::MissingTime(input.to_string()));
         }
@@ -162,7 +173,7 @@ mod tests {
         fn parse_time_missing() {
             let input = "- #context only description";
 
-            LineSpec::new(input)
+            LineSpec::line_is(input)
                 .when_parsed()
                 .expect_invalid_with(&ParseError::MissingTime(input.to_string()));
         }

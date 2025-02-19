@@ -11,7 +11,7 @@ pub struct LineParsingResult {
 }
 
 impl LineSpec {
-    pub fn new(line: &str) -> Self {
+    pub fn line_is(line: &str) -> Self {
         LineSpec {
             line: line.to_string(),
         }
@@ -47,6 +47,11 @@ impl TimeEntry {
 
     pub fn expect_description(self, expected_description: &str) -> TimeEntry {
         assert_eq!(self.description, Some(expected_description.to_string()));
+        self
+    }
+
+    pub fn expect_no_description(self) -> TimeEntry {
+        assert!(self.description.is_none());
         self
     }
 }
