@@ -31,21 +31,31 @@ pub(crate) enum LineType {
 impl LineType {
     pub(crate) fn parse(line: &str, in_tt_section: bool) -> Result<Self, ParseError> {
         if line.starts_with('#') {
-            let maybe_date = maybe_date_from_header(line);
-            let maybe_date = maybe_date.map(|date_str| {
-                NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
-                    .map_err(|_| ParseError::InvalidDate(date_str.to_string()))
-            });
-            let maybe_date = maybe_date.transpose()?;
-            Ok(LineType::Header(maybe_date))
+            try_parse_to_header(line)
         } else if in_tt_section {
-            EntryLine::new(line).map_or(Ok(LineType::Other), |line| {
-                parse_entry(line).map(LineType::Entry)
-            })
+            try_parse_to_entry(line)
         } else {
-            Ok(LineType::Other)
+            other()
         }
     }
+}
+
+fn try_parse_to_header(line: &str) -> Result<LineType, ParseError> {
+    let maybe_date = maybe_date_from_header(line);
+    let maybe_date = maybe_date.map(|date_str| {
+        NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
+            .map_err(|_| ParseError::InvalidDate(date_str.to_string()))
+    });
+    let maybe_date = maybe_date.transpose()?;
+    Ok(LineType::Header(maybe_date))
+}
+
+fn try_parse_to_entry(line: &str) -> Result<LineType, ParseError> {
+    parse_entry(line).map(LineType::Entry)
+}
+
+fn other() -> Result<LineType, ParseError> {
+    Ok(LineType::Other)
 }
 
 #[derive(Debug, PartialEq)]
@@ -116,30 +126,5 @@ impl ParseResult {
             Some(entries) => ParseResult::new(entries, merged_errors),
             None => ParseResult::errors_only(merged_errors),
         }
-    }
-}
-
-pub(crate) struct EntryLine<'a>(pub(crate) &'a str);
-
-impl EntryLine<'_> {
-    pub(crate) fn new(line: &str) -> Result<EntryLine, ParseError> {
-        if EntryLine::is_line_entry(line) {
-            Ok(EntryLine(line))
-        } else {
-            Err(ParseError::InvalidLineFormat(line.to_string()))
-        }
-    }
-
-    fn is_line_entry(line: &str) -> bool {
-        line.starts_with("- #")
-    }
-
-    pub(crate) fn get_line(&self) -> &str {
-        &self.0
-    }
-
-    // Return the actual content of the line, without the prefix that ids the line is an entry line.
-    pub(crate) fn entry(&self) -> &str {
-        &self.0.strip_prefix("- ").expect("invalid struct state")
     }
 }

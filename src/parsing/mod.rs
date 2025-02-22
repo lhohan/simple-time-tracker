@@ -1,7 +1,6 @@
 pub mod filter;
 mod header_parser;
 mod line_parser;
-mod line_part_parser;
 mod model;
 mod parser;
 mod processor;

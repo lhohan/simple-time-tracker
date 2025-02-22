@@ -1,6 +1,6 @@
 use crate::domain::{ParseError, TimeEntry};
 
-use super::{line_parser::parse_entry, model::EntryLine};
+use super::line_parser::parse_entry;
 
 pub struct LineSpec {
     line: String,
@@ -18,7 +18,7 @@ impl LineSpec {
     }
 
     pub fn when_parsed(self) -> LineParsingResult {
-        let entry = EntryLine::new(&self.line).and_then(parse_entry);
+        let entry = parse_entry(&self.line);
         LineParsingResult { entry }
     }
 }
