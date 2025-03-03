@@ -11,7 +11,7 @@ pub struct LineParsingResult {
 }
 
 impl LineSpec {
-    pub fn line_is(line: &str) -> Self {
+    pub fn given_line(line: &str) -> Self {
         LineSpec {
             line: line.to_string(),
         }
