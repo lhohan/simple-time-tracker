@@ -164,6 +164,40 @@ An entry for a sub-project 'sub-proj' below main project 'proj'. Further nesting
     * Extract formatting logic into a separate module.
     * Improve unit testing for edge cases.
     * Consider the builder pattern for Report construction.
+    * Exclude filtering by tags --> see Task 005
+
+### Task 005: Implement tag-based filtering
+
+Specification for an `--exclude-tag` option using a comma-separated list approach:
+
+**Option:** `--exclude-tag`
+
+**Purpose:** Exclude tasks matching specific tags from the result list.
+
+**Syntax:**
+
+```
+--exclude-tag <tag1>,<tag2>,<tag3>,...
+```
+
+*   `<tag1>`, `<tag2>`, `<tag3>`, etc. are the tags to exclude.
+*   Multiple tags should be separated by commas (`,`).
+*   Leading and trailing whitespace around tags will be trimmed.
+
+**Behavior:**
+
+*   Tasks matching *any* of the specified `exclude_tags` will be excluded.
+*   If no tags are provided with the `--exclude-tag` option, no tags will be excluded (the option effectively does nothing).
+*   The filter is case-sensitive. (If you want case-insensitive matching, you'll need to implement that in your filtering logic.)
+* If a tag contains a comma it will be treated as two separate tags.
+
+**Example:**
+
+```
+mytimer --project myproject --exclude-tag urgent,long-running,bug
+```
+
+This command will list only tasks that belong to the project "myproject" and do not contain the tags "urgent", "long-running", or "bug".
 
 ### Task 006: Experiment with tests outputting specs... (Integrated into Phase 2 of Development Roadmap):**
     * Explore the feasibility of tests outputting specifications that can serve as input for LLMs.
