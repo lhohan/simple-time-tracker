@@ -1,5 +1,5 @@
 use super::time_parser::parse_time;
-use crate::domain::{ParseError, TimeEntry};
+use crate::domain::{tags::Tag, ParseError, TimeEntry};
 use std::collections::VecDeque;
 
 pub(crate) fn parse_entry(line: &str) -> Result<TimeEntry, ParseError> {
@@ -47,7 +47,7 @@ fn parse_entry_line(line: EntryLine) -> Result<TimeEntry, ParseError> {
                 minutes += time;
                 time_found = true;
             }
-            Ok(LinePart::Project(project_found)) => {
+            Ok(LinePart::Tag(project_found)) => {
                 projects.push_back(project_found);
             }
             Ok(LinePart::DescriptionPart(desc)) => description.push(desc),
@@ -65,25 +65,24 @@ fn parse_entry_line(line: EntryLine) -> Result<TimeEntry, ParseError> {
 
     let description =
         (!description.is_empty()).then(|| description.into_iter().collect::<Vec<_>>().join(" "));
-    let projects: Vec<String> = projects.into();
+    let projects: Vec<Tag> = projects.into();
 
     Ok(TimeEntry::new(projects, minutes, description))
 }
 
 enum LinePart<'a> {
     Time(u32),
-    Project(String),
+    Tag(Tag),
     DescriptionPart(&'a str),
 }
 
 fn parse_part(part: &str) -> Result<LinePart, ParseError> {
     if part.starts_with('#') {
-        let project = LinePart::Project(
-            part.strip_prefix("#")
-                .expect("project should have had '#' prefix")
-                .to_string(),
-        );
-        Ok(project)
+        let raw_tag = part
+            .strip_prefix("#")
+            .expect("project should have had '#' prefix");
+        let tag = Tag::from_raw(raw_tag);
+        Ok(LinePart::Tag(tag))
     } else {
         match parse_time(part) {
             Ok(Some(minutes)) => Ok(LinePart::Time(minutes)),

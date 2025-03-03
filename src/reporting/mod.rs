@@ -39,15 +39,17 @@ mod tests {
     }
 
     mod helpers {
+        use crate::domain::tags::Tag;
+
         use super::*;
 
         pub(crate) fn create_test_entry(
-            project: &str,
+            tag: &str,
             minutes: u32,
             description: Option<&str>,
         ) -> TimeEntry {
             TimeEntry::new(
-                vec![project.to_string()],
+                vec![Tag::from_raw(tag)],
                 minutes,
                 description.map(String::from),
             )

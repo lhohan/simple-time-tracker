@@ -163,6 +163,34 @@ mod tests {
                     "- #context only description".to_string(),
                 ));
         }
+
+        mod tag_parsing {
+            use super::*;
+
+            #[test]
+            fn parse_line_with_project_prefix_tag() {
+                LineSpec::given_line("- #prj-alpha 1h Task A")
+                    .when_parsed()
+                    .expect_valid()
+                    .expect_main_context("prj-alpha");
+            }
+
+            #[test]
+            fn parse_line_with_project_and_tags() {
+                LineSpec::given_line("- #tag1 #prj-alpha 1h Task A")
+                    .when_parsed()
+                    .expect_valid()
+                    .expect_main_context("prj-alpha");
+            }
+
+            #[test]
+            fn parse_line_with_only_context_tags() {
+                LineSpec::given_line("- #tag1 #tag2 #tag3 1h Task A")
+                    .when_parsed()
+                    .expect_valid()
+                    .expect_main_context("tag1"); // First tag should be used when no project tags
+            }
+        }
     }
 
     mod parser_error_handling {

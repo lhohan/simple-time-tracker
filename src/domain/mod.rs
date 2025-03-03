@@ -1,32 +1,57 @@
 pub mod dates;
 pub mod reports;
+pub mod tags;
 pub mod time;
 
 pub use dates::range::{DateRange, PeriodRequested};
 pub use reports::{RangeDescription, TimeTrackingResult, TrackedTime, TrackingPeriod};
+use tags::Tag;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct TimeEntry {
-    projects: Vec<String>,
+    tags: Vec<Tag>,
     pub minutes: u32,
     pub description: Option<String>,
 }
 
 impl TimeEntry {
     #[must_use]
-    pub fn new(projects: Vec<String>, minutes: u32, description: Option<String>) -> Self {
+    pub fn new(tags: Vec<Tag>, minutes: u32, description: Option<String>) -> Self {
         Self {
-            projects,
+            tags,
             minutes,
             description,
         }
     }
 
     #[must_use]
-    pub fn main_context(&self) -> &String {
-        let tags = &self.projects;
-        let maybe_project = tags.iter().find(|t| t.starts_with("prj-"));
-        maybe_project.unwrap_or_else(|| &self.projects[0])
+    pub fn main_context(&self) -> String {
+        self.tags
+            .iter()
+            .find(|t| t.is_project())
+            .unwrap_or_else(|| &self.tags[0])
+            .raw_value()
+            .to_string()
+    }
+
+    #[must_use]
+    pub fn get_tags(&self) -> &[Tag] {
+        &self.tags
+    }
+
+    #[must_use]
+    pub fn project_tags(&self) -> Vec<&Tag> {
+        self.tags.iter().filter(|t| t.is_project()).collect()
+    }
+
+    #[must_use]
+    pub fn context_tags(&self) -> Vec<&Tag> {
+        self.tags.iter().filter(|t| !t.is_project()).collect()
+    }
+
+    #[must_use]
+    pub fn has_project_tag(&self) -> bool {
+        self.tags.iter().any(|t| t.is_project())
     }
 }
 

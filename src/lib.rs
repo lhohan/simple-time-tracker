@@ -83,7 +83,7 @@ fn create_filter(
 ) -> Option<Filter> {
     let project_filter = match report_type {
         ReportType::Projects => None,
-        ReportType::ProjectDetails(project) => Some(Filter::Project(project.to_string())),
+        ReportType::ProjectDetails(project) => Some(Filter::MainContext(project.to_string())),
     };
     let from_date_filter = from_date.map(|date| Filter::DateRange(DateRange::new_from_date(date)));
     let period_filter = period
