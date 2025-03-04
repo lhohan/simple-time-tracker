@@ -22,6 +22,10 @@ pub struct Args {
     #[arg(long)]
     pub project: Option<String>,
 
+    // Tags exclude filter
+    #[arg(long)]
+    pub exclude_tags: Option<String>,
+
     /// From date filter value
     #[arg(short, long, value_name = "YYYY-MM-DD")]
     pub from: Option<String>,
@@ -49,6 +53,17 @@ impl Args {
                 Ok(Some(StartDate(parsed_date)))
             }
             None => Ok(None),
+        }
+    }
+
+    /// Parses exclude tags from the command line arguments.
+    pub fn exclude_tags(&self) -> Vec<String> {
+        match &self.exclude_tags {
+            Some(tags) => {
+                let parsed_tags = tags.split(',').map(String::from).collect::<Vec<String>>();
+                parsed_tags
+            }
+            None => vec![],
         }
     }
 

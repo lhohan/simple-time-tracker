@@ -133,6 +133,11 @@ impl CommandSpec {
         self
     }
 
+    pub fn with_exclude_tags_filter(mut self, tags: &[&str]) -> Self {
+        self.args.add_option("exclude-tags", &tags.join(","));
+        self
+    }
+
     pub fn with_directory_containing_files(mut self, files: &[(&str, &str)]) -> Self {
         let files = files
             .iter()
@@ -315,6 +320,12 @@ impl CommandResult {
             output: self
                 .output
                 .stdout(predicate::str::contains("Warning:").not()),
+        }
+    }
+
+    pub fn expect_no_text(self, text: &str) -> Self {
+        Self {
+            output: self.output.stdout(predicate::str::contains(text).not()),
         }
     }
 

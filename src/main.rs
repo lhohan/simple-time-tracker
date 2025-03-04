@@ -20,12 +20,14 @@ fn main() -> Result<()> {
         println!("Processing path: {}", args.input.display());
     }
 
+    let exclude_tags = args.exclude_tags();
     let from_date = args.from_date()?;
     let period = args.period(&clock)?;
 
     time_tracker::run(
         &args.input,
         args.project.as_deref().map(String::from),
+        exclude_tags,
         from_date,
         period,
     )

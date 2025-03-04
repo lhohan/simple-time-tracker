@@ -28,13 +28,14 @@ use std::path::Path;
 pub fn run(
     input_path: &Path,
     project_details_selected: Option<String>,
+    exclude_tags: Vec<String>,
     from_date: Option<StartDate>,
     period: Option<PeriodRequested>,
 ) -> Result<(), ParseError> {
     let report_type =
         project_details_selected.map_or(ReportType::Projects, ReportType::ProjectDetails);
 
-    let filter = create_filter(&report_type, from_date, &period);
+    let filter = create_filter(&report_type, &exclude_tags, from_date, &period);
     let tracking_result = parsing::process_input(input_path, &filter)?;
 
     let period_description = period.map(|p| p.period_description());
@@ -78,6 +79,7 @@ fn format_header(period_description: Option<&RangeDescription>) -> String {
 
 fn create_filter(
     report_type: &ReportType,
+    exclude_tags: &Vec<String>,
     from_date: Option<StartDate>,
     period: &Option<PeriodRequested>,
 ) -> Option<Filter> {
@@ -90,10 +92,13 @@ fn create_filter(
         .clone()
         .map(|period| Filter::DateRange(period.date_range()));
 
+    let exclude_tag_filter = Filter::ExcludeTags(exclude_tags.clone());
+
     project_filter
         .into_iter()
         .chain(from_date_filter)
         .chain(period_filter)
+        .chain(Some(exclude_tag_filter))
         .reduce(Filter::combine)
 }
 
