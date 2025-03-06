@@ -430,43 +430,43 @@ fn report_header_format_should_include_date_when_no_period_filter() {
 
 #[rstest]
 fn this_week_report(#[values("this-week", "tw")] this_week_value: &str) {
-    let content = r"## TT 2020-01-15
+    let content = r"## TT 2020-01-01
     - #dev 1h Task1
-    ## TT 2020-01-16
+    ## TT 2020-01-02
     - #dev 2h Task2
     ## TT 2020-01-20
     - #dev 1h Task3";
 
     CommandSpec::new()
         .with_file(content)
-        .at_date("2020-01-15") // Testing as if we're running on Jan 15
+        .at_date("2020-01-01") // Testing as if we're running on Jan 1st
         .with_period(this_week_value)
         .when_run()
         .should_succeed()
-        .expect_output("Week 3, 2020")
+        .expect_output("Week 1, 2020")
         .expect_project("dev")
-        .taking("3h 00m") // Only tasks from Jan 15-16
+        .taking("3h 00m") // Only tasks from Jan 1-2
         .validate();
 }
 
 #[rstest]
-fn last_week_report(#[values("last-week", "lw")] this_week_value: &str) {
-    let content = r"## TT 2020-01-15
+fn last_week_report(#[values("last-week", "lw")] last_week_value: &str) {
+    let content = r"## TT 2020-01-01
     - #dev 1h Task1
-    ## TT 2020-01-16
+    ## TT 2020-01-02
     - #dev 2h Task2
-    ## TT 2020-01-20
+    ## TT 2020-01-08
     - #dev 1h Task3";
 
     CommandSpec::new()
         .with_file(content)
-        .at_date("2020-01-22") // Testing as if we're running on Jan 22
-        .with_period(this_week_value)
+        .at_date("2020-01-08") // Testing as if we're running on Jan 8th
+        .with_period(last_week_value)
         .when_run()
         .should_succeed()
-        .expect_output("Week 3, 2020")
+        .expect_output("Week 1, 2020")
         .expect_project("dev")
-        .taking("3h 00m") // Only tasks from Jan 15-16 (last week)
+        .taking("3h 00m") // Only tasks from Jan 1-2 (last week)
         .validate();
 }
 
@@ -492,7 +492,7 @@ fn last_month_report(#[values("last-month", "lm")] last_month_value: &str) {
 }
 
 #[rstest]
-fn this_month_report(#[values("this-month", "tm")] last_month_value: &str) {
+fn this_month_report(#[values("this-month", "tm")] this_month_value: &str) {
     let content = r"## TT 2020-01-01
     - #dev 1h Task1
     ## TT 2020-01-31
@@ -503,11 +503,11 @@ fn this_month_report(#[values("this-month", "tm")] last_month_value: &str) {
     CommandSpec::new()
         .with_file(content)
         .at_date("2020-01-01")
-        .with_period(last_month_value)
+        .with_period(this_month_value)
         .when_run()
         .should_succeed()
         .expect_output("2020-01")
         .expect_project("dev")
-        .taking("3h 00m") // Only tasks from Jan (last month)
+        .taking("3h 00m") // Only tasks from Jan (this month)
         .validate();
 }
