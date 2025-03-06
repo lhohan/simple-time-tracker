@@ -7,7 +7,7 @@ pub struct LineSpec {
 }
 
 pub struct LineParsingResult {
-    entry: Result<TimeEntry, ParseError>,
+    entry: Result<Option<TimeEntry>, ParseError>,
 }
 
 impl LineSpec {
@@ -24,8 +24,15 @@ impl LineSpec {
 }
 
 impl LineParsingResult {
-    pub fn expect_valid(self) -> TimeEntry {
-        self.entry.expect("Expected time entry but was error")
+    pub fn expect_valid_entry(self) -> TimeEntry {
+        self.entry
+            .expect("Expected time entry but was error")
+            .expect("Expected time entry but was not")
+    }
+
+    pub fn expect_not_an_entry_and_no_error(self) {
+        let maybe_entry = self.entry.expect("Expected no entry but is error");
+        assert_eq!(maybe_entry, None);
     }
 
     pub fn expect_invalid_with(self, expected_error: &ParseError) {

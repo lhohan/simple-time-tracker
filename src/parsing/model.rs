@@ -51,7 +51,11 @@ fn try_parse_to_header(line: &str) -> Result<LineType, ParseError> {
 }
 
 fn try_parse_to_entry(line: &str) -> Result<LineType, ParseError> {
-    parse_entry(line).map(LineType::Entry)
+    match parse_entry(line) {
+        Ok(Some(entry)) => Ok(LineType::Entry(entry)),
+        Ok(None) => other(),
+        Err(err) => Err(err),
+    }
 }
 
 fn other() -> Result<LineType, ParseError> {

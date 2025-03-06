@@ -22,24 +22,50 @@ fn test_basic_time_tracking() {
         .with_file(
             r"
         ## TT 2020-01-01
-        - #sport 30m
-        - #coding 2p
-        - #journaling 20m
-        - #sport 1h
+        - #prj-1 30m
+        - #prj-2  2p
+        - #prj-3  20m
+        - #prj-1  1h
         ",
         )
         .when_run()
         .should_succeed()
-        .expect_project("sport")
+        .expect_project("prj-1")
         .taking("1h 30")
         .with_percentage("53")
-        .expect_project("coding")
+        .expect_project("prj-2")
         .taking("1h 00m")
         .with_percentage("35")
-        .expect_project("journaling")
+        .expect_project("prj-3")
         .taking("0h 20m")
         .with_percentage("12")
-        .validate();
+        .validate()
+        .expect_no_warnings();
+}
+
+#[rstest]
+fn test_non_entries_should_be_ignored(
+    #[values(
+    "", // empty line
+    "    ", // empty line with spaces
+    "some text in a time tracking section", // time tracking section should allow for some text that are not entries
+)]
+    non_entry_input: &str,
+) {
+    let content = format!(
+        r"
+        ## TT 2020-01-01
+        {non_entry_input}
+        - #prj-1 1h
+        {non_entry_input}
+        ",
+    );
+
+    CommandSpec::new()
+        .with_file(&content)
+        .when_run()
+        .should_succeed()
+        .expect_no_warnings();
 }
 
 #[test]

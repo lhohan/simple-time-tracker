@@ -81,7 +81,7 @@ mod tests {
         fn parse_simple_complete_line() {
             LineSpec::given_line("- #project-alpha 10m Task A")
                 .when_parsed()
-                .expect_valid()
+                .expect_valid_entry()
                 .expect_minutes(10)
                 .expect_main_context("project-alpha")
                 .expect_description("Task A");
@@ -91,7 +91,7 @@ mod tests {
         fn parse_task_description_is_optional() {
             LineSpec::given_line("- #project-alpha 20m")
                 .when_parsed()
-                .expect_valid()
+                .expect_valid_entry()
                 .expect_no_description();
         }
 
@@ -99,7 +99,7 @@ mod tests {
         fn parse_simple_minutes() {
             LineSpec::given_line("- #context 10m")
                 .when_parsed()
-                .expect_valid()
+                .expect_valid_entry()
                 .expect_minutes(10);
         }
 
@@ -107,7 +107,7 @@ mod tests {
         fn parse_simple_hours() {
             LineSpec::given_line("- #context 2h")
                 .when_parsed()
-                .expect_valid()
+                .expect_valid_entry()
                 .expect_minutes(2 * 60);
         }
 
@@ -115,7 +115,7 @@ mod tests {
         fn parse_pomodoros() {
             LineSpec::given_line("- #context 2p")
                 .when_parsed()
-                .expect_valid()
+                .expect_valid_entry()
                 .expect_minutes(2 * 30);
         }
 
@@ -123,18 +123,26 @@ mod tests {
         fn parse_multiple_time_entries() {
             LineSpec::given_line("- #context 1h 10m 1p")
                 .when_parsed()
-                .expect_valid()
+                .expect_valid_entry()
                 .expect_minutes(60 + 10 + 30);
         }
 
         #[rstest]
-        fn parse_invalid_line_format(
-            #[values("- hash (#) not in start of line", "# dash (-) not in start of line")]
+        fn parse_non_entries(
+            #[values(
+                "- hash (#) not in start of line",
+                "# dash (-) not in start of line",
+                "", // empty line
+                " ", // whitespace line
+                "some text", // text line
+                "* #not_a_tag", // alternate bullet not considered entry
+                "+ #not_a_tag", // alternate bullet not considered entry
+            )]
             line: &str,
         ) {
             LineSpec::given_line(line)
                 .when_parsed()
-                .expect_invalid_with(&ParseError::InvalidLineFormat(line.to_string()));
+                .expect_not_an_entry_and_no_error();
         }
 
         #[test]
@@ -171,7 +179,7 @@ mod tests {
             fn parse_line_with_project_prefix_tag() {
                 LineSpec::given_line("- #prj-alpha 1h Task A")
                     .when_parsed()
-                    .expect_valid()
+                    .expect_valid_entry()
                     .expect_main_context("prj-alpha");
             }
 
@@ -179,7 +187,7 @@ mod tests {
             fn parse_line_with_project_and_tags() {
                 LineSpec::given_line("- #tag1 #prj-alpha 1h Task A")
                     .when_parsed()
-                    .expect_valid()
+                    .expect_valid_entry()
                     .expect_main_context("prj-alpha");
             }
 
@@ -187,7 +195,7 @@ mod tests {
             fn parse_line_with_only_context_tags() {
                 LineSpec::given_line("- #tag1 #tag2 #tag3 1h Task A")
                     .when_parsed()
-                    .expect_valid()
+                    .expect_valid_entry()
                     .expect_main_context("tag1"); // First tag should be used when no project tags
             }
         }

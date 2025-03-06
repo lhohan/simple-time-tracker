@@ -2,19 +2,22 @@ use super::time_parser::parse_time;
 use crate::domain::{tags::Tag, ParseError, TimeEntry};
 use std::collections::VecDeque;
 
-pub(crate) fn parse_entry(line: &str) -> Result<TimeEntry, ParseError> {
-    let line = EntryLine::parse(line)?;
-    parse_entry_line(line)
+pub(crate) fn parse_entry(line: &str) -> Result<Option<TimeEntry>, ParseError> {
+    let line = EntryLine::parse(line);
+    match line {
+        Some(line) => parse_entry_line(line).map(Some),
+        None => Ok(None),
+    }
 }
 
 struct EntryLine<'a>(pub(crate) &'a str);
 
 impl EntryLine<'_> {
-    pub(crate) fn parse(line: &str) -> Result<EntryLine, ParseError> {
+    pub(crate) fn parse(line: &str) -> Option<EntryLine> {
         if EntryLine::is_line_entry(line) {
-            Ok(EntryLine(line))
+            Some(EntryLine(line))
         } else {
-            Err(ParseError::InvalidLineFormat(line.to_string()))
+            None
         }
     }
 
