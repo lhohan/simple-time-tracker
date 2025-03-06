@@ -8,7 +8,7 @@ fn shows_help_information() {
 }
 
 #[rstest]
-fn test_empties(#[values("", "## TT 2025-01-15")] empty_input: &str) {
+fn test_empties(#[values("", "## TT 2020-01-01")] empty_input: &str) {
     CommandSpec::new()
         .with_file(empty_input.trim())
         .when_run()
@@ -21,7 +21,7 @@ fn test_basic_time_tracking() {
     CommandSpec::new()
         .with_file(
             r"
-        ## TT 2025-01-15
+        ## TT 2020-01-01
         - #sport 30m
         - #coding 2p
         - #journaling 20m
@@ -47,7 +47,7 @@ fn test_verbose_output() {
     CommandSpec::new()
         .with_verbose()
         .with_file(
-            r"## TT 2025-01-15
+            r"## TT 2020-01-01
     - #test 30m",
         )
         .when_run()
@@ -63,7 +63,7 @@ fn should_only_process_entries_in_time_tracking_sections() {
 Some random content
 - #coding 1h
 
-## TT 2025-01-15
+## TT 2020-01-01
 - #sport 1h
 - #coding 2p
 
@@ -95,10 +95,10 @@ fn when_entry_has_error_and_not_in_time_tracking_section_should_not_report_warni
 
 #[test]
 fn test_summary_statistics() {
-    let content = r"## TT 2025-01-15
+    let content = r"## TT 2020-01-01
     - #work 2h
     - #exercise 2h
-    ## TT 2025-01-16
+    ## TT 2020-01-16
     - #work 3h
     - #exercise 1h";
 
@@ -119,7 +119,7 @@ fn test_summary_statistics() {
 
 #[test]
 fn test_project_filter() {
-    let content = r"## TT 2025-01-15
+    let content = r"## TT 2020-01-01
 - #dev #rust 2h implementing filters
 - #dev 1h planning
 - #sport 30m";
@@ -138,7 +138,7 @@ fn test_project_filter() {
 
 #[test]
 fn test_when_project_filter_should_total_task_with_same_name() {
-    let content = r"## TT 2025-01-15
+    let content = r"## TT 2020-01-01
 - #dev 1h My task
 - #dev 1h My task";
 
@@ -153,7 +153,7 @@ fn test_when_project_filter_should_total_task_with_same_name() {
 
 #[test]
 fn test_when_project_filter_should_default_task_description_if_empty() {
-    let content = r"## TT 2025-01-15
+    let content = r"## TT 2020-01-01
 - #dev 2h";
 
     CommandSpec::new()
@@ -168,7 +168,7 @@ fn test_when_project_filter_should_default_task_description_if_empty() {
 
 #[test]
 fn test_when_errors_should_report_warnings() {
-    let content = r"## TT 2025-01-01
+    let content = r"## TT 2020-01-01
 - #dev 1h Task1
 - #dev Task 2 - Forgot to add time";
 
@@ -184,69 +184,69 @@ fn test_when_errors_should_report_warnings() {
 
 #[test]
 fn test_report_should_include_interval_start() {
-    let content = r"## TT 2025-01-01
+    let content = r"## TT 2020-01-01
 - #dev 5h Task1
-## TT 2025-01-02
+## TT 2020-01-02
 - #dev 5h Task2";
 
     CommandSpec::new()
         .with_file(content)
         .when_run()
         .should_succeed()
-        .expect_start_date("2025-01-01");
+        .expect_start_date("2020-01-01");
 }
 
 #[test]
 fn test_report_should_include_interval_end() {
-    let content = r"## TT 2025-01-01
+    let content = r"## TT 2020-01-01
 - #dev 5h Task1
-## TT 2025-01-02
+## TT 2020-01-02
 - #dev 5h Task2";
 
     CommandSpec::new()
         .with_file(content)
         .when_run()
         .should_succeed()
-        .expect_end_date("2025-01-02");
+        .expect_end_date("2020-01-02");
 }
 
 #[test]
 fn test_date_filtering_from_date() {
-    let content = r"## TT 2025-01-01
+    let content = r"## TT 2020-01-01
 - #prj-1 3h Task 1
-## TT 2025-02-01
+## TT 2020-02-01
 - #prj-2 2h Task 2";
 
     CommandSpec::new()
         .with_file(content)
-        .with_from_date_filter("2025-01-02")
+        .with_from_date_filter("2020-01-02")
         .when_run()
         .should_succeed()
-        .expect_start_date("2025-02-01");
+        .expect_start_date("2020-02-01");
 }
 
 #[test]
 fn test_combined_filtering_project_and_from_date() {
-    let content = r"## TT 2025-01-01
+    let content = r"## TT 2020-01-01
 - #prj-1 3h Task 1
-## TT 2025-01-02
+## TT 2020-01-02
 - #prj-1 7h Task 3
 - #prj-2 2h Task 2";
 
     CommandSpec::new()
         .with_file(content)
-        .with_from_date_filter("2025-01-02")
+        .with_from_date_filter("2020-01-02")
         .with_project_filter("prj-1")
         .when_run()
         .should_succeed()
-        .expect_start_date("2025-01-02")
+        .expect_start_date("2020-01-02")
         .expect_output("Project: prj-1")
         .expect_task_with_duration("Task 3", "7h 00m");
 }
 
 #[test]
 fn test_parsing_errors_should_show_line_numbers() {
-    let content = r"## TT 2025-01-01
+    let content = r"## TT 2020-01-01
 - #dev 1h Task1
 - #dev invalid time format
 - #dev 2h Task3";
@@ -284,7 +284,7 @@ fn test_only_warnings_for_sections_with_tt_in() {
 
 #[test]
 fn test_multiple_errors_show_correct_line_numbers() {
-    let content = r"## TT 2025-01-01
+    let content = r"## TT 2020-01-01
 - #dev 1h Task1
 - #dev Task2
 - #dev 2x Task3
@@ -300,7 +300,7 @@ fn test_multiple_errors_show_correct_line_numbers() {
 
 #[test]
 fn test_errors_show_file_name() {
-    let content = r"## TT 2025-01-01
+    let content = r"## TT 2020-01-01
 - #dev 1h Task1
 - #dev missing_time_entry";
 
@@ -316,7 +316,7 @@ fn test_process_directory() {
     CommandSpec::new()
         .with_directory_containing_files(&[
             ("file1.md", "## TT 2024-01-01\n- #prj-1 2h Task1"),
-            ("file2.md", "## TT 2025-01-01\n- #prj-2 1h Task2"),
+            ("file2.md", "## TT 2020-01-01\n- #prj-2 1h Task2"),
         ])
         .when_run()
         .should_succeed()
@@ -331,8 +331,8 @@ fn test_process_directory() {
 fn test_process_directory_with_multiple_files_should_merge_days() {
     CommandSpec::new()
         .with_directory_containing_files(&[
-            ("file1.md", "## TT 2025-01-15\n- #dev 1h Task1"),
-            ("file2.md", "## TT 2025-01-15\n- #dev 2h Task2"), // same day, same project!
+            ("file1.md", "## TT 2020-01-15\n- #dev 1h Task1"),
+            ("file2.md", "## TT 2020-01-15\n- #dev 2h Task2"), // same day, same project!
         ])
         .when_run()
         .should_succeed()
@@ -346,7 +346,7 @@ fn test_process_nested_directories() {
     CommandSpec::new()
         .with_directory_containing_files(&[
             ("2024/jan.md", "## TT 2024-01-01\n- #prj-1 2h Task1"),
-            ("2025/jan.md", "## TT 2025-01-01\n- #prj-1 1h Task2"),
+            ("2025/jan.md", "## TT 2020-01-01\n- #prj-1 1h Task2"),
         ])
         .when_run()
         .should_succeed()
@@ -387,37 +387,37 @@ fn test_directory_processing_with_invalid_files() {
 
 #[test]
 fn report_header_format_should_include_date_when_no_period_filter() {
-    let content = r"## TT 2025-01-15
+    let content = r"## TT 2020-01-15
 - #dev 1h Task1
-## TT 2025-01-16
+## TT 2020-01-16
 - #dev 1h Task1";
 
     CommandSpec::new()
         .with_file(content)
         .when_run()
         .should_succeed()
-        .expect_start_date("2025-01-15")
-        .expect_end_date("2025-01-16")
+        .expect_start_date("2020-01-15")
+        .expect_end_date("2020-01-16")
         // todo?: expect_days(..), etc -> do when more extensive or targeted testing is aimed at this functionality
         .expect_output("2 days, 1.0 h/day,  2h 00m total");
 }
 
 #[rstest]
 fn this_week_report(#[values("this-week", "tw")] this_week_value: &str) {
-    let content = r"## TT 2025-01-15
+    let content = r"## TT 2020-01-15
     - #dev 1h Task1
-    ## TT 2025-01-16
+    ## TT 2020-01-16
     - #dev 2h Task2
-    ## TT 2025-01-20
+    ## TT 2020-01-20
     - #dev 1h Task3";
 
     CommandSpec::new()
         .with_file(content)
-        .at_date("2025-01-15") // Testing as if we're running on Jan 15
+        .at_date("2020-01-15") // Testing as if we're running on Jan 15
         .with_period(this_week_value)
         .when_run()
         .should_succeed()
-        .expect_output("Week 3, 2025")
+        .expect_output("Week 3, 2020")
         .expect_project("dev")
         .taking("3h 00m") // Only tasks from Jan 15-16
         .validate();
@@ -425,20 +425,20 @@ fn this_week_report(#[values("this-week", "tw")] this_week_value: &str) {
 
 #[rstest]
 fn last_week_report(#[values("last-week", "lw")] this_week_value: &str) {
-    let content = r"## TT 2025-01-15
+    let content = r"## TT 2020-01-15
     - #dev 1h Task1
-    ## TT 2025-01-16
+    ## TT 2020-01-16
     - #dev 2h Task2
-    ## TT 2025-01-20
+    ## TT 2020-01-20
     - #dev 1h Task3";
 
     CommandSpec::new()
         .with_file(content)
-        .at_date("2025-01-22") // Testing as if we're running on Jan 22
+        .at_date("2020-01-22") // Testing as if we're running on Jan 22
         .with_period(this_week_value)
         .when_run()
         .should_succeed()
-        .expect_output("Week 3, 2025")
+        .expect_output("Week 3, 2020")
         .expect_project("dev")
         .taking("3h 00m") // Only tasks from Jan 15-16 (last week)
         .validate();
@@ -446,20 +446,20 @@ fn last_week_report(#[values("last-week", "lw")] this_week_value: &str) {
 
 #[rstest]
 fn last_month_report(#[values("last-month", "lm")] last_month_value: &str) {
-    let content = r"## TT 2025-01-01
+    let content = r"## TT 2020-01-01
     - #dev 1h Task1
-    ## TT 2025-01-31
+    ## TT 2020-01-31
     - #dev 2h Task2
-    ## TT 2025-02-01
+    ## TT 2020-02-01
     - #dev 1h Task3";
 
     CommandSpec::new()
         .with_file(content)
-        .at_date("2025-02-01")
+        .at_date("2020-02-01")
         .with_period(last_month_value)
         .when_run()
         .should_succeed()
-        .expect_output("2025-01")
+        .expect_output("2020-01")
         .expect_project("dev")
         .taking("3h 00m") // Only tasks from Jan (last month)
         .validate();
@@ -467,20 +467,20 @@ fn last_month_report(#[values("last-month", "lm")] last_month_value: &str) {
 
 #[rstest]
 fn this_month_report(#[values("this-month", "tm")] last_month_value: &str) {
-    let content = r"## TT 2025-01-01
+    let content = r"## TT 2020-01-01
     - #dev 1h Task1
-    ## TT 2025-01-31
+    ## TT 2020-01-31
     - #dev 2h Task2
-    ## TT 2025-02-01
+    ## TT 2020-02-01
     - #dev 1h Task3";
 
     CommandSpec::new()
         .with_file(content)
-        .at_date("2025-01-01")
+        .at_date("2020-01-01")
         .with_period(last_month_value)
         .when_run()
         .should_succeed()
-        .expect_output("2025-01")
+        .expect_output("2020-01")
         .expect_project("dev")
         .taking("3h 00m") // Only tasks from Jan (last month)
         .validate();
