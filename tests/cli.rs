@@ -427,3 +427,16 @@ fn report_header_format_should_include_date_when_no_period_filter() {
         // todo?: expect_days(..), etc -> do when more extensive or targeted testing is aimed at this functionality
         .expect_output("2 days, 1.0 h/day,  2h 00m total");
 }
+
+#[rstest]
+fn invalid_from(#[values("01-01-2020", "2020-00-01", "2020-01-00", "abc")] value: &str) {
+    CommandSpec::new()
+        .with_file(
+            r"## TT 2020-01-01
+- #dev 1h Task1",
+        )
+        .at_date("2020-01-01")
+        .with_from_date_filter(value)
+        .when_run()
+        .should_fail();
+}
