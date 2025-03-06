@@ -14,6 +14,11 @@ pub struct RangeDescription(String);
 
 impl RangeDescription {
     #[must_use]
+    pub fn today(date: NaiveDate) -> Self {
+        let date_str = format_today(date);
+        RangeDescription(date_str)
+    }
+    #[must_use]
     pub fn this_week(week: IsoWeek) -> Self {
         let week_str = format_week(week);
         RangeDescription(week_str)
@@ -25,18 +30,28 @@ impl RangeDescription {
     }
     #[must_use]
     pub fn last_month(date: NaiveDate) -> Self {
-        RangeDescription(format!("{}", date.format("%Y-%m")))
+        let month_str = format_month(date);
+        RangeDescription(month_str)
     }
     #[must_use]
     pub fn this_month(date: NaiveDate) -> Self {
-        RangeDescription(format!("{}", date.format("%Y-%m")))
+        let month_str = format_month(date);
+        RangeDescription(month_str)
     }
+}
+
+fn format_today(date: NaiveDate) -> String {
+    format!("today ({})", date.format("%Y-%m-%d"))
 }
 
 fn format_week(week: IsoWeek) -> String {
     let week_number = week.week();
     let year = week.year();
     format!("Week {week_number}, {year}")
+}
+
+fn format_month(date: NaiveDate) -> String {
+    format!("{}", date.format("%Y-%m"))
 }
 
 impl std::fmt::Display for RangeDescription {

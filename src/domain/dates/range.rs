@@ -5,6 +5,7 @@ use crate::domain::{time::Clock, RangeDescription};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum PeriodRequested {
+    Today(NaiveDate),
     ThisWeek(NaiveDate),
     LastWeek(NaiveDate),
     ThisMonth(NaiveDate),
@@ -15,6 +16,7 @@ impl PeriodRequested {
     #[allow(clippy::missing_panics_doc)]
     pub fn from_str(s: &str, clock: &Clock) -> Result<Self, crate::domain::ParseError> {
         match s {
+            "today" | "t" => Ok(Self::Today(clock.today())),
             "this-week" | "tw" => Ok(Self::ThisWeek(clock.today())),
             "last-week" | "lw" => Ok(Self::LastWeek(clock.today() - Duration::days(7))),
             "this-month" | "tm" => Ok(Self::ThisMonth(clock.today().with_day(1).unwrap())),
@@ -35,6 +37,7 @@ impl PeriodRequested {
     #[must_use]
     pub fn date_range(&self) -> DateRange {
         match self {
+            Self::Today(date) => DateRange::today(*date),
             Self::ThisWeek(date) | Self::LastWeek(date) => DateRange::week_of(*date),
             Self::ThisMonth(date) | Self::LastMonth(date) => DateRange::month_of(*date),
         }
@@ -43,6 +46,7 @@ impl PeriodRequested {
     #[must_use]
     pub fn period_description(&self) -> RangeDescription {
         match self {
+            Self::Today(date) => RangeDescription::today(*date),
             Self::ThisWeek(date) => RangeDescription::this_week(date.iso_week()),
             Self::LastWeek(date) => RangeDescription::last_week(date.iso_week()),
             Self::ThisMonth(date) => RangeDescription::this_month(*date),
@@ -56,6 +60,11 @@ impl PeriodRequested {
 pub struct DateRange(pub StartDate, pub EndDate);
 
 impl DateRange {
+    #[must_use]
+    pub fn today(date: NaiveDate) -> Self {
+        DateRange(StartDate(date), EndDate(date))
+    }
+
     #[must_use]
     pub fn week_of(date: NaiveDate) -> Self {
         let monday = date - Duration::days(i64::from(date.weekday().num_days_from_monday()));
