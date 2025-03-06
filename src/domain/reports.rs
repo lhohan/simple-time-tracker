@@ -1,7 +1,7 @@
 use super::dates::{EndDate, StartDate};
 use super::{ParseError, TimeEntry};
-use chrono::IsoWeek;
 use chrono::NaiveDate;
+use chrono::{Datelike, IsoWeek};
 
 #[derive(Debug)]
 pub struct TimeTrackingResult {
@@ -18,27 +18,16 @@ impl RangeDescription {
         let date_str = format_today(date);
         RangeDescription(date_str)
     }
+
     #[must_use]
-    pub fn this_week(week: IsoWeek) -> Self {
+    pub fn week_of(date: NaiveDate) -> Self {
+        let week = date.iso_week();
         let week_str = format_week(week);
         RangeDescription(week_str)
-    }
-    #[must_use]
-    pub fn last_week(week: IsoWeek) -> Self {
-        let week_str = format_week(week);
-        RangeDescription(week_str)
-    }
-    #[must_use]
-    pub fn last_month(date: NaiveDate) -> Self {
-        Self::month(date)
-    }
-    #[must_use]
-    pub fn this_month(date: NaiveDate) -> Self {
-        Self::month(date)
     }
 
     #[must_use]
-    pub fn month(date: NaiveDate) -> Self {
+    pub fn month_of(date: NaiveDate) -> Self {
         let month_str = format_month(date);
         RangeDescription(month_str)
     }

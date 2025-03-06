@@ -8,10 +8,7 @@ use crate::domain::{time::Clock, RangeDescription};
 pub enum PeriodRequested {
     Month(NaiveDate),
     Today(NaiveDate),
-    ThisWeek(NaiveDate),
-    LastWeek(NaiveDate),
-    ThisMonth(NaiveDate),
-    LastMonth(NaiveDate),
+    Week(NaiveDate),
 }
 
 impl PeriodRequested {
@@ -19,10 +16,10 @@ impl PeriodRequested {
     pub fn from_str(s: &str, clock: &Clock) -> Result<Self, crate::domain::ParseError> {
         match s {
             "today" | "t" => Ok(Self::Today(clock.today())),
-            "this-week" | "tw" => Ok(Self::ThisWeek(clock.today())),
-            "last-week" | "lw" => Ok(Self::LastWeek(clock.today() - Duration::days(7))),
-            "this-month" | "tm" => Ok(Self::ThisMonth(clock.today().with_day(1).unwrap())),
-            "last-month" | "lm" => Ok(Self::LastMonth(
+            "this-week" | "tw" => Ok(Self::Week(clock.today())),
+            "last-week" | "lw" => Ok(Self::Week(clock.today() - Duration::days(7))),
+            "this-month" | "tm" => Ok(Self::Month(clock.today().with_day(1).unwrap())),
+            "last-month" | "lm" => Ok(Self::Month(
                 clock
                     .today()
                     .with_day(1)
@@ -54,22 +51,18 @@ impl PeriodRequested {
     #[must_use]
     pub fn date_range(&self) -> DateRange {
         match self {
-            Self::Month(date) => DateRange::month_of(*date),
             Self::Today(date) => DateRange::today(*date),
-            Self::ThisWeek(date) | Self::LastWeek(date) => DateRange::week_of(*date),
-            Self::ThisMonth(date) | Self::LastMonth(date) => DateRange::month_of(*date),
+            Self::Week(date) => DateRange::week_of(*date),
+            Self::Month(date) => DateRange::month_of(*date),
         }
     }
 
     #[must_use]
     pub fn period_description(&self) -> RangeDescription {
         match self {
-            Self::Month(date) => RangeDescription::month(*date),
             Self::Today(date) => RangeDescription::today(*date),
-            Self::ThisWeek(date) => RangeDescription::this_week(date.iso_week()),
-            Self::LastWeek(date) => RangeDescription::last_week(date.iso_week()),
-            Self::ThisMonth(date) => RangeDescription::this_month(*date),
-            Self::LastMonth(date) => RangeDescription::last_month(*date),
+            Self::Week(date) => RangeDescription::week_of(*date),
+            Self::Month(date) => RangeDescription::month_of(*date),
         }
     }
 }
