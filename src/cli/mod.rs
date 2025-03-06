@@ -30,7 +30,10 @@ pub struct Args {
     #[arg(short, long, value_name = "YYYY-MM-DD")]
     pub from: Option<String>,
 
-    #[arg(long, value_name = "this-week, next-week, this-month, ...")]
+    #[arg(
+        long,
+        value_name = "this-week, tw, last-week, lw, this-month, tm, last-month, lm"
+    )]
     period: Option<String>,
 }
 
