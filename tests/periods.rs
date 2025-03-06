@@ -189,3 +189,18 @@ fn today_report(
         .taking(expected_duration) // Only tasks of 'today'
         .validate();
 }
+
+#[rstest]
+fn invalid_period(#[values("abc", "month-0", "month-13", "m-0", "month-13")] value: &str) {
+    let content = r"## TT 2020-01-01
+    - #dev 1h Task1";
+
+    let at_date = "2020-01-01";
+
+    CommandSpec::new()
+        .with_file(content)
+        .at_date(at_date)
+        .with_period(value)
+        .when_run()
+        .should_fail();
+}

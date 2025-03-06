@@ -32,7 +32,7 @@ pub struct Args {
 
     #[arg(
         long,
-        value_name = "this-week, tw, last-week, lw, this-month, tm, last-month, lm"
+        value_name = "this-week, tw, last-week, lw, this-month, tm, last-month, lm, month-n,m-n"
     )]
     period: Option<String>,
 }
@@ -76,9 +76,9 @@ impl Args {
     ///
     /// Returns a `ParseError::InvalidPeriod` if the period is not valid.
     pub fn period(&self, clock: &Clock) -> Result<Option<PeriodRequested>, ParseError> {
-        Ok(self
-            .period
-            .as_ref()
-            .and_then(|s| PeriodRequested::from_str(s, clock).ok()))
+        match self.period.as_ref() {
+            Some(period) => PeriodRequested::from_str(period, clock).map(Some),
+            None => Ok(None),
+        }
     }
 }

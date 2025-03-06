@@ -273,6 +273,12 @@ impl CommandResult {
         }
     }
 
+    pub fn should_fail(self) -> Self {
+        Self {
+            output: self.output.failure(),
+        }
+    }
+
     pub fn expect_output(self, expected_output: &str) -> Self {
         let new_output = self
             .output
