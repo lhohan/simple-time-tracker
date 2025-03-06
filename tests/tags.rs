@@ -28,7 +28,7 @@ fn multiple_project_tags_first_takes_precedence() {
 }
 
 #[test]
-fn entries_with_no_project_tag_use_first_context_tag() {
+fn entries_with_no_project_tag_use_first_context_tag_as_main() {
     let content = r#"## TT 2020-01-01
 - #tag1 #tag2 #tag3 1h Task A"#;
 
@@ -57,7 +57,25 @@ fn excluded_tags_are_filtered() {
 }
 
 #[test]
-fn excluded_tags_are_filtered_multiple_tags() {
+fn excluded_tags_are_filtered_multiple_tags_excluded() {
+    let content = r#"## TT 2020-01-01
+- #tag1 1h Task A
+- #tag2 1h Task B
+- #tag3 1h Task C"#;
+
+    CommandSpec::new()
+        .with_file(content)
+        .with_exclude_tags_filter(&["tag2", "tag3"])
+        .when_run()
+        .should_succeed()
+        .expect_no_text("tag2")
+        .expect_no_text("tag3")
+        .expect_project("tag1")
+        .taking("1h")
+        .validate();
+}
+#[test]
+fn excluded_tags_are_filtered_entry_with_multiple_tags() {
     let content = r#"## TT 2020-01-01
 - #tag1 #tag2 1h Task A
 - #tag1 1h Task B"#;
