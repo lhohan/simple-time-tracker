@@ -45,7 +45,77 @@ fn last_week_report(#[values("last-week", "lw")] last_week_value: &str) {
 }
 
 #[rstest]
-fn last_month_report(#[values("last-month", "lm")] last_month_value: &str) {
+fn month_1_report(
+    #[values("month-1", "m-1")] value: &str,
+    #[values(
+        ("2019", "1h 00m", "2019-01"),
+        ("2020", "2h 00m", "2020-01"),
+        ("2021", "8h 00m", "2021-01"),
+    )]
+    data: (&str, &str, &str),
+) {
+    let content = r"## TT 2019-01-01
+    - #dev 1h Task1
+    ## TT 2020-01-01
+    - #dev 2h Task2
+    ## TT 2020-02-01
+    - #dev 4h Task4
+    ## TT 2021-01-01
+    - #dev 8h Task5";
+
+    let at_year = data.0;
+    let at_date = format!("{at_year}-01-01");
+    let expected_taking = data.1;
+    let expected_output = data.2;
+
+    CommandSpec::new()
+        .with_file(content)
+        .at_date(&at_date) // Testing as if we are running in year 'at_year'
+        .with_period(value)
+        .when_run()
+        .should_succeed()
+        .expect_output(&expected_output)
+        .expect_project("dev")
+        .taking(expected_taking)
+        .validate();
+}
+
+#[rstest]
+fn month_2_report(
+    #[values("month-2", "m-2")] value: &str,
+    #[values(
+        ("2019", "1h 00m", "2019-02"),
+        ("2020", "2h 00m", "2020-02"),
+        ("2021", "4h 00m", "2021-02"),
+    )]
+    data: (&str, &str, &str),
+) {
+    let content = r"## TT 2019-02-01
+    - #dev 1h Task1
+    ## TT 2020-02-01
+    - #dev 2h Task2
+    ## TT 2021-02-01
+    - #dev 4h Task3";
+
+    let at_year = data.0;
+    let at_date = format!("{at_year}-01-01");
+    let expected_taking = data.1;
+    let expected_output = data.2;
+
+    CommandSpec::new()
+        .with_file(content)
+        .at_date(&at_date) // Testing as if we are running in year 'at_year'
+        .with_period(value)
+        .when_run()
+        .should_succeed()
+        .expect_output(&expected_output)
+        .expect_project("dev")
+        .taking(expected_taking)
+        .validate();
+}
+
+#[rstest]
+fn last_month_report(#[values("last-month", "lm")] flag_value: &str) {
     let content = r"## TT 2020-01-01
     - #dev 1h Task1
     ## TT 2020-01-31
@@ -56,7 +126,7 @@ fn last_month_report(#[values("last-month", "lm")] last_month_value: &str) {
     CommandSpec::new()
         .with_file(content)
         .at_date("2020-02-01")
-        .with_period(last_month_value)
+        .with_period(flag_value)
         .when_run()
         .should_succeed()
         .expect_output("2020-01")

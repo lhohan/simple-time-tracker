@@ -30,11 +30,15 @@ impl RangeDescription {
     }
     #[must_use]
     pub fn last_month(date: NaiveDate) -> Self {
-        let month_str = format_month(date);
-        RangeDescription(month_str)
+        Self::month(date)
     }
     #[must_use]
     pub fn this_month(date: NaiveDate) -> Self {
+        Self::month(date)
+    }
+
+    #[must_use]
+    pub fn month(date: NaiveDate) -> Self {
         let month_str = format_month(date);
         RangeDescription(month_str)
     }
