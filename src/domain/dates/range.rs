@@ -17,9 +17,6 @@ pub enum PeriodRequested {
 impl PeriodRequested {
     #[allow(clippy::missing_panics_doc)]
     pub fn from_str(s: &str, clock: &Clock) -> Result<Self, crate::domain::ParseError> {
-        // Define a regex to match "month-<number>" or "m-<number>"
-        let month_regex = Regex::new(r"^(month|m)-(\d+)$").unwrap();
-
         match s {
             "today" | "t" => Ok(Self::Today(clock.today())),
             "this-week" | "tw" => Ok(Self::ThisWeek(clock.today())),
@@ -36,13 +33,12 @@ impl PeriodRequested {
                     .unwrap(),
             )),
             _ => {
+                // Regex to match "month-<number>" or "m-<number>"
+                let month_regex = Regex::new(r"^(month|m)-(\d+)$").unwrap();
                 if let Some(month_captures) = month_regex.captures(s) {
-                    // Extract the numeric part of the string
                     if let Some(month_str) = month_captures.get(2) {
                         if let Ok(month) = month_str.as_str().parse::<u32>() {
-                            // Validate that the month is in the range 1–12
                             if (1..=12).contains(&month) {
-                                // Create a new date with the specified month
                                 let date = clock.today().with_month(month).unwrap();
                                 return Ok(Self::Month(date));
                             }
