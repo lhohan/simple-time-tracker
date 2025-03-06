@@ -30,7 +30,7 @@ impl LineParsingResult {
             .expect("Expected time entry but was not")
     }
 
-    pub fn expect_not_an_entry_and_no_error(self) {
+    pub fn expect_not_an_entry_and_not_an_error(self) {
         let maybe_entry = self.entry.expect("Expected no entry but is error");
         assert_eq!(maybe_entry, None);
     }

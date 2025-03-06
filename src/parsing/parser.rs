@@ -142,7 +142,7 @@ mod tests {
         ) {
             LineSpec::given_line(line)
                 .when_parsed()
-                .expect_not_an_entry_and_no_error();
+                .expect_not_an_entry_and_not_an_error();
         }
 
         #[test]
