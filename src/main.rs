@@ -30,6 +30,7 @@ fn main() -> Result<()> {
         exclude_tags,
         from_date,
         period,
+        args.limit,
     )
     .map_err(anyhow::Error::from)?;
     Ok(())

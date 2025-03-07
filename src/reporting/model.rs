@@ -24,17 +24,25 @@ pub enum ReportType {
 }
 
 impl Report {
-    pub fn new_overview(time_report: TrackedTime) -> Self {
+    pub fn new_overview(time_report: TrackedTime, limit: bool) -> Self {
         let summarized = summarize_entries(&time_report.entries);
 
+        let summaries_sorted = summarized
+            .into_iter()
+            .map(|(project, minutes)| {
+                ProjectSummary::new(project, minutes, time_report.total_minutes)
+            })
+            .sorted_by(|a, b| b.minutes.cmp(&a.minutes).then(a.project.cmp(&b.project)));
+
+        let entries = if !limit {
+            summaries_sorted.collect()
+        } else {
+            let total_minutes = time_report.total_minutes as f64;
+            limit_number_of_entries(total_minutes, summaries_sorted)
+        };
+
         Report::Overview {
-            entries: summarized
-                .into_iter()
-                .map(|(project, minutes)| {
-                    ProjectSummary::new(project, minutes, time_report.total_minutes)
-                })
-                .sorted_by(|a, b| b.minutes.cmp(&a.minutes).then(a.project.cmp(&b.project)))
-                .collect(),
+            entries,
             period: time_report.period,
             total_minutes: time_report.total_minutes,
         }
@@ -53,6 +61,24 @@ impl Report {
             total_minutes: time_report.total_minutes,
         }
     }
+}
+
+fn limit_number_of_entries(
+    total_minutes: f64,
+    summaries_sorted: std::vec::IntoIter<ProjectSummary>,
+) -> Vec<ProjectSummary> {
+    let cumulative_percentage_threshold = 90.01;
+    summaries_sorted
+        .scan(0.0, |cumulative_percentage, entry| {
+            let percentage = (entry.minutes as f64 / total_minutes) * 100.0;
+            *cumulative_percentage += percentage;
+            Some((entry, *cumulative_percentage))
+        })
+        .take_while(|(_, cumulative_percentage)| {
+            *cumulative_percentage <= cumulative_percentage_threshold
+        })
+        .map(|(entry, _)| entry)
+        .collect()
 }
 
 #[derive(Debug)]

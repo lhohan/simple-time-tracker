@@ -31,6 +31,7 @@ pub fn run(
     exclude_tags: Vec<String>,
     from_date: Option<StartDate>,
     period: Option<PeriodRequested>,
+    limit: bool,
 ) -> Result<(), ParseError> {
     let report_type =
         project_details_selected.map_or(ReportType::Projects, ReportType::ProjectDetails);
@@ -46,7 +47,7 @@ pub fn run(
         println!("{}", &format_interval(&tracked_interval));
 
         let report = match report_type {
-            ReportType::Projects => Report::new_overview(time_report),
+            ReportType::Projects => Report::new_overview(time_report, limit),
             ReportType::ProjectDetails(project) => {
                 Report::new_project_detail(&time_report, &project)
             }

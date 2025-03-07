@@ -118,6 +118,11 @@ impl CommandSpec {
         self
     }
 
+    pub fn with_limit(mut self) -> Self {
+        self.args.add_flag("limit");
+        self
+    }
+
     pub fn with_period(mut self, period: &str) -> Self {
         self.args.add_option("period", period);
         self

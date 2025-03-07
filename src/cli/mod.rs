@@ -18,6 +18,10 @@ pub struct Args {
     #[arg(short, long)]
     pub verbose: bool,
 
+    /// Limit output
+    #[arg(short, long)]
+    pub limit: bool,
+
     // Project filter flag
     #[arg(long)]
     pub project: Option<String>,
