@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::domain::{TimeEntry, TrackedTime, TrackingPeriod};
+use crate::domain::{reports::OutputLimit, TimeEntry, TrackedTime, TrackingPeriod};
 use itertools::Itertools;
 
 #[derive(Debug)]
@@ -24,7 +24,7 @@ pub enum ReportType {
 }
 
 impl Report {
-    pub fn new_overview(time_report: TrackedTime, limit: bool) -> Self {
+    pub fn new_overview(time_report: TrackedTime, limit: Option<OutputLimit>) -> Self {
         let summarized = summarize_entries(&time_report.entries);
 
         let summaries_sorted = summarized
@@ -34,11 +34,12 @@ impl Report {
             })
             .sorted_by(|a, b| b.minutes.cmp(&a.minutes).then(a.project.cmp(&b.project)));
 
-        let entries = if !limit {
-            summaries_sorted.collect()
-        } else {
-            let total_minutes = time_report.total_minutes as f64;
-            limit_number_of_entries(total_minutes, summaries_sorted)
+        let entries = match limit {
+            Some(OutputLimit::CummalitivePercentageThreshhold(threshold)) => {
+                let total_minutes = time_report.total_minutes as f64;
+                limit_number_of_entries(total_minutes, summaries_sorted, threshold)
+            }
+            None => summaries_sorted.collect(),
         };
 
         Report::Overview {
@@ -66,8 +67,8 @@ impl Report {
 fn limit_number_of_entries(
     total_minutes: f64,
     summaries_sorted: std::vec::IntoIter<ProjectSummary>,
+    cumulative_percentage_threshold: f64,
 ) -> Vec<ProjectSummary> {
-    let cumulative_percentage_threshold = 90.01;
     summaries_sorted
         .scan(0.0, |cumulative_percentage, entry| {
             let percentage = (entry.minutes as f64 / total_minutes) * 100.0;

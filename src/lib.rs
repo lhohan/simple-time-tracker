@@ -4,6 +4,7 @@ mod reporting;
 
 pub mod domain;
 
+use domain::reports::OutputLimit;
 use domain::DateRange;
 use reporting::Report;
 
@@ -31,7 +32,7 @@ pub fn run(
     exclude_tags: Vec<String>,
     from_date: Option<StartDate>,
     period: Option<PeriodRequested>,
-    limit: bool,
+    limit: Option<OutputLimit>,
 ) -> Result<(), ParseError> {
     let report_type =
         project_details_selected.map_or(ReportType::Projects, ReportType::ProjectDetails);

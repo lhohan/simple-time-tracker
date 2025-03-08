@@ -85,3 +85,7 @@ impl TrackedTime {
         }
     }
 }
+
+pub enum OutputLimit {
+    CummalitivePercentageThreshhold(f64),
+}

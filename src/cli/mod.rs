@@ -3,6 +3,7 @@ use clap::Parser;
 use std::path::PathBuf;
 
 use crate::domain::dates::StartDate;
+use crate::domain::reports::OutputLimit;
 use crate::domain::time::Clock;
 use crate::domain::ParseError;
 use crate::domain::PeriodRequested;
@@ -20,7 +21,7 @@ pub struct Args {
 
     /// Limit output
     #[arg(short, long)]
-    pub limit: bool,
+    limit: bool,
 
     // Project filter flag
     #[arg(long)]
@@ -83,6 +84,14 @@ impl Args {
         match self.period.as_ref() {
             Some(period) => PeriodRequested::from_str(period, clock).map(Some),
             None => Ok(None),
+        }
+    }
+
+    pub fn limit(&self) -> Option<OutputLimit> {
+        if self.limit {
+            Some(OutputLimit::CummalitivePercentageThreshhold(90.01))
+        } else {
+            None
         }
     }
 }
