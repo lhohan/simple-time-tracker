@@ -2,6 +2,7 @@ pub mod test_helpers;
 use rstest::rstest;
 use test_helpers::*;
 
+/// Literal period tests.
 #[rstest]
 fn this_week_report(#[values("this-week", "tw")] this_week_value: &str) {
     let content = r"## TT 2020-01-01
@@ -41,76 +42,6 @@ fn last_week_report(#[values("last-week", "lw")] last_week_value: &str) {
         .expect_output("Week 1, 2020")
         .expect_project("dev")
         .taking("3h 00m") // Only tasks from Jan 1-2 (last week)
-        .validate();
-}
-
-#[rstest]
-fn month_1_report(
-    #[values("month-1", "m-1")] value: &str,
-    #[values(
-        ("2019", "1h 00m", "2019-01"),
-        ("2020", "2h 00m", "2020-01"),
-        ("2021", "8h 00m", "2021-01"),
-    )]
-    data: (&str, &str, &str),
-) {
-    let content = r"## TT 2019-01-01
-    - #dev 1h Task1
-    ## TT 2020-01-01
-    - #dev 2h Task2
-    ## TT 2020-02-01
-    - #dev 4h Task4
-    ## TT 2021-01-01
-    - #dev 8h Task5";
-
-    let at_year = data.0;
-    let at_date = format!("{at_year}-01-01");
-    let expected_taking = data.1;
-    let expected_output = data.2;
-
-    CommandSpec::new()
-        .with_file(content)
-        .at_date(&at_date) // Testing as if we are running in year 'at_year'
-        .with_period(value)
-        .when_run()
-        .should_succeed()
-        .expect_output(&expected_output)
-        .expect_project("dev")
-        .taking(expected_taking)
-        .validate();
-}
-
-#[rstest]
-fn month_2_report(
-    #[values("month-2", "m-2")] value: &str,
-    #[values(
-        ("2019", "1h 00m", "2019-02"),
-        ("2020", "2h 00m", "2020-02"),
-        ("2021", "4h 00m", "2021-02"),
-    )]
-    data: (&str, &str, &str),
-) {
-    let content = r"## TT 2019-02-01
-    - #dev 1h Task1
-    ## TT 2020-02-01
-    - #dev 2h Task2
-    ## TT 2021-02-01
-    - #dev 4h Task3";
-
-    let at_year = data.0;
-    let at_date = format!("{at_year}-01-01");
-    let expected_taking = data.1;
-    let expected_output = data.2;
-
-    CommandSpec::new()
-        .with_file(content)
-        .at_date(&at_date) // Testing as if we are running in year 'at_year'
-        .with_period(value)
-        .when_run()
-        .should_succeed()
-        .expect_output(&expected_output)
-        .expect_project("dev")
-        .taking(expected_taking)
         .validate();
 }
 
@@ -175,7 +106,7 @@ fn today_report(
 
     let at_date = at_date_and_expected_duration.0;
 
-    let expected_output = format!("today ({})", at_date);
+    let expected_output = format!("Date ({})", at_date);
     let expected_duration = at_date_and_expected_duration.1;
 
     CommandSpec::new()
@@ -190,6 +121,78 @@ fn today_report(
         .validate();
 }
 
+/// (Semi-/)value period tests.
+#[rstest]
+fn month_1_for_current_year_report(
+    #[values("month-1", "m-1")] value: &str,
+    #[values(
+        ("2019", "1h 00m", "2019-01"),
+        ("2020", "2h 00m", "2020-01"),
+        ("2021", "8h 00m", "2021-01"),
+    )]
+    data: (&str, &str, &str),
+) {
+    let content = r"## TT 2019-01-01
+    - #dev 1h Task1
+    ## TT 2020-01-01
+    - #dev 2h Task2
+    ## TT 2020-02-01
+    - #dev 4h Task4
+    ## TT 2021-01-01
+    - #dev 8h Task5";
+
+    let at_year = data.0;
+    let at_date = format!("{at_year}-01-01");
+    let expected_taking = data.1;
+    let expected_output = data.2;
+
+    CommandSpec::new()
+        .with_file(content)
+        .at_date(&at_date) // Testing as if we are running in year 'at_year'
+        .with_period(value)
+        .when_run()
+        .should_succeed()
+        .expect_output(&expected_output)
+        .expect_project("dev")
+        .taking(expected_taking)
+        .validate();
+}
+
+#[rstest]
+fn month_2_for_current_year_report(
+    #[values("month-2", "m-2")] value: &str,
+    #[values(
+        ("2019", "1h 00m", "2019-02"),
+        ("2020", "2h 00m", "2020-02"),
+        ("2021", "4h 00m", "2021-02"),
+    )]
+    data: (&str, &str, &str),
+) {
+    let content = r"## TT 2019-02-01
+    - #dev 1h Task1
+    ## TT 2020-02-01
+    - #dev 2h Task2
+    ## TT 2021-02-01
+    - #dev 4h Task3";
+
+    let at_year = data.0;
+    let at_date = format!("{at_year}-01-01");
+    let expected_taking = data.1;
+    let expected_output = data.2;
+
+    CommandSpec::new()
+        .with_file(content)
+        .at_date(&at_date) // Testing as if we are running in year 'at_year'
+        .with_period(value)
+        .when_run()
+        .should_succeed()
+        .expect_output(&expected_output)
+        .expect_project("dev")
+        .taking(expected_taking)
+        .validate();
+}
+
+/// Invalid period tests.
 #[rstest]
 fn invalid_period(#[values("abc", "month-0", "month-13", "m-0", "month-13")] value: &str) {
     let content = r"## TT 2020-01-01

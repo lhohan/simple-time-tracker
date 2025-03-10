@@ -2,7 +2,7 @@ use chrono::{Datelike, Duration, NaiveDate};
 use regex::Regex;
 
 use super::{EndDate, EntryDate, StartDate};
-use crate::domain::{time::Clock, RangeDescription};
+use crate::domain::{self, time::Clock, RangeDescription};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum PeriodRequested {
@@ -13,13 +13,22 @@ pub enum PeriodRequested {
 
 impl PeriodRequested {
     #[allow(clippy::missing_panics_doc)]
-    pub fn from_str(s: &str, clock: &Clock) -> Result<Self, crate::domain::ParseError> {
+    pub fn from_str(period_requested: &str, clock: &Clock) -> Result<Self, domain::ParseError> {
+        Self::date_from_literal(period_requested, clock)
+            .or_else(|| Self::date_from_value(period_requested, clock))
+            .ok_or(domain::ParseError::InvalidPeriod(
+                period_requested.to_string(),
+            ))
+    }
+
+    #[must_use]
+    fn date_from_literal(s: &str, clock: &Clock) -> Option<PeriodRequested> {
         match s {
-            "today" | "t" => Ok(Self::Today(clock.today())),
-            "this-week" | "tw" => Ok(Self::Week(clock.today())),
-            "last-week" | "lw" => Ok(Self::Week(clock.today() - Duration::days(7))),
-            "this-month" | "tm" => Ok(Self::Month(clock.today().with_day(1).unwrap())),
-            "last-month" | "lm" => Ok(Self::Month(
+            "today" | "t" => Some(Self::Today(clock.today())),
+            "this-week" | "tw" => Some(Self::Week(clock.today())),
+            "last-week" | "lw" => Some(Self::Week(clock.today() - Duration::days(7))),
+            "this-month" | "tm" => Some(Self::Month(clock.today().with_day(1).unwrap())),
+            "last-month" | "lm" => Some(Self::Month(
                 clock
                     .today()
                     .with_day(1)
@@ -29,29 +38,35 @@ impl PeriodRequested {
                     .with_day(1)
                     .unwrap(),
             )),
-            _ => {
-                // Regex to match "month-<number>" or "m-<number>"
-                let month_regex = Regex::new(r"^(month|m)-(\d+)$").unwrap();
-                if let Some(month_captures) = month_regex.captures(s) {
-                    if let Some(month_str) = month_captures.get(2) {
-                        if let Ok(month) = month_str.as_str().parse::<u32>() {
-                            if (1..=12).contains(&month) {
-                                let date = clock.today().with_month(month).unwrap();
-                                return Ok(Self::Month(date));
-                            }
-                        }
-                    }
-                }
-                // If no match or invalid month, return an error
-                Err(crate::domain::ParseError::InvalidPeriod(s.to_string()))
-            }
+            _ => None,
         }
+    }
+
+    #[must_use]
+    fn date_from_value(s: &str, clock: &Clock) -> Option<PeriodRequested> {
+        Self::try_parse_month(s, clock)
+    }
+
+    #[must_use]
+    fn try_parse_month(s: &str, clock: &Clock) -> Option<PeriodRequested> {
+        let month_regex = Regex::new(r"^(month|m)-(\d+)$").unwrap();
+        month_regex.captures(s).and_then(|captures| {
+            captures.get(2).and_then(|month_str| {
+                month_str.as_str().parse::<u32>().ok().and_then(|month| {
+                    if (1..=12).contains(&month) {
+                        clock.today().with_month(month).map(PeriodRequested::Month)
+                    } else {
+                        None
+                    }
+                })
+            })
+        })
     }
 
     #[must_use]
     pub fn date_range(&self) -> DateRange {
         match self {
-            Self::Today(date) => DateRange::today(*date),
+            Self::Today(date) => DateRange::day(*date),
             Self::Week(date) => DateRange::week_of(*date),
             Self::Month(date) => DateRange::month_of(*date),
         }
@@ -73,7 +88,7 @@ pub struct DateRange(pub StartDate, pub EndDate);
 
 impl DateRange {
     #[must_use]
-    pub fn today(date: NaiveDate) -> Self {
+    pub fn day(date: NaiveDate) -> Self {
         DateRange(StartDate(date), EndDate(date))
     }
 

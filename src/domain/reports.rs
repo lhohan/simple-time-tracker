@@ -34,7 +34,7 @@ impl RangeDescription {
 }
 
 fn format_today(date: NaiveDate) -> String {
-    format!("today ({})", date.format("%Y-%m-%d"))
+    format!("Date ({})", date.format("%Y-%m-%d"))
 }
 
 fn format_week(week: IsoWeek) -> String {
