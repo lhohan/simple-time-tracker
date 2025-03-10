@@ -18,13 +18,13 @@ pub enum Report {
 }
 
 #[derive(Debug)]
-pub enum ReportType {
-    Projects,
+pub enum ReportTypeRequested {
+    Overview,
     ProjectDetails(String),
 }
 
 impl Report {
-    pub fn new_overview(time_report: TrackedTime, limit: Option<OutputLimit>) -> Self {
+    pub fn overview(time_report: &TrackedTime, limit: Option<OutputLimit>) -> Self {
         let summarized = summarize_entries(&time_report.entries);
 
         let summaries_sorted = summarized
@@ -49,7 +49,7 @@ impl Report {
         }
     }
 
-    pub fn new_project_detail(time_report: &TrackedTime, project: &str) -> Self {
+    pub fn project_details(time_report: &TrackedTime, project: &str) -> Self {
         let summarized = summarize_tasks(&time_report.entries);
 
         Report::ProjectDetail {

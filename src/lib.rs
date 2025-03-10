@@ -13,7 +13,7 @@ use crate::domain::ParseError;
 use crate::domain::RangeDescription;
 use crate::domain::{PeriodRequested, TrackingPeriod};
 use crate::parsing::filter::Filter;
-use crate::reporting::ReportType;
+use crate::reporting::ReportTypeRequested;
 use std::path::Path;
 
 /// Run the time tracking report generation
@@ -34,23 +34,54 @@ pub fn run(
     period: Option<PeriodRequested>,
     limit: Option<OutputLimit>,
 ) -> Result<(), ParseError> {
-    let report_type =
-        project_details_selected.map_or(ReportType::Projects, ReportType::ProjectDetails);
+    let report_type = project_details_selected.clone().map_or(
+        ReportTypeRequested::Overview,
+        ReportTypeRequested::ProjectDetails,
+    );
 
-    let filter = create_filter(&report_type, &exclude_tags, from_date, &period);
+    let tracking_result = process_inputs(
+        input_path,
+        project_details_selected,
+        exclude_tags,
+        from_date,
+        &period,
+    )?;
+
+    print_result(period, limit, report_type, &tracking_result);
+    print_warnings(&tracking_result.errors);
+
+    Ok(())
+}
+
+fn process_inputs(
+    input_path: &Path,
+    project_details_selected: Option<String>,
+    exclude_tags: Vec<String>,
+    from_date: Option<StartDate>,
+    period: &Option<PeriodRequested>,
+) -> Result<domain::TimeTrackingResult, ParseError> {
+    let filter = create_filter(&project_details_selected, &exclude_tags, from_date, period);
     let tracking_result = parsing::process_input(input_path, &filter)?;
+    Ok(tracking_result)
+}
 
+fn print_result(
+    period: Option<PeriodRequested>,
+    limit: Option<OutputLimit>,
+    report_type: ReportTypeRequested,
+    tracking_result: &domain::TimeTrackingResult,
+) {
     let period_description = period.map(|p| p.period_description());
     println!("{}", format_header(period_description.as_ref()));
 
-    if let Some(time_report) = tracking_result.time_entries {
+    if let Some(ref time_report) = tracking_result.time_entries {
         let tracked_interval = time_report.period.clone();
         println!("{}", &format_interval(&tracked_interval));
 
         let report = match report_type {
-            ReportType::Projects => Report::new_overview(time_report, limit),
-            ReportType::ProjectDetails(project) => {
-                Report::new_project_detail(&time_report, &project)
+            ReportTypeRequested::Overview => Report::overview(time_report, limit),
+            ReportTypeRequested::ProjectDetails(project) => {
+                Report::project_details(&time_report, &project)
             }
         };
 
@@ -58,14 +89,12 @@ pub fn run(
     } else {
         println!("No data found.");
     }
+}
 
-    // always print warnings
-    tracking_result
-        .errors
+fn print_warnings(parse_errors: &Vec<ParseError>) {
+    parse_errors
         .iter()
         .for_each(|error| println!("Warning: {error}"));
-
-    Ok(())
 }
 
 fn format_header(period_description: Option<&RangeDescription>) -> String {
@@ -80,15 +109,12 @@ fn format_header(period_description: Option<&RangeDescription>) -> String {
 }
 
 fn create_filter(
-    report_type: &ReportType,
+    main_context_requested: &Option<String>,
     exclude_tags: &Vec<String>,
     from_date: Option<StartDate>,
     period: &Option<PeriodRequested>,
 ) -> Option<Filter> {
-    let project_filter = match report_type {
-        ReportType::Projects => None,
-        ReportType::ProjectDetails(project) => Some(Filter::MainContext(project.to_string())),
-    };
+    let project_filter = main_context_requested.clone().map(Filter::MainContext);
     let from_date_filter = from_date.map(|date| Filter::DateRange(DateRange::new_from_date(date)));
     let period_filter = period
         .clone()

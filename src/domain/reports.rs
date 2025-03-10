@@ -53,7 +53,7 @@ impl std::fmt::Display for RangeDescription {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct TrackingPeriod {
     pub(crate) start: StartDate,
     pub(crate) end: EndDate,
