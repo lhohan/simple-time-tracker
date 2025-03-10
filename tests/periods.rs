@@ -227,6 +227,41 @@ fn date_value_speficied(
         .validate();
 }
 
+struct MonthValueSpecified<'a> {
+    month_value: &'a str,
+    expectations: (&'a str, &'a str),
+}
+
+#[rstest]
+fn month_value_speficied(
+    #[values(
+        MonthValueSpecified{month_value: "2020-01", expectations:  ("2020-01", "1h 00m")},
+        MonthValueSpecified{month_value: "2020-02", expectations:  ("2020-02", "2h 00m")}
+    )]
+    test_data: MonthValueSpecified,
+) {
+    let content = r"## TT 2020-01-01
+    - #dev 1h Task1
+    ## TT 2020-02-01
+    - #dev 2h Task2
+    ";
+
+    let date_value = test_data.month_value;
+
+    let expected_output = test_data.expectations.0;
+    let expected_taking = test_data.expectations.1;
+
+    CommandSpec::new()
+        .with_file(content)
+        .with_period(date_value)
+        .when_run()
+        .should_succeed()
+        .expect_output(&expected_output)
+        .expect_project("dev")
+        .taking(expected_taking)
+        .validate();
+}
+
 /// Invalid period tests.
 #[rstest]
 fn invalid_period(#[values("abc", "month-0", "month-13", "m-0", "month-13")] value: &str) {

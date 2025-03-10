@@ -6,8 +6,8 @@ use crate::domain::{self, time::Clock, RangeDescription};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum PeriodRequested {
-    Month(NaiveDate),
     Day(NaiveDate),
+    Month(NaiveDate),
     Week(NaiveDate),
 }
 
@@ -27,24 +27,17 @@ impl PeriodRequested {
             "today" | "t" => Some(Self::Day(clock.today())),
             "this-week" | "tw" => Some(Self::Week(clock.today())),
             "last-week" | "lw" => Some(Self::Week(clock.today() - Duration::days(7))),
-            "this-month" | "tm" => Some(Self::Month(clock.today().with_day(1).unwrap())),
-            "last-month" | "lm" => Some(Self::Month(
-                clock
-                    .today()
-                    .with_day(1)
-                    .unwrap()
-                    .pred_opt()
-                    .unwrap()
-                    .with_day(1)
-                    .unwrap(),
-            )),
+            "this-month" | "tm" => Some(Self::Month(this_month(clock))),
+            "last-month" | "lm" => Some(Self::Month(last_month(clock))),
             _ => None,
         }
     }
 
     #[must_use]
     fn date_from_value(s: &str, clock: &Clock) -> Option<PeriodRequested> {
-        Self::try_parse_month(s, clock).or_else(|| Self::try_parse_date_value(s, clock))
+        Self::try_parse_month(s, clock)
+            .or_else(|| Self::try_parse_date_value(s))
+            .or_else(|| Self::try_parse_month_value(s))
     }
 
     #[must_use]
@@ -64,7 +57,7 @@ impl PeriodRequested {
     }
 
     #[must_use]
-    fn try_parse_date_value(s: &str, _clock: &Clock) -> Option<PeriodRequested> {
+    fn try_parse_date_value(s: &str) -> Option<PeriodRequested> {
         let date_regex = Regex::new(r"^(\d{4})-(\d{2})-(\d{2})$").unwrap();
         if date_regex.is_match(s) {
             match NaiveDate::parse_from_str(s, "%Y-%m-%d") {
@@ -74,6 +67,21 @@ impl PeriodRequested {
         } else {
             None
         }
+    }
+
+    #[must_use]
+    fn try_parse_month_value(s: &str) -> Option<PeriodRequested> {
+        let month_value_regex = Regex::new(r"^(\d{4})-(\d{2})$").unwrap();
+        let month = month_value_regex.captures(s).and_then(|captures| {
+            captures.get(1).and_then(|year_match| {
+                captures.get(2).and_then(|month_match| {
+                    let year = year_match.as_str().parse::<i32>().unwrap();
+                    let month = month_match.as_str().parse::<u32>().unwrap();
+                    NaiveDate::from_ymd_opt(year, month, 1)
+                })
+            })
+        });
+        month.map(PeriodRequested::Month)
     }
 
     #[must_use]
@@ -93,6 +101,21 @@ impl PeriodRequested {
             Self::Month(date) => RangeDescription::month_of(*date),
         }
     }
+}
+
+fn last_month(clock: &Clock) -> NaiveDate {
+    let today = clock.today();
+    let previous_month = today.pred_opt().unwrap();
+    calculate_1st_of_month(previous_month)
+}
+
+fn this_month(clock: &Clock) -> NaiveDate {
+    let today = clock.today();
+    calculate_1st_of_month(today)
+}
+
+fn calculate_1st_of_month(date: NaiveDate) -> NaiveDate {
+    date.with_day(1).unwrap()
 }
 
 #[derive(Debug, Clone, PartialEq)]
