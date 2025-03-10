@@ -31,6 +31,12 @@ impl RangeDescription {
         let month_str = format_month(date);
         RangeDescription(month_str)
     }
+
+    #[must_use]
+    pub fn year_of(date: NaiveDate) -> Self {
+        let year_str = format_year(date);
+        RangeDescription(year_str)
+    }
 }
 
 fn format_day(date: NaiveDate) -> String {
@@ -45,6 +51,10 @@ fn format_week(week: IsoWeek) -> String {
 
 fn format_month(date: NaiveDate) -> String {
     format!("{}", date.format("%Y-%m"))
+}
+
+fn format_year(date: NaiveDate) -> String {
+    format!("{}", date.format("%Y"))
 }
 
 impl std::fmt::Display for RangeDescription {

@@ -262,6 +262,41 @@ fn month_value_speficied(
         .validate();
 }
 
+struct YearValueSpecified<'a> {
+    year_value: &'a str,
+    expectations: (&'a str, &'a str),
+}
+
+#[rstest]
+fn year_value_speficied(
+    #[values(
+        YearValueSpecified{year_value: "2020", expectations:  ("2020", "1h 00m")},
+        YearValueSpecified{year_value: "2021", expectations:  ("2021", "2h 00m")}
+    )]
+    test_data: YearValueSpecified,
+) {
+    let content = r"## TT 2020-01-01
+    - #dev 1h Task1
+    ## TT 2021-01-01
+    - #dev 2h Task2
+    ";
+
+    let date_value = test_data.year_value;
+
+    let expected_output = test_data.expectations.0;
+    let expected_taking = test_data.expectations.1;
+
+    CommandSpec::new()
+        .with_file(content)
+        .with_period(date_value)
+        .when_run()
+        .should_succeed()
+        .expect_output(&expected_output)
+        .expect_project("dev")
+        .taking(expected_taking)
+        .validate();
+}
+
 /// Invalid period tests.
 #[rstest]
 fn invalid_period(#[values("abc", "month-0", "month-13", "m-0", "month-13")] value: &str) {

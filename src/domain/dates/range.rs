@@ -7,8 +7,9 @@ use crate::domain::{self, time::Clock, RangeDescription};
 #[derive(Debug, Clone, PartialEq)]
 pub enum PeriodRequested {
     Day(NaiveDate),
-    Month(NaiveDate),
     Week(NaiveDate),
+    Month(NaiveDate),
+    Year(NaiveDate),
 }
 
 impl PeriodRequested {
@@ -38,6 +39,7 @@ impl PeriodRequested {
         Self::try_parse_month(s, clock)
             .or_else(|| Self::try_parse_date_value(s))
             .or_else(|| Self::try_parse_month_value(s))
+            .or_else(|| Self::try_parse_year_value(s))
     }
 
     #[must_use]
@@ -83,6 +85,17 @@ impl PeriodRequested {
         });
         month.map(PeriodRequested::Month)
     }
+    #[must_use]
+    fn try_parse_year_value(s: &str) -> Option<PeriodRequested> {
+        let year_value_regex = Regex::new(r"^(\d{4})$").unwrap();
+        let year = year_value_regex.captures(s).and_then(|captures| {
+            captures.get(1).and_then(|year_match| {
+                let year = year_match.as_str().parse::<i32>().unwrap();
+                NaiveDate::from_ymd_opt(year, 1, 1)
+            })
+        });
+        year.map(PeriodRequested::Year)
+    }
 
     #[must_use]
     pub fn date_range(&self) -> DateRange {
@@ -90,6 +103,7 @@ impl PeriodRequested {
             Self::Day(date) => DateRange::day(*date),
             Self::Week(date) => DateRange::week_of(*date),
             Self::Month(date) => DateRange::month_of(*date),
+            Self::Year(date) => DateRange::year_of(*date),
         }
     }
 
@@ -99,6 +113,7 @@ impl PeriodRequested {
             Self::Day(date) => RangeDescription::day(*date),
             Self::Week(date) => RangeDescription::week_of(*date),
             Self::Month(date) => RangeDescription::month_of(*date),
+            Self::Year(date) => RangeDescription::year_of(*date),
         }
     }
 }
@@ -153,6 +168,18 @@ impl DateRange {
         let first_day = date.with_day(1).unwrap();
         let last_day = first_day
             .with_month0(date.month0() + 1)
+            .unwrap()
+            .pred_opt()
+            .unwrap();
+        DateRange(StartDate(first_day), EndDate(last_day))
+    }
+
+    #[must_use]
+    #[allow(clippy::missing_panics_doc)]
+    pub fn year_of(date: NaiveDate) -> Self {
+        let first_day = date.with_day(1).unwrap().with_month(1).unwrap();
+        let last_day = first_day
+            .with_year(date.year() + 1)
             .unwrap()
             .pred_opt()
             .unwrap();
