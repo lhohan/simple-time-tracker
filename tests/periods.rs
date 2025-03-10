@@ -106,7 +106,7 @@ fn today_report(
 
     let at_date = at_date_and_expected_duration.0;
 
-    let expected_output = format!("Date ({})", at_date);
+    let expected_output = format!("date {}", at_date);
     let expected_duration = at_date_and_expected_duration.1;
 
     CommandSpec::new()
@@ -184,6 +184,41 @@ fn month_2_for_current_year_report(
         .with_file(content)
         .at_date(&at_date) // Testing as if we are running in year 'at_year'
         .with_period(value)
+        .when_run()
+        .should_succeed()
+        .expect_output(&expected_output)
+        .expect_project("dev")
+        .taking(expected_taking)
+        .validate();
+}
+
+struct DateValueSpecified<'a> {
+    date_value: &'a str,
+    expectations: (&'a str, &'a str),
+}
+
+#[rstest]
+fn date_value_speficied(
+    #[values(
+        DateValueSpecified{date_value: "2020-01-01", expectations:  ("2020-01-01", "1h 00m")},
+        DateValueSpecified{date_value: "2020-01-02", expectations:  ("2020-01-02", "2h 00m")}
+    )]
+    test_data: DateValueSpecified,
+) {
+    let content = r"## TT 2020-01-01
+    - #dev 1h Task1
+    ## TT 2020-01-02
+    - #dev 2h Task2
+    ";
+
+    let date_value = test_data.date_value;
+
+    let expected_output = test_data.expectations.0;
+    let expected_taking = test_data.expectations.1;
+
+    CommandSpec::new()
+        .with_file(content)
+        .with_period(date_value)
         .when_run()
         .should_succeed()
         .expect_output(&expected_output)

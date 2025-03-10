@@ -14,8 +14,8 @@ pub struct RangeDescription(String);
 
 impl RangeDescription {
     #[must_use]
-    pub fn today(date: NaiveDate) -> Self {
-        let date_str = format_today(date);
+    pub fn day(date: NaiveDate) -> Self {
+        let date_str = format_day(date);
         RangeDescription(date_str)
     }
 
@@ -33,8 +33,8 @@ impl RangeDescription {
     }
 }
 
-fn format_today(date: NaiveDate) -> String {
-    format!("Date ({})", date.format("%Y-%m-%d"))
+fn format_day(date: NaiveDate) -> String {
+    format!("date {}", date.format("%Y-%m-%d"))
 }
 
 fn format_week(week: IsoWeek) -> String {

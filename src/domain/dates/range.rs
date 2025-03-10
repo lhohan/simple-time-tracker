@@ -7,7 +7,7 @@ use crate::domain::{self, time::Clock, RangeDescription};
 #[derive(Debug, Clone, PartialEq)]
 pub enum PeriodRequested {
     Month(NaiveDate),
-    Today(NaiveDate),
+    Day(NaiveDate),
     Week(NaiveDate),
 }
 
@@ -24,7 +24,7 @@ impl PeriodRequested {
     #[must_use]
     fn date_from_literal(s: &str, clock: &Clock) -> Option<PeriodRequested> {
         match s {
-            "today" | "t" => Some(Self::Today(clock.today())),
+            "today" | "t" => Some(Self::Day(clock.today())),
             "this-week" | "tw" => Some(Self::Week(clock.today())),
             "last-week" | "lw" => Some(Self::Week(clock.today() - Duration::days(7))),
             "this-month" | "tm" => Some(Self::Month(clock.today().with_day(1).unwrap())),
@@ -44,7 +44,7 @@ impl PeriodRequested {
 
     #[must_use]
     fn date_from_value(s: &str, clock: &Clock) -> Option<PeriodRequested> {
-        Self::try_parse_month(s, clock)
+        Self::try_parse_month(s, clock).or_else(|| Self::try_parse_date_value(s, clock))
     }
 
     #[must_use]
@@ -64,9 +64,22 @@ impl PeriodRequested {
     }
 
     #[must_use]
+    fn try_parse_date_value(s: &str, _clock: &Clock) -> Option<PeriodRequested> {
+        let date_regex = Regex::new(r"^(\d{4})-(\d{2})-(\d{2})$").unwrap();
+        if date_regex.is_match(s) {
+            match NaiveDate::parse_from_str(s, "%Y-%m-%d") {
+                Ok(date) => Some(PeriodRequested::Day(date)),
+                Err(_) => None,
+            }
+        } else {
+            None
+        }
+    }
+
+    #[must_use]
     pub fn date_range(&self) -> DateRange {
         match self {
-            Self::Today(date) => DateRange::day(*date),
+            Self::Day(date) => DateRange::day(*date),
             Self::Week(date) => DateRange::week_of(*date),
             Self::Month(date) => DateRange::month_of(*date),
         }
@@ -75,7 +88,7 @@ impl PeriodRequested {
     #[must_use]
     pub fn period_description(&self) -> RangeDescription {
         match self {
-            Self::Today(date) => RangeDescription::today(*date),
+            Self::Day(date) => RangeDescription::day(*date),
             Self::Week(date) => RangeDescription::week_of(*date),
             Self::Month(date) => RangeDescription::month_of(*date),
         }
