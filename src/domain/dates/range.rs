@@ -24,9 +24,9 @@ impl PeriodRequested {
     #[must_use]
     fn date_from_literal(s: &str, clock: &Clock) -> Option<PeriodRequested> {
         match s {
-            "today" | "t" => Some(Self::Day(clock.today())),
-            "this-week" | "tw" => Some(Self::Week(clock.today())),
-            "last-week" | "lw" => Some(Self::Week(clock.today() - Duration::days(7))),
+            "today" | "t" => Some(Self::Day(today(clock))),
+            "this-week" | "tw" => Some(Self::Week(date_of_this_week(clock))),
+            "last-week" | "lw" => Some(Self::Week(date_of_last_week(clock))),
             "this-month" | "tm" => Some(Self::Month(this_month(clock))),
             "last-month" | "lm" => Some(Self::Month(last_month(clock))),
             _ => None,
@@ -47,7 +47,7 @@ impl PeriodRequested {
             captures.get(2).and_then(|month_str| {
                 month_str.as_str().parse::<u32>().ok().and_then(|month| {
                     if (1..=12).contains(&month) {
-                        clock.today().with_month(month).map(PeriodRequested::Month)
+                        today(clock).with_month(month).map(PeriodRequested::Month)
                     } else {
                         None
                     }
@@ -103,14 +103,26 @@ impl PeriodRequested {
     }
 }
 
+fn today(clock: &Clock) -> NaiveDate {
+    clock.today()
+}
+
+fn date_of_this_week(clock: &Clock) -> NaiveDate {
+    today(clock)
+}
+
+fn date_of_last_week(clock: &Clock) -> NaiveDate {
+    today(clock) - Duration::days(7)
+}
+
 fn last_month(clock: &Clock) -> NaiveDate {
-    let today = clock.today();
+    let today = today(clock);
     let previous_month = today.pred_opt().unwrap();
     calculate_1st_of_month(previous_month)
 }
 
 fn this_month(clock: &Clock) -> NaiveDate {
-    let today = clock.today();
+    let today = today(clock);
     calculate_1st_of_month(today)
 }
 
