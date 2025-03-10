@@ -297,6 +297,42 @@ fn year_value_speficied(
         .validate();
 }
 
+struct WeekValueSpecified<'a> {
+    week_value: &'a str,
+    expectations: (&'a str, &'a str),
+}
+
+#[rstest]
+fn week_value_speficied(
+    #[values(
+        WeekValueSpecified{week_value: "2020-w01", expectations:  ("Week 1", "1h 00m")},
+        WeekValueSpecified{week_value: "2020-w1", expectations:  ("Week 1", "1h 00m")},
+        WeekValueSpecified{week_value: "2020-w02", expectations:  ("Week 2", "2h 00m")}
+    )]
+    test_data: WeekValueSpecified,
+) {
+    let content = r"## TT 2020-01-01
+    - #dev 1h Task1
+    ## TT 2020-01-08
+    - #dev 2h Task2
+    ";
+
+    let period_value = test_data.week_value;
+
+    let expected_output = test_data.expectations.0;
+    let expected_taking = test_data.expectations.1;
+
+    CommandSpec::new()
+        .with_file(content)
+        .with_period(period_value)
+        .when_run()
+        .should_succeed()
+        .expect_output(&expected_output)
+        .expect_project("dev")
+        .taking(expected_taking)
+        .validate();
+}
+
 /// Invalid period tests.
 #[rstest]
 fn invalid_period(#[values("abc", "month-0", "month-13", "m-0", "month-13")] value: &str) {

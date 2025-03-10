@@ -39,6 +39,7 @@ impl PeriodRequested {
         Self::try_parse_month(s, clock)
             .or_else(|| Self::try_parse_date_value(s))
             .or_else(|| Self::try_parse_month_value(s))
+            .or_else(|| Self::try_parse_week_value(s))
             .or_else(|| Self::try_parse_year_value(s))
     }
 
@@ -85,6 +86,42 @@ impl PeriodRequested {
         });
         month.map(PeriodRequested::Month)
     }
+
+    #[must_use]
+    fn try_parse_week_value(s: &str) -> Option<PeriodRequested> {
+        let week_value_regex = Regex::new(r"^(\d{4})-w(\d{1,2})$").unwrap();
+        let week = week_value_regex.captures(s).and_then(|captures| {
+            captures.get(1).and_then(|year_match| {
+                captures.get(2).and_then(|week_match| {
+                    let week = week_match.as_str().parse::<u32>().unwrap();
+                    if (1..=53).contains(&week) {
+                        let year = year_match.as_str().parse::<i32>().unwrap();
+                        Self::get_first_day_of_week(year, week)
+                    } else {
+                        None
+                    }
+                })
+            })
+        });
+        week.map(PeriodRequested::Week)
+    }
+
+    #[must_use]
+    fn get_first_day_of_week(year: i32, week: u32) -> Option<NaiveDate> {
+        if week == 0 || week > 53 {
+            return None;
+        }
+
+        // January 4th is always in the first week of the year according to ISO 8601
+        let jan_4 = NaiveDate::from_ymd_opt(year, 1, 4)?;
+
+        let days_to_monday = jan_4.weekday().num_days_from_monday() as i64;
+        let first_monday = jan_4.checked_sub_signed(chrono::Duration::days(days_to_monday))?;
+
+        let days_to_add = (week - 1) * 7;
+        first_monday.checked_add_signed(chrono::Duration::days(days_to_add as i64))
+    }
+
     #[must_use]
     fn try_parse_year_value(s: &str) -> Option<PeriodRequested> {
         let year_value_regex = Regex::new(r"^(\d{4})$").unwrap();
