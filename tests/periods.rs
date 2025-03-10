@@ -350,7 +350,7 @@ fn invalid_period(
         "2020-00-00",
         "2020-01-32"
     )]
-    value: &str,
+    period_value: &str,
 ) {
     let content = r"## TT 2020-01-01
     - #dev 1h Task1";
@@ -360,7 +360,7 @@ fn invalid_period(
     CommandSpec::new()
         .with_file(content)
         .at_date(at_date)
-        .with_period(value)
+        .with_period(period_value)
         .when_run()
         .should_fail();
 }
