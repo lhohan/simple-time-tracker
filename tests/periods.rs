@@ -335,7 +335,13 @@ fn week_value_speficied(
 
 /// Invalid period tests.
 #[rstest]
-fn invalid_period(#[values("abc", "month-0", "month-13", "m-0", "month-13")] value: &str) {
+fn invalid_period(
+    #[values(
+        "abc", "month-0", "month-13", "m-0", "month-13", "2020-w00", "2020-w54", "2020-00",
+        "2020-13"
+    )]
+    value: &str,
+) {
     let content = r"## TT 2020-01-01
     - #dev 1h Task1";
 
