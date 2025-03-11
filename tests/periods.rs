@@ -18,7 +18,7 @@ fn this_week_report(#[values("this-week", "tw")] period_value: &str) {
         .with_period(period_value)
         .when_run()
         .should_succeed()
-        .expect_output("Week 1, 2020")
+        .expect_output("week 1, 2020")
         .expect_project("dev")
         .taking("3h 00m") // Only tasks from Jan 1-2
         .validate();
@@ -39,7 +39,7 @@ fn last_week_report(#[values("last-week", "lw")] period_value: &str) {
         .with_period(period_value)
         .when_run()
         .should_succeed()
-        .expect_output("Week 1, 2020")
+        .expect_output("week 1, 2020")
         .expect_project("dev")
         .taking("3h 00m") // Only tasks from Jan 1-2 (last week)
         .validate();
@@ -305,9 +305,9 @@ struct WeekValueSpecified<'a> {
 #[rstest]
 fn week_value_speficied(
     #[values(
-        WeekValueSpecified{week_value: "2020-w01", expectations:  ("Week 1", "1h 00m")},
-        WeekValueSpecified{week_value: "2020-w1", expectations:  ("Week 1", "1h 00m")},
-        WeekValueSpecified{week_value: "2020-w02", expectations:  ("Week 2", "2h 00m")}
+        WeekValueSpecified{week_value: "2020-w01", expectations:  ("week 1", "1h 00m")},
+        WeekValueSpecified{week_value: "2020-w1", expectations:  ("week 1", "1h 00m")},
+        WeekValueSpecified{week_value: "2020-w02", expectations:  ("week 2", "2h 00m")}
     )]
     test_data: WeekValueSpecified,
 ) {

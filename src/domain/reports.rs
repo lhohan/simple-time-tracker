@@ -46,7 +46,7 @@ fn format_day(date: NaiveDate) -> String {
 fn format_week(week: IsoWeek) -> String {
     let week_number = week.week();
     let year = week.year();
-    format!("Week {week_number}, {year}")
+    format!("week {week_number}, {year}")
 }
 
 fn format_month(date: NaiveDate) -> String {
