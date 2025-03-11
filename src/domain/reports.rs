@@ -40,7 +40,7 @@ impl RangeDescription {
 }
 
 fn format_day(date: NaiveDate) -> String {
-    format!("date {}", date.format("%Y-%m-%d"))
+    format!("{}", date.format("%Y-%m-%d"))
 }
 
 fn format_week(week: IsoWeek) -> String {
