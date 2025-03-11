@@ -164,7 +164,7 @@ fn date_of_this_week(clock: &Clock) -> NaiveDate {
 }
 
 fn date_of_last_week(clock: &Clock) -> NaiveDate {
-    today(clock) - Duration::days(7)
+    date_of_this_week(clock) - Duration::days(7)
 }
 
 fn last_month(clock: &Clock) -> NaiveDate {
