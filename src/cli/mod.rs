@@ -7,6 +7,7 @@ use crate::domain::reports::OutputLimit;
 use crate::domain::time::Clock;
 use crate::domain::ParseError;
 use crate::domain::PeriodRequested;
+use crate::reporting::format::Formatter;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about = "Simple time tracking from markdown files")]
@@ -40,6 +41,10 @@ pub struct Args {
         value_name = "this-week, tw, last-week, lw, this-month, tm, last-month, lm, month-n,m-n"
     )]
     period: Option<String>,
+
+    /// Format of the output
+    #[arg(long, value_name = "text, markdown", default_value = "text")]
+    pub format: Option<String>,
 }
 
 impl Args {
@@ -87,11 +92,17 @@ impl Args {
         }
     }
 
+    #[must_use]
     pub fn limit(&self) -> Option<OutputLimit> {
         if self.limit {
             Some(OutputLimit::CummalitivePercentageThreshhold(90.01))
         } else {
             None
         }
+    }
+
+    #[must_use]
+    pub fn formatter(&self) -> Box<dyn Formatter> {
+        <dyn Formatter>::from_str(&self.format)
     }
 }

@@ -23,6 +23,7 @@ fn main() -> Result<()> {
     let exclude_tags = args.exclude_tags();
     let from_date = args.from_date()?;
     let period = args.period(&clock)?;
+    let formatter = args.formatter();
 
     time_tracker::run(
         &args.input,
@@ -31,6 +32,7 @@ fn main() -> Result<()> {
         from_date,
         period,
         args.limit(),
+        formatter,
     )
     .map_err(anyhow::Error::from)?;
     Ok(())

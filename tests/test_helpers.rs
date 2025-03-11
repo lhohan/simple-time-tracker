@@ -143,6 +143,11 @@ impl CommandSpec {
         self
     }
 
+    pub fn with_format(mut self, format: &str) -> Self {
+        self.args.add_option("format", format);
+        self
+    }
+
     pub fn with_directory_containing_files(mut self, files: &[(&str, &str)]) -> Self {
         let files = files
             .iter()

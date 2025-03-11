@@ -13,6 +13,7 @@ use crate::domain::ParseError;
 use crate::domain::RangeDescription;
 use crate::domain::{PeriodRequested, TrackingPeriod};
 use crate::parsing::filter::Filter;
+use crate::reporting::format::Formatter;
 use crate::reporting::ReportTypeRequested;
 use std::path::Path;
 
@@ -33,6 +34,7 @@ pub fn run(
     from_date: Option<StartDate>,
     period: Option<PeriodRequested>,
     limit: Option<OutputLimit>,
+    formatter: Box<dyn Formatter>,
 ) -> Result<(), ParseError> {
     let report_type = project_details_selected.clone().map_or(
         ReportTypeRequested::Overview,
@@ -47,7 +49,7 @@ pub fn run(
         &period,
     )?;
 
-    print_result(period, limit, report_type, &tracking_result);
+    print_result(period, limit, report_type, &tracking_result, formatter);
     print_warnings(&tracking_result.errors);
 
     Ok(())
@@ -70,6 +72,7 @@ fn print_result(
     limit: Option<OutputLimit>,
     report_type: ReportTypeRequested,
     tracking_result: &domain::TimeTrackingResult,
+    formatter: Box<dyn Formatter>,
 ) {
     let period_description = period.map(|p| p.period_description());
     println!("{}", format_header(period_description.as_ref()));
@@ -85,7 +88,7 @@ fn print_result(
             }
         };
 
-        println!("{report}");
+        println!("{}", formatter.format(&report));
     } else {
         println!("No data found.");
     }

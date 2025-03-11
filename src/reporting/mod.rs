@@ -1,4 +1,4 @@
-mod format;
+pub mod format;
 mod model;
 pub use crate::reporting::model::Report;
 pub use crate::reporting::model::ReportTypeRequested;

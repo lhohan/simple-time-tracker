@@ -1,12 +1,13 @@
 use crate::domain::TrackingPeriod;
 
+use crate::reporting::format::format_duration;
+use crate::reporting::format::Formatter;
 use crate::reporting::model::{ProjectSummary, Report, TaskSummary};
-use std::fmt;
 
 pub struct TextFormatter;
 
-impl TextFormatter {
-    pub fn format(report: &Report) -> String {
+impl Formatter for TextFormatter {
+    fn format(&self, report: &Report) -> String {
         match report {
             Report::Overview {
                 entries,
@@ -20,7 +21,9 @@ impl TextFormatter {
             } => Self::format_project_detail(project, tasks, *total_minutes),
         }
     }
+}
 
+impl TextFormatter {
     fn format_overview(
         entries: &[ProjectSummary],
         period: &TrackingPeriod,
@@ -73,22 +76,10 @@ impl TextFormatter {
     }
 }
 
-impl fmt::Display for Report {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", TextFormatter::format(self))
-    }
-}
-
 fn format_padded_description(desc: &str) -> String {
     format!(
         "{}..{}",
         desc,
         ".".repeat(20_usize.saturating_sub(desc.len()))
     )
-}
-
-pub(crate) fn format_duration(minutes: u32) -> String {
-    let hours = minutes / 60;
-    let remaining_minutes = minutes % 60;
-    format!("{hours:2}h {remaining_minutes:02}m")
 }
