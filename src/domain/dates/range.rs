@@ -7,9 +7,9 @@ use crate::domain::{self, time::Clock, RangeDescription};
 #[derive(Debug, Clone, PartialEq)]
 pub enum PeriodRequested {
     Day(NaiveDate),
-    Week(NaiveDate),
-    Month(NaiveDate),
-    Year(NaiveDate),
+    WeekOf(NaiveDate),
+    MonthOf(NaiveDate),
+    YearOf(NaiveDate),
 }
 
 impl PeriodRequested {
@@ -26,10 +26,10 @@ impl PeriodRequested {
     fn date_from_literal(s: &str, clock: &Clock) -> Option<PeriodRequested> {
         match s {
             "today" | "t" => Some(Self::Day(today(clock))),
-            "this-week" | "tw" => Some(Self::Week(date_of_this_week(clock))),
-            "last-week" | "lw" => Some(Self::Week(date_of_last_week(clock))),
-            "this-month" | "tm" => Some(Self::Month(this_month(clock))),
-            "last-month" | "lm" => Some(Self::Month(last_month(clock))),
+            "this-week" | "tw" => Some(Self::WeekOf(date_of_this_week(clock))),
+            "last-week" | "lw" => Some(Self::WeekOf(date_of_last_week(clock))),
+            "this-month" | "tm" => Some(Self::MonthOf(this_month(clock))),
+            "last-month" | "lm" => Some(Self::MonthOf(last_month(clock))),
             _ => None,
         }
     }
@@ -50,7 +50,7 @@ impl PeriodRequested {
             captures.get(2).and_then(|month_str| {
                 month_str.as_str().parse::<u32>().ok().and_then(|month| {
                     if (1..=12).contains(&month) {
-                        today(clock).with_month(month).map(PeriodRequested::Month)
+                        today(clock).with_month(month).map(PeriodRequested::MonthOf)
                     } else {
                         None
                     }
@@ -84,7 +84,7 @@ impl PeriodRequested {
                 })
             })
         });
-        month.map(PeriodRequested::Month)
+        month.map(PeriodRequested::MonthOf)
     }
 
     #[must_use]
@@ -103,7 +103,7 @@ impl PeriodRequested {
                 })
             })
         });
-        week.map(PeriodRequested::Week)
+        week.map(PeriodRequested::WeekOf)
     }
 
     #[must_use]
@@ -131,16 +131,16 @@ impl PeriodRequested {
                 NaiveDate::from_ymd_opt(year, 1, 1)
             })
         });
-        year.map(PeriodRequested::Year)
+        year.map(PeriodRequested::YearOf)
     }
 
     #[must_use]
     pub fn date_range(&self) -> DateRange {
         match self {
             Self::Day(date) => DateRange::day(*date),
-            Self::Week(date) => DateRange::week_of(*date),
-            Self::Month(date) => DateRange::month_of(*date),
-            Self::Year(date) => DateRange::year_of(*date),
+            Self::WeekOf(date) => DateRange::week_of(*date),
+            Self::MonthOf(date) => DateRange::month_of(*date),
+            Self::YearOf(date) => DateRange::year_of(*date),
         }
     }
 
@@ -148,9 +148,9 @@ impl PeriodRequested {
     pub fn period_description(&self) -> RangeDescription {
         match self {
             Self::Day(date) => RangeDescription::day(*date),
-            Self::Week(date) => RangeDescription::week_of(*date),
-            Self::Month(date) => RangeDescription::month_of(*date),
-            Self::Year(date) => RangeDescription::year_of(*date),
+            Self::WeekOf(date) => RangeDescription::week_of(*date),
+            Self::MonthOf(date) => RangeDescription::month_of(*date),
+            Self::YearOf(date) => RangeDescription::year_of(*date),
         }
     }
 }
