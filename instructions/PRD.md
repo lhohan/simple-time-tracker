@@ -2,13 +2,12 @@
 
 ## 1. Introduction
 
-This document outlines the requirements and development plan for a simple, text-based time-tracking application. The application will analyze markdown files to track time spent on various projects and generate reports. The target audience is individuals seeking a straightforward method for time tracking and reporting.  The primary goal is to provide accurate and flexible time-tracking capabilities with minimal user overhead.
+This document outlines the requirements and development plan for a simple, text-based time-tracking application. The application will analyze markdown files to track time spent on various projects or contexts and generate reports. The target audience is individuals seeking a straightforward method for time tracking and reporting.  The primary goal is to provide accurate and flexible time-tracking capabilities with minimal user overhead.
 
 
 ## 2. Product Overview
 
-This application reads markdown files, parses time entries associated with project identifiers, and generates reports summarizing time allocations across different projects and time periods.  It prioritizes a command-line interface (CLI) for initial usage, with a potential web interface as a future enhancement.
-
+This application reads markdown files, parses time entries associated with project or activity identifiers or tags, and generates reports summarizing time allocations across different projects and time periods.  It prioritizes a command-line interface (CLI) for initial usage, with a potential web interface as a future enhancement.
 
 ## 3. Features
 
@@ -154,8 +153,8 @@ An entry for a sub-project 'sub-proj' below main project 'proj'. Further nesting
 - Maintains backward compatibility with existing logs
 
 
-### Task 003: Support extended and full-day entries (Integrated into Phase 2 of Development Roadmap):**
-    * Implement support for specifying full or extended day entries for projects.
+### Task 003: Support extended-day entries (Integrated into Phase 2 of Development Roadmap):**
+    * Implement support for specifying extended day entries for projects.
 
 ### Task 004: Areas for improvement after project filtering (Integrated into Phase 2 of Development Roadmap):**
     * Enhance support for sub-projects (#dev #rust) in filtering.
@@ -166,47 +165,18 @@ An entry for a sub-project 'sub-proj' below main project 'proj'. Further nesting
     * Consider the builder pattern for Report construction.
     * Exclude filtering by tags --> see Task 005
 
-### Task 005: Implement tag-based filtering
-
-Specification for an `--exclude-tag` option using a comma-separated list approach:
-
-**Option:** `--exclude-tag`
-
-**Purpose:** Exclude tasks matching specific tags from the result list.
-
-**Syntax:**
-
-```
---exclude-tag <tag1>,<tag2>,<tag3>,...
-```
-
-*   `<tag1>`, `<tag2>`, `<tag3>`, etc. are the tags to exclude.
-*   Multiple tags should be separated by commas (`,`).
-*   Leading and trailing whitespace around tags will be trimmed.
-
-**Behavior:**
-
-*   Tasks matching *any* of the specified `exclude_tags` will be excluded.
-*   If no tags are provided with the `--exclude-tag` option, no tags will be excluded (the option effectively does nothing).
-*   The filter is case-sensitive. (If you want case-insensitive matching, you'll need to implement that in your filtering logic.)
-* If a tag contains a comma it will be treated as two separate tags.
-
-**Example:**
-
-```
-mytimer --project myproject --exclude-tag urgent,long-running,bug
-```
-
-This command will list only tasks that belong to the project "myproject" and do not contain the tags "urgent", "long-running", or "bug".
-
 ### Task 006: Experiment with tests outputting specs... (Integrated into Phase 2 of Development Roadmap):**
     * Explore the feasibility of tests outputting specifications that can serve as input for LLMs.
 
 ### Task 007: Add length-of-working days support (Integrated into Phase 2 of Development Roadmap):**
     * Allow users to specify their typical working day length for better efficiency calculations including time spent on misc tasks.
 
-### Task 008: Implement reporting for between dates, specific months, etc (Integrated into Section 3.3 Output and Phase 1 & 2 of the Development Roadmap):**
-    * Implement reporting for specified periods (last week, last month) in addition to daily/weekly/monthly reports and custom date ranges.
+### Task 008: Extend reporting filtering for specific periods
+    * ? quarter / 12 weeks reporting
+    * ? last 3 months reporting
+    * ? last 6 months reporting
+    * Specify multiple periods
+    * Implement 2020-01-01+12w reporting
 
 ### Task 009: Active and finished project support.
 
@@ -214,6 +184,26 @@ Why?: To get an overview of finished projects and active projects. To get a sens
 
 - Projects are defined as: have an end-date.
 
-### Task 010: Get overview per week of top activitities/projects worked on to get an high-level feel of what I worked on
-
 ### Task 011: Log files containing time entries under --verbose flag, useful when entries are read from a directory and need to find where entry was defined
+
+Less useful in case of a central location of these entries, e.g. a fixed directory or file.
+
+### Task 012: Output markdown reports
+
+Simple markdown output can be redirected to an external tool to generate HTML overview or pdf?
+
+### Task 013: Create README.md
+
+Containing usage instructions
+
+### Task 014: Create Goals of project
+
+- Personal tool
+- Project to use Rust in
+- Try dev practices: TDD, BDD, TDD, testing at appropriate levels, refactoring, more maintainable design, etc..
+- Work, get experience and explore LLMs.
+- How to work with LLMs.
+- Input for blog writing.
+- Freshen up my dev skills.
+
+### Task 15:  Expand limit flag to only show tasks above a certain % threshold
