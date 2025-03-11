@@ -46,7 +46,10 @@ fn last_week_report(#[values("last-week", "lw")] period_value: &str) {
 }
 
 #[rstest]
-fn last_month_report(#[values("last-month", "lm")] period_value: &str) {
+fn last_month_report(
+    #[values("last-month", "lm")] period_value: &str,
+    #[values("2020-02-01", "2020-02-02", "2020-02-28")] at_date: &str,
+) {
     let content = r"## TT 2020-01-01
     - #dev 1h Task1
     ## TT 2020-01-31
@@ -56,7 +59,7 @@ fn last_month_report(#[values("last-month", "lm")] period_value: &str) {
 
     CommandSpec::new()
         .with_file(content)
-        .at_date("2020-02-01")
+        .at_date(at_date)
         .with_period(period_value)
         .when_run()
         .should_succeed()

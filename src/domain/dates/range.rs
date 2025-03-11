@@ -169,7 +169,8 @@ fn date_of_last_week(clock: &Clock) -> NaiveDate {
 
 fn last_month(clock: &Clock) -> NaiveDate {
     let today = today(clock);
-    let previous_month = today.pred_opt().unwrap();
+    let month_of_today = today.month();
+    let previous_month = today.with_month(month_of_today - 1).unwrap();
     calculate_1st_of_month(previous_month)
 }
 
