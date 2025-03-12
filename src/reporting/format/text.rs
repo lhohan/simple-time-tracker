@@ -10,11 +10,7 @@ pub struct TextFormatter;
 
 impl Formatter for TextFormatter {
     fn format(&self, report: &Report) -> String {
-        let mut result = String::new();
-
-        result.push_str(format_interval(&report.period()).as_str());
-
-        let report_str = match report {
+        match report {
             Report::Overview {
                 entries,
                 period,
@@ -24,13 +20,10 @@ impl Formatter for TextFormatter {
             Report::ProjectDetail {
                 project,
                 tasks,
-                period: _,
+                period,
                 total_minutes,
-            } => Self::format_project_detail(project, tasks, *total_minutes),
-        };
-        result.push_str(&report_str);
-
-        result
+            } => Self::format_project_detail(project, tasks, period, *total_minutes),
+        }
     }
 }
 
@@ -53,18 +46,10 @@ impl TextFormatter {
 
         let period_description = period_requested.as_ref().map(|p| p.period_description());
         result.push_str(&format_header(period_description.as_ref()));
-
+        result.push('\n');
         result.push_str(format_interval(period).as_str());
-
-        // Format summary
-        let hours_per_day = (f64::from(total_minutes) / 60.0) / f64::from(period.days);
-        result.push_str(&format!(
-            "{} days, {:.1} h/day, {} total\n",
-            period.days,
-            hours_per_day,
-            format_duration(total_minutes)
-        ));
-
+        result.push('\n');
+        result.push_str(&format_time_statistics(period, total_minutes));
         result.push('\n');
 
         // Format entries
@@ -80,11 +65,19 @@ impl TextFormatter {
         result
     }
 
-    fn format_project_detail(project: &str, tasks: &[TaskSummary], total_minutes: u32) -> String {
+    fn format_project_detail(
+        project: &str,
+        tasks: &[TaskSummary],
+        period: &TrackingPeriod,
+        total_minutes: u32,
+    ) -> String {
         let mut result = String::new();
 
-        result.push_str(&format!("Project: {project}\n"));
-        result.push_str(&format!("{} total\n", format_duration(total_minutes)));
+        result.push_str(&format!("Project: {project}"));
+        result.push('\n');
+        result.push_str(&format_interval(period));
+        result.push('\n');
+        result.push_str(&format_time_statistics(period, total_minutes));
         result.push('\n');
 
         result.push_str("Tasks:\n");
@@ -99,6 +92,16 @@ impl TextFormatter {
 
         result
     }
+}
+
+fn format_time_statistics(period: &TrackingPeriod, total_minutes: u32) -> String {
+    let hours_per_day = (f64::from(total_minutes) / 60.0) / f64::from(period.days);
+    format!(
+        "{} days, {:.1} h/day, {} total\n",
+        period.days,
+        hours_per_day,
+        format_duration(total_minutes)
+    )
 }
 
 fn format_padded_description(desc: &str) -> String {
