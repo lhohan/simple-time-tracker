@@ -9,11 +9,13 @@ impl Formatter for MarkdownFormatter {
             Report::Overview {
                 entries,
                 period,
+                period_requested: _,
                 total_minutes,
             } => Self::format_overview(entries, period, *total_minutes),
             Report::ProjectDetail {
                 project: _,
                 tasks: _,
+                period: _,
                 total_minutes: _,
             } => todo!(),
         }

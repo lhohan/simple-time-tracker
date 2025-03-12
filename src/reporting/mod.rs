@@ -27,7 +27,7 @@ mod tests {
 
             let (start, end) = default_period();
             let time_report = TrackedTime::new(entries, start, end, 1);
-            let report = Report::overview(&time_report, None);
+            let report = Report::overview(&time_report, None, &None);
 
             if let Report::Overview { entries, .. } = report {
                 let projects: Vec<_> = entries.iter().map(|e| e.project.as_str()).collect();

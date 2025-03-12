@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use crate::domain::{reports::OutputLimit, TimeEntry, TrackedTime, TrackingPeriod};
+use crate::domain::{
+    reports::OutputLimit, PeriodRequested, TimeEntry, TrackedTime, TrackingPeriod,
+};
 use itertools::Itertools;
 
 #[derive(Debug)]
@@ -8,11 +10,13 @@ pub enum Report {
     Overview {
         entries: Vec<ProjectSummary>,
         period: TrackingPeriod,
+        period_requested: Option<PeriodRequested>,
         total_minutes: u32,
     },
     ProjectDetail {
         project: String,
         tasks: Vec<TaskSummary>,
+        period: TrackingPeriod,
         total_minutes: u32,
     },
 }
@@ -24,7 +28,11 @@ pub enum ReportTypeRequested {
 }
 
 impl Report {
-    pub fn overview(time_report: &TrackedTime, limit: Option<OutputLimit>) -> Self {
+    pub fn overview(
+        time_report: &TrackedTime,
+        limit: Option<OutputLimit>,
+        period_requested: &Option<PeriodRequested>,
+    ) -> Self {
         let summarized = summarize_entries(&time_report.entries);
 
         let summaries_sorted = summarized
@@ -45,6 +53,7 @@ impl Report {
         Report::Overview {
             entries,
             period: time_report.period,
+            period_requested: period_requested.clone(),
             total_minutes: time_report.total_minutes,
         }
     }
@@ -59,7 +68,15 @@ impl Report {
                 .map(|(desc, minutes)| TaskSummary::new(desc, minutes, time_report.total_minutes))
                 .sorted_by(|a, b| b.minutes.cmp(&a.minutes))
                 .collect(),
+            period: time_report.period,
             total_minutes: time_report.total_minutes,
+        }
+    }
+
+    pub fn period(&self) -> &TrackingPeriod {
+        match self {
+            Report::Overview { period, .. } => &period,
+            Report::ProjectDetail { period, .. } => &period,
         }
     }
 }

@@ -16,7 +16,6 @@ fn create_formatter(format_type: FormatType) -> Box<dyn Formatter> {
 }
 
 pub trait Formatter {
-    // fn format(report: &Report) -> String;
     fn format(&self, report: &Report) -> String;
 }
 
