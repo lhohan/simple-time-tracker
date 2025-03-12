@@ -1,4 +1,3 @@
-use crate::domain::PeriodRequested;
 use crate::domain::RangeDescription;
 use crate::domain::TrackingPeriod;
 
@@ -16,7 +15,10 @@ impl Formatter for TextFormatter {
                 period,
                 period_requested,
                 total_minutes,
-            } => Self::format_overview(entries, period, period_requested, *total_minutes),
+            } => {
+                let description = period_requested.as_ref().map(|p| p.period_description());
+                Self::format_overview(entries, period, &description, *total_minutes)
+            }
             Report::ProjectDetail {
                 project,
                 tasks,
@@ -39,20 +41,18 @@ impl TextFormatter {
     fn format_overview(
         entries: &[ProjectSummary],
         period: &TrackingPeriod,
-        period_requested: &Option<PeriodRequested>,
+        range_description: &Option<RangeDescription>,
         total_minutes: u32,
     ) -> String {
         let mut result = String::new();
 
-        let period_description = period_requested.as_ref().map(|p| p.period_description());
-        result.push_str(&format_header(period_description.as_ref()));
+        result.push_str(&format_header(range_description.as_ref()));
         result.push('\n');
         result.push_str(format_interval(period).as_str());
         result.push('\n');
         result.push_str(&format_time_statistics(period, total_minutes));
         result.push('\n');
 
-        // Format entries
         for entry in entries {
             result.push_str(&format!(
                 "{:.<20}..{} ({:>3}%)\n",
