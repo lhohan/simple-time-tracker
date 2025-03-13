@@ -1,10 +1,8 @@
 pub mod filter;
 mod header_parser;
-mod line_parser;
 mod model;
 mod parser;
 mod processor;
-mod time_parser;
 
 #[cfg(test)]
 pub mod test_helpers;

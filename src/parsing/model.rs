@@ -1,5 +1,4 @@
 use super::header_parser::maybe_date_from_header;
-use super::line_parser::parse_entry;
 use crate::domain::{ParseError, TimeEntry};
 use chrono::NaiveDate;
 use std::collections::HashMap;
@@ -51,7 +50,7 @@ fn try_parse_to_header(line: &str) -> Result<LineType, ParseError> {
 }
 
 fn try_parse_to_entry(line: &str) -> Result<LineType, ParseError> {
-    match parse_entry(line) {
+    match TimeEntry::parse(line) {
         Ok(Some(entry)) => Ok(LineType::Entry(entry)),
         Ok(None) => other(),
         Err(err) => Err(err),

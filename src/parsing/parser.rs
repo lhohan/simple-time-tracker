@@ -165,11 +165,20 @@ mod tests {
 
         #[test]
         fn parse_time_missing() {
-            LineSpec::given_line("- #context only description")
+            let input = "- #context only description";
+
+            LineSpec::given_line(input)
                 .when_parsed()
-                .expect_invalid_with(&ParseError::MissingTime(
-                    "- #context only description".to_string(),
-                ));
+                .expect_invalid_with(&ParseError::MissingTime(input.to_string()));
+        }
+
+        #[test]
+        fn parse_project_missing() {
+            let input = "- # 30m only description";
+
+            LineSpec::given_line(input)
+                .when_parsed()
+                .expect_invalid_with(&ParseError::MissingProject(input.to_string()));
         }
 
         mod tag_parsing {
@@ -188,7 +197,7 @@ mod tests {
                 LineSpec::given_line("- #tag1 #prj-alpha 1h Task A")
                     .when_parsed()
                     .expect_valid_entry()
-                    .expect_main_context("prj-alpha");
+                    .expect_main_context("tag1");
             }
 
             #[test]

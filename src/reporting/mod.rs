@@ -19,10 +19,10 @@ mod tests {
         #[test]
         fn test_overview_report_ordering() {
             let entries = vec![
-                create_test_entry("short", 30, None),
-                create_test_entry("longest", 120, None),
-                create_test_entry("medium", 60, None),
-                create_test_entry("also-long", 120, None),
+                create_test_entry("short", 30),
+                create_test_entry("longest", 120),
+                create_test_entry("medium", 60),
+                create_test_entry("also-long", 120),
             ];
 
             let (start, end) = default_period();
@@ -39,20 +39,12 @@ mod tests {
     }
 
     mod helpers {
-        use crate::domain::tags::Tag;
-
         use super::*;
 
-        pub(crate) fn create_test_entry(
-            tag: &str,
-            minutes: u32,
-            description: Option<&str>,
-        ) -> TimeEntry {
-            TimeEntry::new(
-                vec![Tag::from_raw(tag)],
-                minutes,
-                description.map(String::from),
-            )
+        pub(crate) fn create_test_entry(tag: &str, minutes: u32) -> TimeEntry {
+            TimeEntry::parse(format!("- #{tag} {minutes}m").as_str())
+                .unwrap()
+                .unwrap()
         }
 
         pub(crate) fn default_period() -> (StartDate, EndDate) {

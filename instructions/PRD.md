@@ -207,5 +207,3 @@ Containing usage instructions
 - Freshen up my dev skills.
 
 ### Task 15: Expand limit flag to only show tasks above a certain % threshold
-
-### Task 16: Change behavior of primary context: first tag should be the main context even if there is prj- / project in the tag list.
