@@ -79,16 +79,31 @@ fn exclude_tags_filter_should_work() {
 
 #[ignore]
 #[test]
-fn shows_context_tags_in_project_details() {
+fn project_filter_works_on_all_tags() {
     let content = r#"## TT 2024-01-15
-- #rust #prj-timetracker #cli #testing 1h Task A"#;
+- #tag1 #tag2 1h Task A"#;
+
+    CommandSpec::new()
+        .with_file(content)
+        .with_project_filter("tag2")
+        .when_run()
+        .should_succeed()
+        .expect_project("tag2")
+        .validate();
+}
+
+#[ignore]
+#[test]
+fn project_filter_shows_related_tags() {
+    let content = r#"## TT 2024-01-15
+- #tag1 #tag2 #tag3 1h Task A"#;
 
     CommandSpec::new()
         .with_file(content)
         .with_project_filter("prj-timetracker")
         .when_run()
         .should_succeed()
-        .expect_project("prj-timetracker")
-        .with_tag("rust, cli, testing")
+        .expect_project("tag1")
+        .with_context("tag2, tag3")
         .validate();
 }

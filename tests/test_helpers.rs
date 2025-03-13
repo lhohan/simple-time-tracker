@@ -477,9 +477,9 @@ impl ProjectAssertion {
         }
     }
 
-    pub fn with_tag(self, expected_tag: &str) -> Self {
+    pub fn with_context(self, expected_tag: &str) -> Self {
         let mut new_expectations = self.expectations;
-        new_expectations.push(("Tag", expected_tag.to_string()));
+        new_expectations.push(("Context", expected_tag.to_string()));
         Self {
             cmd_result: self.cmd_result,
             expectations: new_expectations,

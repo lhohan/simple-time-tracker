@@ -227,10 +227,10 @@ mod tests {
 
         #[test]
         fn parse_simple_minutes() {
-            LineSpec::given_line("- #context 10m")
+            LineSpec::given_line("- #context 15m")
                 .when_parsed()
                 .expect_valid_entry()
-                .expect_minutes(10);
+                .expect_minutes(15);
         }
 
         #[test]
@@ -251,10 +251,10 @@ mod tests {
 
         #[test]
         fn parse_multiple_time_entries() {
-            LineSpec::given_line("- #context 1h 10m 1p")
+            LineSpec::given_line("- #context 1h 15m 1p")
                 .when_parsed()
                 .expect_valid_entry()
-                .expect_minutes(60 + 10 + 30);
+                .expect_minutes(60 + 15 + 30);
         }
 
         #[rstest]
@@ -285,7 +285,9 @@ mod tests {
         }
 
         #[rstest]
-        fn parse_maybe_time(#[values('h', 'm', 'p')] supported_time_unit: char) {
+        fn parse_invalid_times_ending_in_time_unit(
+            #[values('h', 'm', 'p')] supported_time_unit: char,
+        ) {
             let input = format!("- #context x{}", supported_time_unit);
 
             LineSpec::given_line(&input)
