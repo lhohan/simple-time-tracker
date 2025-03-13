@@ -4,9 +4,6 @@ mod model;
 mod parser;
 mod processor;
 
-#[cfg(test)]
-pub mod test_helpers;
-
 use model::ParseResult;
 pub(crate) use model::{LineType, ParseState, ParsedLine};
 use processor::Processor;

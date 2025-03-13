@@ -199,3 +199,226 @@ impl std::fmt::Display for ParseError {
 }
 
 impl std::error::Error for ParseError {}
+
+#[cfg(test)]
+mod tests {
+    mod line_entry_parsing {
+        use crate::domain::ParseError;
+        use rstest::rstest;
+        use spec::LineSpec;
+
+        #[test]
+        fn parse_simple_complete_line() {
+            LineSpec::given_line("- #project-alpha 10m Task A")
+                .when_parsed()
+                .expect_valid_entry()
+                .expect_minutes(10)
+                .expect_main_context("project-alpha")
+                .expect_description("Task A");
+        }
+
+        #[test]
+        fn parse_task_description_is_optional() {
+            LineSpec::given_line("- #project-alpha 20m")
+                .when_parsed()
+                .expect_valid_entry()
+                .expect_no_description();
+        }
+
+        #[test]
+        fn parse_simple_minutes() {
+            LineSpec::given_line("- #context 10m")
+                .when_parsed()
+                .expect_valid_entry()
+                .expect_minutes(10);
+        }
+
+        #[test]
+        fn parse_simple_hours() {
+            LineSpec::given_line("- #context 2h")
+                .when_parsed()
+                .expect_valid_entry()
+                .expect_minutes(2 * 60);
+        }
+
+        #[test]
+        fn parse_pomodoros() {
+            LineSpec::given_line("- #context 2p")
+                .when_parsed()
+                .expect_valid_entry()
+                .expect_minutes(2 * 30);
+        }
+
+        #[test]
+        fn parse_multiple_time_entries() {
+            LineSpec::given_line("- #context 1h 10m 1p")
+                .when_parsed()
+                .expect_valid_entry()
+                .expect_minutes(60 + 10 + 30);
+        }
+
+        #[rstest]
+        fn parse_non_entries(
+            #[values(
+                "- hash (#) not in start of line",
+                "# dash (-) not in start of line",
+                "", // empty line
+                " ", // whitespace line
+                "some text", // text line
+                "* #not_a_tag", // alternate bullet not considered entry
+                "+ #not_a_tag", // alternate bullet not considered entry
+            )]
+            line: &str,
+        ) {
+            LineSpec::given_line(line)
+                .when_parsed()
+                .expect_not_an_entry_and_not_an_error();
+        }
+
+        #[test]
+        fn parse_invalid_time() {
+            LineSpec::given_line("- #context 100000000000000000000h")
+                .when_parsed()
+                .expect_invalid_with(&ParseError::InvalidTime(
+                    "100000000000000000000h".to_string(),
+                ));
+        }
+
+        #[rstest]
+        fn parse_maybe_time(#[values('h', 'm', 'p')] supported_time_unit: char) {
+            let input = format!("- #context x{}", supported_time_unit);
+
+            LineSpec::given_line(&input)
+                .when_parsed()
+                .expect_invalid_with(&ParseError::MissingTime(input.to_string()));
+        }
+
+        #[test]
+        fn parse_time_missing() {
+            let input = "- #context only description";
+
+            LineSpec::given_line(input)
+                .when_parsed()
+                .expect_invalid_with(&ParseError::MissingTime(input.to_string()));
+        }
+
+        #[test]
+        fn parse_project_missing() {
+            let input = "- # 30m only description";
+
+            LineSpec::given_line(input)
+                .when_parsed()
+                .expect_invalid_with(&ParseError::MissingProject(input.to_string()));
+        }
+
+        mod tag_parsing {
+            use super::*;
+
+            #[test]
+            fn parse_line_with_project_prefix_tag() {
+                LineSpec::given_line("- #prj-alpha 1h Task A")
+                    .when_parsed()
+                    .expect_valid_entry()
+                    .expect_main_context("prj-alpha");
+            }
+
+            #[test]
+            fn parse_line_with_project_and_tags() {
+                LineSpec::given_line("- #tag1 #prj-alpha 1h Task A")
+                    .when_parsed()
+                    .expect_valid_entry()
+                    .expect_main_context("tag1");
+            }
+
+            #[test]
+            fn parse_line_with_only_context_tags() {
+                LineSpec::given_line("- #tag1 #tag2 #tag3 1h Task A")
+                    .when_parsed()
+                    .expect_valid_entry()
+                    .expect_main_context("tag1");
+            }
+        }
+
+        mod spec {
+            use crate::domain::{ParseError, TimeEntry};
+
+            pub struct LineSpec {
+                line: String,
+            }
+
+            impl LineSpec {
+                pub fn given_line(line: &str) -> Self {
+                    LineSpec {
+                        line: line.to_string(),
+                    }
+                }
+
+                pub fn when_parsed(self) -> LineParsingResult {
+                    let entry = TimeEntry::parse(&self.line);
+                    LineParsingResult { entry }
+                }
+            }
+
+            pub struct LineParsingResult {
+                entry: Result<Option<TimeEntry>, ParseError>,
+            }
+
+            impl LineParsingResult {
+                pub fn expect_valid_entry(self) -> TimeEntry {
+                    self.entry
+                        .expect("Expected time entry but was error")
+                        .expect("Expected time entry but was not")
+                }
+
+                pub fn expect_not_an_entry_and_not_an_error(self) {
+                    let maybe_entry = self.entry.expect("Expected no entry but is error");
+                    assert_eq!(maybe_entry, None);
+                }
+
+                pub fn expect_invalid_with(self, expected_error: &ParseError) {
+                    let error = self.entry.expect_err("Expected error but was valid");
+                    assert_eq!(error, *expected_error);
+                }
+            }
+
+            impl TimeEntry {
+                pub fn expect_minutes(self, expected_minutes: u32) -> TimeEntry {
+                    assert_eq!(self.minutes, expected_minutes);
+                    self
+                }
+
+                pub fn expect_main_context(self, expected_project: &str) -> TimeEntry {
+                    assert_eq!(*self.main_context(), expected_project.to_string());
+                    self
+                }
+
+                pub fn expect_description(self, expected_description: &str) -> TimeEntry {
+                    assert_eq!(self.description, Some(expected_description.to_string()));
+                    self
+                }
+
+                pub fn expect_no_description(self) -> TimeEntry {
+                    assert!(self.description.is_none());
+                    self
+                }
+            }
+        }
+    }
+
+    mod parser_error_handling {
+        use crate::domain::ParseError;
+        #[test]
+        fn error_messages() {
+            assert_eq!(
+                ParseError::InvalidTime("Xh".to_string()).to_string(),
+                "invalid time format: Xh"
+            );
+        }
+
+        #[test]
+        fn error_conversion() {
+            let err = ParseError::InvalidTime("a".to_string());
+            let _: Box<dyn std::error::Error> = Box::new(err); // Should compile
+        }
+    }
+}
