@@ -30,22 +30,6 @@ mod filter_tags {
             .should_succeed()
             .expect_task("Task A");
     }
-
-    #[ignore]
-    #[test]
-    fn project_filter_shows_related_tags() {
-        let content = r#"## TT 2024-01-15
-- #tag1 #tag2 #tag3 1h Task A"#;
-
-        CommandSpec::new()
-            .with_file(content)
-            .with_project_filter("prj-timetracker")
-            .when_run()
-            .should_succeed()
-            .expect_project("tag1")
-            .with_context("tag2, tag3")
-            .validate();
-    }
 }
 
 mod exclude_tags {
