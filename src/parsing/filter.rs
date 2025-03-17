@@ -13,7 +13,7 @@ pub enum Filter {
 impl Filter {
     pub fn matches(&self, entry: &TimeEntry, date: &EntryDate) -> bool {
         match self {
-            Filter::MainContext(project) => entry.main_context().eq_ignore_ascii_case(project),
+            Filter::MainContext(project) => entry.get_tags().contains(&Tag::from_raw(project)),
             Filter::ExcludeTags(tags) => !tags
                 .iter()
                 .any(|tag| entry.get_tags().contains(&Tag::from_raw(tag))),

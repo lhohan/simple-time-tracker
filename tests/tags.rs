@@ -16,20 +16,19 @@ fn first_tag_is_main_context() {
 
 mod filter_tags {
     use crate::test_helpers::CommandSpec;
+    use rstest::rstest;
 
-    #[ignore]
-    #[test]
-    fn project_filter_works_on_all_tags() {
+    #[rstest]
+    fn project_filter_works_on_all_tags(#[values("tag1", "tag2", "tag3")] tag: &str) {
         let content = r#"## TT 2024-01-15
-- #tag1 #tag2 1h Task A"#;
+- #tag1 #tag2 #tag3 1h Task A"#;
 
         CommandSpec::new()
             .with_file(content)
-            .with_project_filter("tag2")
+            .with_project_filter(tag)
             .when_run()
             .should_succeed()
-            .expect_project("tag2")
-            .validate();
+            .expect_task("Task A");
     }
 
     #[ignore]
