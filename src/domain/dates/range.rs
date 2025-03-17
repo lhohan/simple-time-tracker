@@ -74,7 +74,7 @@ impl PeriodRequested {
 
     #[must_use]
     fn try_parse_month_value(s: &str) -> Option<PeriodRequested> {
-        let month_value_regex = Regex::new(r"^(\d{4})-(\d{2})$").unwrap();
+        let month_value_regex = Regex::new(r"^(\d{4})-(\d{1,2})$").unwrap();
         let month = month_value_regex.captures(s).and_then(|captures| {
             captures.get(1).and_then(|year_match| {
                 captures.get(2).and_then(|month_match| {

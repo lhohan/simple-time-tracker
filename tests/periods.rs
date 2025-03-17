@@ -239,7 +239,8 @@ struct MonthValueSpecified<'a> {
 fn month_value_speficied(
     #[values(
         MonthValueSpecified{month_value: "2020-01", expectations:  ("2020-01", "1h 00m")},
-        MonthValueSpecified{month_value: "2020-02", expectations:  ("2020-02", "2h 00m")}
+        MonthValueSpecified{month_value: "2020-1", expectations:  ("2020-01", "1h 00m")},
+        MonthValueSpecified{month_value: "2020-02", expectations:  ("2020-02", "2h 00m")},
     )]
     test_data: MonthValueSpecified,
 ) {
