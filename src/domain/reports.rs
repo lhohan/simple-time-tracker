@@ -10,38 +10,38 @@ pub struct TimeTrackingResult {
 }
 
 #[derive(Debug, Clone)]
-pub struct RangeDescription(String);
+pub struct PeriodDescription(String);
 
-impl RangeDescription {
+impl PeriodDescription {
     #[must_use]
     pub fn day(date: NaiveDate) -> Self {
         let date_str = format_day(date);
-        RangeDescription(date_str)
+        PeriodDescription(date_str)
     }
 
     #[must_use]
     pub fn from_date(date: NaiveDate) -> Self {
         let date_str = format_from_date(date);
-        RangeDescription(date_str)
+        PeriodDescription(date_str)
     }
 
     #[must_use]
     pub fn week_of(date: NaiveDate) -> Self {
         let week = date.iso_week();
         let week_str = format_week(week);
-        RangeDescription(week_str)
+        PeriodDescription(week_str)
     }
 
     #[must_use]
     pub fn month_of(date: NaiveDate) -> Self {
         let month_str = format_month(date);
-        RangeDescription(month_str)
+        PeriodDescription(month_str)
     }
 
     #[must_use]
     pub fn year_of(date: NaiveDate) -> Self {
         let year_str = format_year(date);
-        RangeDescription(year_str)
+        PeriodDescription(year_str)
     }
 }
 
@@ -72,7 +72,7 @@ fn format_year(date: NaiveDate) -> String {
     format!("of {}", date.format("%Y"))
 }
 
-impl std::fmt::Display for RangeDescription {
+impl std::fmt::Display for PeriodDescription {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
     }

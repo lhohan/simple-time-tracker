@@ -2,7 +2,7 @@ use chrono::{Datelike, Duration, NaiveDate};
 use regex::Regex;
 
 use super::{EndDate, EntryDate, StartDate};
-use crate::domain::{self, time::Clock, RangeDescription};
+use crate::domain::{self, time::Clock, PeriodDescription};
 use crate::ParseError;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -162,13 +162,13 @@ impl PeriodRequested {
     }
 
     #[must_use]
-    pub fn period_description(&self) -> RangeDescription {
+    pub fn description(&self) -> PeriodDescription {
         match self {
-            Self::Day(date) => RangeDescription::day(*date),
-            Self::FromDate(date) => RangeDescription::from_date(*date),
-            Self::WeekOf(date) => RangeDescription::week_of(*date),
-            Self::MonthOf(date) => RangeDescription::month_of(*date),
-            Self::YearOf(date) => RangeDescription::year_of(*date),
+            Self::Day(date) => PeriodDescription::day(*date),
+            Self::FromDate(date) => PeriodDescription::from_date(*date),
+            Self::WeekOf(date) => PeriodDescription::week_of(*date),
+            Self::MonthOf(date) => PeriodDescription::month_of(*date),
+            Self::YearOf(date) => PeriodDescription::year_of(*date),
         }
     }
 }

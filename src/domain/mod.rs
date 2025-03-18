@@ -5,7 +5,7 @@ pub mod time;
 use std::collections::VecDeque;
 
 pub use dates::range::{DateRange, PeriodRequested};
-pub use reports::{RangeDescription, TimeTrackingResult, TrackedTime, TrackingPeriod};
+pub use reports::{PeriodDescription, TimeTrackingResult, TrackedTime, TrackingPeriod};
 use tags::Tag;
 
 #[derive(Debug, PartialEq, Clone)]

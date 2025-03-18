@@ -1,4 +1,4 @@
-use crate::domain::RangeDescription;
+use crate::domain::PeriodDescription;
 use crate::domain::TrackingPeriod;
 
 use crate::reporting::format::format_duration;
@@ -16,7 +16,7 @@ impl Formatter for TextFormatter {
                 period_requested,
                 total_minutes,
             } => {
-                let description = period_requested.as_ref().map(|p| p.period_description());
+                let description = period_requested.as_ref().map(|p| p.description());
                 Self::format_overview(entries, period, &description, *total_minutes)
             }
             Report::ProjectDetail {
@@ -41,7 +41,7 @@ impl TextFormatter {
     fn format_overview(
         entries: &[ProjectSummary],
         period: &TrackingPeriod,
-        range_description: &Option<RangeDescription>,
+        range_description: &Option<PeriodDescription>,
         total_minutes: u32,
     ) -> String {
         let mut result = String::new();
@@ -112,7 +112,7 @@ fn format_padded_description(desc: &str) -> String {
     )
 }
 
-fn format_header(period_description: Option<&RangeDescription>) -> String {
+fn format_header(period_description: Option<&PeriodDescription>) -> String {
     let mut result = String::new();
 
     result.push_str("Time tracking report ");
