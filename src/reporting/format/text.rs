@@ -115,7 +115,7 @@ fn format_padded_description(desc: &str) -> String {
 fn format_header(period_description: Option<&RangeDescription>) -> String {
     let mut result = String::new();
 
-    result.push_str("Time tracking report for ");
+    result.push_str("Time tracking report ");
     let period_description_str = period_description
         .map(|description| description.to_string())
         .unwrap_or_default();

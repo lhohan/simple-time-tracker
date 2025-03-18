@@ -20,6 +20,12 @@ impl RangeDescription {
     }
 
     #[must_use]
+    pub fn from_date(date: NaiveDate) -> Self {
+        let date_str = format_from_date(date);
+        RangeDescription(date_str)
+    }
+
+    #[must_use]
     pub fn week_of(date: NaiveDate) -> Self {
         let week = date.iso_week();
         let week_str = format_week(week);
@@ -40,21 +46,30 @@ impl RangeDescription {
 }
 
 fn format_day(date: NaiveDate) -> String {
-    format!("{}", date.format("%Y-%m-%d"))
+    let date_str = format_yyyy_mm_dd(date);
+    format!("of {}", date_str)
+}
+
+fn format_yyyy_mm_dd(date: NaiveDate) -> String {
+    date.format("%Y-%m-%d").to_string()
+}
+
+fn format_from_date(date: NaiveDate) -> String {
+    format!("from {} until today", format_yyyy_mm_dd(date))
 }
 
 fn format_week(week: IsoWeek) -> String {
     let week_number = week.week();
     let year = week.year();
-    format!("week {week_number}, {year}")
+    format!("of week {week_number}, {year}")
 }
 
 fn format_month(date: NaiveDate) -> String {
-    format!("{}", date.format("%Y-%m"))
+    format!("of {}", date.format("%Y-%m"))
 }
 
 fn format_year(date: NaiveDate) -> String {
-    format!("{}", date.format("%Y"))
+    format!("of {}", date.format("%Y"))
 }
 
 impl std::fmt::Display for RangeDescription {

@@ -237,7 +237,7 @@ fn test_report_should_include_interval_end() {
 }
 
 #[test]
-fn test_date_filtering_from_date() {
+fn test_date_filtering_from_date_shows_correct_start_date() {
     let content = r"## TT 2020-01-01
 - #prj-1 3h Task 1
 ## TT 2020-02-01
@@ -249,6 +249,19 @@ fn test_date_filtering_from_date() {
         .when_run()
         .should_succeed()
         .expect_start_date("2020-02-01");
+}
+
+#[test]
+fn test_date_filtering_from_date_shows_correct_description() {
+    let content = r"## TT 2020-01-01
+- #prj-1 1h Task 1";
+
+    CommandSpec::new()
+        .with_file(content)
+        .with_from_date_filter("2020-01-01")
+        .when_run()
+        .should_succeed()
+        .expect_output("Time tracking report from 2020-01-01 until today");
 }
 
 #[test]

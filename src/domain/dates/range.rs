@@ -3,10 +3,12 @@ use regex::Regex;
 
 use super::{EndDate, EntryDate, StartDate};
 use crate::domain::{self, time::Clock, RangeDescription};
+use crate::ParseError;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum PeriodRequested {
     Day(NaiveDate),
+    FromDate(NaiveDate),
     WeekOf(NaiveDate),
     MonthOf(NaiveDate),
     YearOf(NaiveDate),
@@ -20,6 +22,20 @@ impl PeriodRequested {
             .ok_or(domain::ParseError::InvalidPeriod(
                 period_requested.to_string(),
             ))
+    }
+
+    #[allow(clippy::missing_panics_doc)]
+    pub fn from_from_date(
+        from_date_requested: Option<&str>,
+    ) -> Result<Option<Self>, domain::ParseError> {
+        match from_date_requested {
+            Some(date) => {
+                let parsed_date = NaiveDate::parse_from_str(date, "%Y-%m-%d")
+                    .map_err(|_| ParseError::InvalidDate(date.to_string()))?;
+                Ok(Some(PeriodRequested::FromDate(parsed_date)))
+            }
+            None => Ok(None),
+        }
     }
 
     #[must_use]
@@ -138,6 +154,7 @@ impl PeriodRequested {
     pub fn date_range(&self) -> DateRange {
         match self {
             Self::Day(date) => DateRange::day(*date),
+            Self::FromDate(date) => DateRange::from_date(*date),
             Self::WeekOf(date) => DateRange::week_of(*date),
             Self::MonthOf(date) => DateRange::month_of(*date),
             Self::YearOf(date) => DateRange::year_of(*date),
@@ -148,6 +165,7 @@ impl PeriodRequested {
     pub fn period_description(&self) -> RangeDescription {
         match self {
             Self::Day(date) => RangeDescription::day(*date),
+            Self::FromDate(date) => RangeDescription::from_date(*date),
             Self::WeekOf(date) => RangeDescription::week_of(*date),
             Self::MonthOf(date) => RangeDescription::month_of(*date),
             Self::YearOf(date) => RangeDescription::year_of(*date),
@@ -191,6 +209,11 @@ impl DateRange {
     #[must_use]
     pub fn day(date: NaiveDate) -> Self {
         DateRange(StartDate(date), EndDate(date))
+    }
+
+    #[must_use]
+    pub fn from_date(date: NaiveDate) -> Self {
+        DateRange(StartDate(date), EndDate(NaiveDate::MAX))
     }
 
     #[must_use]

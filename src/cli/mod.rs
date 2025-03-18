@@ -1,8 +1,6 @@
-use chrono::NaiveDate;
 use clap::Parser;
 use std::path::PathBuf;
 
-use crate::domain::dates::StartDate;
 use crate::domain::reports::OutputLimit;
 use crate::domain::time::Clock;
 use crate::domain::ParseError;
@@ -53,22 +51,6 @@ impl Args {
         Self::parse_from(std::env::args())
     }
 
-    /// Parses the from date from the command line arguments.
-    ///
-    /// # Errors
-    ///
-    /// Returns a `ParseError::InvalidDate` if the date is not in the correct format.
-    pub fn from_date(&self) -> Result<Option<StartDate>, ParseError> {
-        match &self.from {
-            Some(date) => {
-                let parsed_date = NaiveDate::parse_from_str(date, "%Y-%m-%d")
-                    .map_err(|_| ParseError::InvalidDate(date.to_string()))?;
-                Ok(Some(StartDate(parsed_date)))
-            }
-            None => Ok(None),
-        }
-    }
-
     /// Parses exclude tags from the command line arguments.
     pub fn exclude_tags(&self) -> Vec<String> {
         match &self.exclude_tags {
@@ -86,10 +68,22 @@ impl Args {
     ///
     /// Returns a `ParseError::InvalidPeriod` if the period is not valid.
     pub fn period(&self, clock: &Clock) -> Result<Option<PeriodRequested>, ParseError> {
+        match self.from_period(clock) {
+            Ok(Some(period)) => Ok(Some(period)),
+            Err(err) => Err(err),
+            Ok(None) => self.from_date(),
+        }
+    }
+
+    fn from_period(&self, clock: &Clock) -> Result<Option<PeriodRequested>, ParseError> {
         match self.period.as_ref() {
             Some(period) => PeriodRequested::from_str(period, clock).map(Some),
             None => Ok(None),
         }
+    }
+
+    fn from_date(&self) -> Result<Option<PeriodRequested>, ParseError> {
+        PeriodRequested::from_from_date(self.from.as_deref())
     }
 
     #[must_use]

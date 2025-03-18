@@ -5,10 +5,8 @@ mod reporting;
 pub mod domain;
 
 use domain::reports::OutputLimit;
-use domain::DateRange;
 use reporting::Report;
 
-use crate::domain::dates::StartDate;
 use crate::domain::ParseError;
 use crate::domain::PeriodRequested;
 use crate::parsing::filter::Filter;
@@ -30,7 +28,6 @@ pub fn run(
     input_path: &Path,
     project_details_selected: Option<String>,
     exclude_tags: Vec<String>,
-    from_date: Option<StartDate>,
     period: Option<PeriodRequested>,
     limit: Option<OutputLimit>,
     formatter: Box<dyn Formatter>,
@@ -40,13 +37,8 @@ pub fn run(
         ReportTypeRequested::ProjectDetails,
     );
 
-    let tracking_result = process_inputs(
-        input_path,
-        project_details_selected,
-        exclude_tags,
-        from_date,
-        &period,
-    )?;
+    let tracking_result =
+        process_inputs(input_path, project_details_selected, exclude_tags, &period)?;
 
     print_result(period, limit, report_type, &tracking_result, formatter);
     print_warnings(&tracking_result.errors);
@@ -58,10 +50,9 @@ fn process_inputs(
     input_path: &Path,
     project_details_selected: Option<String>,
     exclude_tags: Vec<String>,
-    from_date: Option<StartDate>,
     period: &Option<PeriodRequested>,
 ) -> Result<domain::TimeTrackingResult, ParseError> {
-    let filter = create_filter(&project_details_selected, &exclude_tags, from_date, period);
+    let filter = create_filter(&project_details_selected, &exclude_tags, period);
     let tracking_result = parsing::process_input(input_path, &filter)?;
     Ok(tracking_result)
 }
@@ -96,11 +87,9 @@ fn print_warnings(parse_errors: &Vec<ParseError>) {
 fn create_filter(
     main_context_requested: &Option<String>,
     exclude_tags: &Vec<String>,
-    from_date: Option<StartDate>,
     period: &Option<PeriodRequested>,
 ) -> Option<Filter> {
     let project_filter = main_context_requested.clone().map(Filter::MainContext);
-    let from_date_filter = from_date.map(|date| Filter::DateRange(DateRange::new_from_date(date)));
     let period_filter = period
         .clone()
         .map(|period| Filter::DateRange(period.date_range()));
@@ -109,7 +98,7 @@ fn create_filter(
 
     project_filter
         .into_iter()
-        .chain(from_date_filter)
+        // .chain(from_date_filter)
         .chain(period_filter)
         .chain(Some(exclude_tag_filter))
         .reduce(Filter::combine)

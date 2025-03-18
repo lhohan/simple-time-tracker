@@ -21,7 +21,6 @@ fn main() -> Result<()> {
     }
 
     let exclude_tags = args.exclude_tags();
-    let from_date = args.from_date()?;
     let period = args.period(&clock)?;
     let formatter = args.formatter();
 
@@ -29,7 +28,6 @@ fn main() -> Result<()> {
         &args.input,
         args.project.as_deref().map(String::from),
         exclude_tags,
-        from_date,
         period,
         args.limit(),
         formatter,

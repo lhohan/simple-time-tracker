@@ -109,7 +109,7 @@ fn today_report(
 
     let at_date = at_date_and_expected_duration.0;
 
-    let expected_output = format!("for {}", at_date);
+    let expected_output = format!("of {}", at_date);
     let expected_duration = at_date_and_expected_duration.1;
 
     CommandSpec::new()
