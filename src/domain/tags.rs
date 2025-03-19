@@ -43,3 +43,24 @@ impl fmt::Display for Tag {
         write!(f, "{}", self.raw_value())
     }
 }
+
+pub enum TagFilter {
+    ShowOnlyContainingAny(Vec<Tag>),
+}
+
+impl TagFilter {
+    pub fn parse(input: String) -> Self {
+        let tags = input
+            .as_str()
+            .split(',')
+            .map(|tag| Tag::from_raw(tag))
+            .collect();
+        TagFilter::ShowOnlyContainingAny(tags)
+    }
+
+    pub fn filter_tags(&self) -> Vec<Tag> {
+        match self {
+            TagFilter::ShowOnlyContainingAny(tags) => tags.clone(),
+        }
+    }
+}

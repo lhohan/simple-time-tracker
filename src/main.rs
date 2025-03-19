@@ -20,6 +20,7 @@ fn main() -> Result<()> {
         println!("Processing path: {}", args.input.display());
     }
 
+    let tags = args.tags();
     let exclude_tags = args.exclude_tags();
     let period = args.period(&clock)?;
     let formatter = args.formatter();
@@ -27,6 +28,7 @@ fn main() -> Result<()> {
     time_tracker::run(
         &args.input,
         args.project.as_deref().map(String::from),
+        tags,
         exclude_tags,
         period,
         args.limit(),

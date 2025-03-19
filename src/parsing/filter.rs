@@ -5,6 +5,7 @@ use crate::domain::{DateRange, TimeEntry};
 #[derive(Debug, Clone)]
 pub enum Filter {
     MainContext(String),
+    Tags(Vec<Tag>),
     ExcludeTags(Vec<String>),
     DateRange(DateRange),
     And(Box<Filter>, Box<Filter>),
@@ -14,6 +15,7 @@ impl Filter {
     pub fn matches(&self, entry: &TimeEntry, date: &EntryDate) -> bool {
         match self {
             Filter::MainContext(project) => entry.get_tags().contains(&Tag::from_raw(project)),
+            Filter::Tags(tags) => tags.iter().any(|tag| entry.get_tags().contains(tag)),
             Filter::ExcludeTags(tags) => !tags
                 .iter()
                 .any(|tag| entry.get_tags().contains(&Tag::from_raw(tag))),

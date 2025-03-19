@@ -5,6 +5,7 @@ mod reporting;
 pub mod domain;
 
 use domain::reports::OutputLimit;
+use domain::tags::TagFilter;
 use reporting::Report;
 
 use crate::domain::ParseError;
@@ -27,6 +28,7 @@ use std::path::Path;
 pub fn run(
     input_path: &Path,
     project_details_selected: Option<String>,
+    tag_filter: Option<TagFilter>,
     exclude_tags: Vec<String>,
     period: Option<PeriodRequested>,
     limit: Option<OutputLimit>,
@@ -37,8 +39,13 @@ pub fn run(
         ReportTypeRequested::ProjectDetails,
     );
 
-    let tracking_result =
-        process_inputs(input_path, project_details_selected, exclude_tags, &period)?;
+    let tracking_result = process_inputs(
+        input_path,
+        project_details_selected,
+        tag_filter,
+        exclude_tags,
+        &period,
+    )?;
 
     print_result(period, limit, report_type, &tracking_result, formatter);
     print_warnings(&tracking_result.errors);
@@ -49,10 +56,16 @@ pub fn run(
 fn process_inputs(
     input_path: &Path,
     project_details_selected: Option<String>,
+    tags_filter: Option<TagFilter>,
     exclude_tags: Vec<String>,
     period: &Option<PeriodRequested>,
 ) -> Result<domain::TimeTrackingResult, ParseError> {
-    let filter = create_filter(&project_details_selected, &exclude_tags, period);
+    let filter = create_filter(
+        &project_details_selected,
+        &tags_filter,
+        &exclude_tags,
+        period,
+    );
     let tracking_result = parsing::process_input(input_path, &filter)?;
     Ok(tracking_result)
 }
@@ -86,6 +99,7 @@ fn print_warnings(parse_errors: &Vec<ParseError>) {
 
 fn create_filter(
     main_context_requested: &Option<String>,
+    tags_filter: &Option<TagFilter>,
     exclude_tags: &Vec<String>,
     period: &Option<PeriodRequested>,
 ) -> Option<Filter> {
@@ -93,13 +107,15 @@ fn create_filter(
     let period_filter = period
         .clone()
         .map(|period| Filter::DateRange(period.date_range()));
-
+    let tags_filter = tags_filter
+        .as_ref()
+        .map(|filter| Filter::Tags(filter.filter_tags()));
     let exclude_tag_filter = Filter::ExcludeTags(exclude_tags.clone());
 
     project_filter
         .into_iter()
-        // .chain(from_date_filter)
         .chain(period_filter)
+        .chain(tags_filter)
         .chain(Some(exclude_tag_filter))
         .reduce(Filter::combine)
 }

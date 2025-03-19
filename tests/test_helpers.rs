@@ -138,6 +138,11 @@ impl CommandSpec {
         self
     }
 
+    pub fn with_tags_filter(mut self, tags: &[&str]) -> Self {
+        self.args.add_option("tags", &tags.join(","));
+        self
+    }
+
     pub fn with_exclude_tags_filter(mut self, tags: &[&str]) -> Self {
         self.args.add_option("exclude-tags", &tags.join(","));
         self

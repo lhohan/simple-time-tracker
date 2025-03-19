@@ -30,6 +30,53 @@ mod filter_tags {
             .should_succeed()
             .expect_task("Task A");
     }
+
+    #[test]
+    fn supports_tags_filter() {
+        let content = r#"## TT 2020-01-01
+- #tag1 1h Task A"#;
+
+        CommandSpec::new()
+            .with_file(content)
+            .with_tags_filter(&["tag1"])
+            .when_run()
+            .should_succeed();
+    }
+
+    #[test]
+    fn tags_filter() {
+        let content = r#"## TT 2024-01-15
+- #tag-1 1h Task A
+- #tag-2 2h Task B"#;
+
+        CommandSpec::new()
+            .with_file(content)
+            .with_tags_filter(&["tag-1"])
+            .when_run()
+            .should_succeed()
+            .expect_project("tag-1")
+            .validate()
+            .expect_no_text("tag-2");
+    }
+
+    #[test]
+    fn tags_filter_multiple_tags() {
+        let content = r#"## TT 2024-01-15
+- #tag-1 1h Task A
+- #tag-2 2h Task B
+- #tag-3 4h Task C"#;
+
+        CommandSpec::new()
+            .with_file(content)
+            .with_tags_filter(&["tag-1,tag-2"])
+            .when_run()
+            .should_succeed()
+            .expect_project("tag-1")
+            .validate()
+            .expect_project("tag-2")
+            .validate()
+            .expect_no_text("tag-3");
+    }
 }
 
 mod exclude_tags {

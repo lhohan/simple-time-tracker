@@ -2,6 +2,7 @@ use clap::Parser;
 use std::path::PathBuf;
 
 use crate::domain::reports::OutputLimit;
+use crate::domain::tags::TagFilter;
 use crate::domain::time::Clock;
 use crate::domain::ParseError;
 use crate::domain::PeriodRequested;
@@ -25,6 +26,10 @@ pub struct Args {
     // Project filter flag
     #[arg(long)]
     pub project: Option<String>,
+
+    // Tags filter
+    #[arg(long)]
+    pub tags: Option<String>,
 
     // Tags exclude filter
     #[arg(long)]
@@ -60,6 +65,13 @@ impl Args {
             }
             None => vec![],
         }
+    }
+
+    /// Parses filter tags from the command line arguments.
+    pub fn tags(&self) -> Option<TagFilter> {
+        self.tags
+            .as_ref()
+            .map(|tags| TagFilter::parse(tags.clone()))
     }
 
     /// Parses the period from the command line arguments.
