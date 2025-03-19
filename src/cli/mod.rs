@@ -71,6 +71,7 @@ impl Args {
     pub fn tags(&self) -> Option<TagFilter> {
         self.tags
             .as_ref()
+            .filter(|tags| !tags.is_empty())
             .map(|tags| TagFilter::parse(tags.clone()))
     }
 

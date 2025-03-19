@@ -60,6 +60,35 @@ mod filter_tags {
     }
 
     #[test]
+    fn tags_filter_empty() {
+        let content = r#"## TT 2024-01-15
+- #tag-1 1h Task A
+"#;
+
+        CommandSpec::new()
+            .with_file(content)
+            .with_tags_filter(&[])
+            .when_run()
+            .should_succeed()
+            .expect_project("tag-1")
+            .validate();
+    }
+
+    #[test]
+    fn tags_filter_non_existing_tag() {
+        let content = r#"## TT 2024-01-15
+- #tag-1 1h Task A
+"#;
+
+        CommandSpec::new()
+            .with_file(content)
+            .with_tags_filter(&["tag-2"])
+            .when_run()
+            .should_succeed()
+            .expect_no_data_found();
+    }
+
+    #[test]
     fn tags_filter_multiple_tags() {
         let content = r#"## TT 2024-01-15
 - #tag-1 1h Task A
@@ -68,7 +97,7 @@ mod filter_tags {
 
         CommandSpec::new()
             .with_file(content)
-            .with_tags_filter(&["tag-1,tag-2"])
+            .with_tags_filter(&["tag-1", "tag-2"])
             .when_run()
             .should_succeed()
             .expect_project("tag-1")
