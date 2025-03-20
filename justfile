@@ -6,6 +6,10 @@ build:
 install:
     cargo install --path .
 
+# Check for warnings continuously
+check-w:
+    cargo watch -c -x check
+
 # Run the 'tt' app
 run:
     cargo run -- --help
