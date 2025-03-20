@@ -29,7 +29,7 @@ pub struct Args {
 
     // Project filter flag
     #[arg(long)]
-    pub project: Option<String>,
+    project: Option<String>,
 
     // Tags filter
     #[arg(long)]
