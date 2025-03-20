@@ -23,6 +23,10 @@ pub struct Args {
     #[arg(short, long)]
     limit: bool,
 
+    /// Show project details, e.g. tasks
+    #[arg(short, long)]
+    details: bool,
+
     // Project filter flag
     #[arg(long)]
     pub project: Option<String>,
@@ -52,8 +56,21 @@ pub struct Args {
 
 impl Args {
     #[must_use]
-    pub fn parse() -> Self {
-        Self::parse_from(std::env::args())
+    pub fn parse() -> Result<Self, String> {
+        let args = Self::parse_from(std::env::args());
+        args.validate()?;
+        Ok(args)
+    }
+
+    fn validate(&self) -> Result<(), String> {
+        // Check if details is specified without tags
+        if self.details && self.tags.is_none() && self.project.is_none() {
+            return Err("--details flag requires --tags to be specified".to_string());
+        }
+
+        // Add any other validations here
+
+        Ok(())
     }
 
     /// Parses exclude tags from the command line arguments.
@@ -68,7 +85,7 @@ impl Args {
     }
 
     pub fn include_details(&self) -> bool {
-        self.project.is_some()
+        self.project.is_some() || self.details
     }
 
     /// Parses filter tags from the command line arguments.

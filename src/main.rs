@@ -4,7 +4,13 @@ use time_tracker::cli::Args;
 use time_tracker::domain::time::Clock;
 
 fn main() -> Result<()> {
-    let args = Args::parse();
+    let args = match Args::parse() {
+        Ok(args) => args,
+        Err(err) => {
+            eprintln!("Error parsing command line arguments: {}", err);
+            std::process::exit(1);
+        }
+    };
     let today_str = std::env::var("TT_TODAY").ok();
     let clock = match today_str {
         Some(today_str) => {

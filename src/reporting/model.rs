@@ -24,7 +24,7 @@ pub enum Report {
 #[derive(Debug)]
 pub enum ReportTypeRequested {
     Overview,
-    ProjectDetails(String),
+    ProjectDetails(Vec<String>),
 }
 
 impl Report {

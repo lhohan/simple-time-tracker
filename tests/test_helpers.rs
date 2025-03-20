@@ -118,6 +118,11 @@ impl CommandSpec {
         self
     }
 
+    pub fn with_details(mut self) -> Self {
+        self.args.add_flag("details");
+        self
+    }
+
     pub fn with_limit(mut self) -> Self {
         self.args.add_flag("limit");
         self
@@ -292,6 +297,13 @@ impl CommandResult {
         Self {
             output: self.output.failure(),
         }
+    }
+
+    pub fn expect_error(self, expected_output: &str) -> Self {
+        let new_output = self
+            .output
+            .stderr(predicate::str::contains(expected_output));
+        Self { output: new_output }
     }
 
     pub fn expect_output(self, expected_output: &str) -> Self {
