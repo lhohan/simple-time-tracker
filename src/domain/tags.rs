@@ -45,24 +45,24 @@ impl fmt::Display for Tag {
 }
 
 pub enum TagFilter {
-    ShowOnlyContainingAnyOf(Vec<Tag>),
+    Any(Vec<Tag>),
 }
 
 impl TagFilter {
     pub fn parse(input: Vec<String>) -> Self {
         let tags = input.into_iter().map(|tag| Tag::from_raw(&tag)).collect();
-        TagFilter::ShowOnlyContainingAnyOf(tags)
+        TagFilter::Any(tags)
     }
 
     pub fn filter_tags(&self) -> Vec<Tag> {
         match self {
-            TagFilter::ShowOnlyContainingAnyOf(tags) => tags.clone(),
+            TagFilter::Any(tags) => tags.clone(),
         }
     }
 
     pub fn project(&self) -> Option<Tag> {
         match self {
-            TagFilter::ShowOnlyContainingAnyOf(tags) => tags.first().cloned(),
+            TagFilter::Any(tags) => tags.first().cloned(),
         }
     }
 }
