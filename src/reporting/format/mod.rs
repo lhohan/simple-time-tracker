@@ -5,7 +5,7 @@ mod text;
 
 use crate::reporting::format::markdown::MarkdownFormatter;
 use crate::reporting::format::text::TextFormatter;
-use crate::reporting::model::Report;
+use crate::reporting::model::ReportOld;
 use std::fmt;
 
 fn create_formatter(format_type: FormatType) -> Box<dyn Formatter> {
@@ -16,7 +16,7 @@ fn create_formatter(format_type: FormatType) -> Box<dyn Formatter> {
 }
 
 pub trait Formatter {
-    fn format(&self, report: &Report) -> String;
+    fn format(&self, report: &ReportOld) -> String;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -47,7 +47,7 @@ impl FormatType {
     }
 }
 
-impl fmt::Display for Report {
+impl fmt::Display for ReportOld {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,

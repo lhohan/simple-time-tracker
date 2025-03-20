@@ -5,8 +5,9 @@ mod reporting;
 pub mod domain;
 
 use domain::reports::OutputLimit;
+use domain::tags::Tag;
 use domain::tags::TagFilter;
-use reporting::Report;
+use reporting::ReportOld;
 
 use crate::domain::ParseError;
 use crate::domain::PeriodRequested;
@@ -35,8 +36,8 @@ pub fn run(
     formatter: Box<dyn Formatter>,
 ) -> Result<(), ParseError> {
     let tags_details_requested = tag_filter
-        .as_ref()
-        .and_then(|filter| filter.project().clone().map(|p| p.raw_value()));
+        .clone()
+        .and_then(|filter| filter.tags().first().map(|tag| tag.clone()));
 
     let tracking_result = process_inputs(input_path, tag_filter, exclude_tags, &period)?;
 
@@ -68,7 +69,7 @@ fn print_result(
     period: Option<PeriodRequested>,
     limit: Option<OutputLimit>,
     include_details: bool,
-    project: &Option<String>,
+    project: &Option<Tag>,
     tracking_result: &domain::TimeTrackingResult,
     formatter: Box<dyn Formatter>,
 ) {
@@ -82,9 +83,9 @@ fn print_result(
         };
 
         let report = match report_type {
-            ReportTypeRequested::Overview => Report::overview(time_report, limit, &period),
-            ReportTypeRequested::ProjectDetails(project) => {
-                Report::project_details(&time_report, &project.first().unwrap())
+            ReportTypeRequested::Overview => ReportOld::overview(time_report, limit, &period),
+            ReportTypeRequested::ProjectDetails(tags) => {
+                ReportOld::project_details(&time_report, &tags.first().unwrap().clone())
             }
         };
 

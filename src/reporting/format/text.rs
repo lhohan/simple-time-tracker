@@ -3,14 +3,14 @@ use crate::domain::TrackingPeriod;
 
 use crate::reporting::format::format_duration;
 use crate::reporting::format::Formatter;
-use crate::reporting::model::{ProjectSummary, Report, TaskSummary};
+use crate::reporting::model::{ReportOld, Summary};
 
 pub struct TextFormatter;
 
 impl Formatter for TextFormatter {
-    fn format(&self, report: &Report) -> String {
+    fn format(&self, report: &ReportOld) -> String {
         match report {
-            Report::Overview {
+            ReportOld::Overview {
                 entries,
                 period,
                 period_requested,
@@ -19,7 +19,7 @@ impl Formatter for TextFormatter {
                 let description = period_requested.as_ref().map(|p| p.description());
                 Self::format_overview(entries, period, &description, *total_minutes)
             }
-            Report::ProjectDetail {
+            ReportOld::ProjectDetail {
                 project,
                 tasks,
                 period,
@@ -39,7 +39,7 @@ fn format_interval(period: &TrackingPeriod) -> String {
 
 impl TextFormatter {
     fn format_overview(
-        entries: &[ProjectSummary],
+        entries: &[Summary],
         period: &TrackingPeriod,
         range_description: &Option<PeriodDescription>,
         total_minutes: u32,
@@ -56,7 +56,7 @@ impl TextFormatter {
         for entry in entries {
             result.push_str(&format!(
                 "{:.<20}..{} ({:>3}%)\n",
-                entry.project,
+                entry.description,
                 format_duration(entry.minutes),
                 entry.percentage
             ));
@@ -67,7 +67,7 @@ impl TextFormatter {
 
     fn format_project_detail(
         project: &str,
-        tasks: &[TaskSummary],
+        tasks: &[Summary],
         period: &TrackingPeriod,
         total_minutes: u32,
     ) -> String {

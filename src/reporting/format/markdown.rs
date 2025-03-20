@@ -1,18 +1,18 @@
 use crate::reporting::format::{format_duration, Formatter};
-use crate::reporting::model::Report;
+use crate::reporting::model::ReportOld;
 
 pub struct MarkdownFormatter;
 
 impl Formatter for MarkdownFormatter {
-    fn format(&self, report: &Report) -> String {
+    fn format(&self, report: &ReportOld) -> String {
         match report {
-            Report::Overview {
+            ReportOld::Overview {
                 entries,
                 period,
                 period_requested: _,
                 total_minutes,
             } => Self::format_overview(entries, period, *total_minutes),
-            Report::ProjectDetail {
+            ReportOld::ProjectDetail {
                 project: _,
                 tasks: _,
                 period: _,
@@ -24,7 +24,7 @@ impl Formatter for MarkdownFormatter {
 
 impl MarkdownFormatter {
     fn format_overview(
-        entries: &[crate::reporting::model::ProjectSummary],
+        entries: &[crate::reporting::model::Summary],
         period: &crate::domain::TrackingPeriod,
         total_minutes: u32,
     ) -> String {
@@ -45,7 +45,7 @@ impl MarkdownFormatter {
         for entry in entries {
             result.push_str(&format!(
                 "- **{}**: {} ({}%)\n",
-                entry.project,
+                entry.description,
                 format_duration(entry.minutes),
                 entry.percentage
             ));

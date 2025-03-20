@@ -1,21 +1,24 @@
 use std::collections::HashMap;
 
+use crate::domain::tags::Tag;
 use crate::domain::{
     reports::OutputLimit, PeriodRequested, TimeEntry, TrackedTime, TrackingPeriod,
 };
 use itertools::Itertools;
 
+struct Report {}
+
 #[derive(Debug)]
-pub enum Report {
+pub enum ReportOld {
     Overview {
-        entries: Vec<ProjectSummary>,
+        entries: Vec<Summary>,
         period: TrackingPeriod,
         period_requested: Option<PeriodRequested>,
         total_minutes: u32,
     },
     ProjectDetail {
         project: String,
-        tasks: Vec<TaskSummary>,
+        tasks: Vec<Summary>,
         period: TrackingPeriod,
         total_minutes: u32,
     },
@@ -24,10 +27,10 @@ pub enum Report {
 #[derive(Debug)]
 pub enum ReportTypeRequested {
     Overview,
-    ProjectDetails(Vec<String>),
+    ProjectDetails(Vec<Tag>),
 }
 
-impl Report {
+impl ReportOld {
     pub fn overview(
         time_report: &TrackedTime,
         limit: Option<OutputLimit>,
@@ -37,10 +40,12 @@ impl Report {
 
         let summaries_sorted = summarized
             .into_iter()
-            .map(|(project, minutes)| {
-                ProjectSummary::new(project, minutes, time_report.total_minutes)
-            })
-            .sorted_by(|a, b| b.minutes.cmp(&a.minutes).then(a.project.cmp(&b.project)));
+            .map(|(project, minutes)| Summary::new(project, minutes, time_report.total_minutes))
+            .sorted_by(|a, b| {
+                b.minutes
+                    .cmp(&a.minutes)
+                    .then(a.description.cmp(&b.description))
+            });
 
         let entries = match limit {
             Some(OutputLimit::CummalitivePercentageThreshhold(threshold)) => {
@@ -50,7 +55,7 @@ impl Report {
             None => summaries_sorted.collect(),
         };
 
-        Report::Overview {
+        ReportOld::Overview {
             entries,
             period: time_report.period,
             period_requested: period_requested.clone(),
@@ -58,14 +63,14 @@ impl Report {
         }
     }
 
-    pub fn project_details(time_report: &TrackedTime, project: &str) -> Self {
+    pub fn project_details(time_report: &TrackedTime, project: &Tag) -> Self {
         let summarized = summarize_tasks(&time_report.entries);
 
-        Report::ProjectDetail {
-            project: project.to_string(),
+        ReportOld::ProjectDetail {
+            project: project.raw_value().to_string(),
             tasks: summarized
                 .into_iter()
-                .map(|(desc, minutes)| TaskSummary::new(desc, minutes, time_report.total_minutes))
+                .map(|(desc, minutes)| Summary::new(desc, minutes, time_report.total_minutes))
                 .sorted_by(|a, b| b.minutes.cmp(&a.minutes))
                 .collect(),
             period: time_report.period,
@@ -75,17 +80,17 @@ impl Report {
 
     pub fn period(&self) -> &TrackingPeriod {
         match self {
-            Report::Overview { period, .. } => &period,
-            Report::ProjectDetail { period, .. } => &period,
+            ReportOld::Overview { period, .. } => &period,
+            ReportOld::ProjectDetail { period, .. } => &period,
         }
     }
 }
 
 fn limit_number_of_entries(
     total_minutes: f64,
-    summaries_sorted: std::vec::IntoIter<ProjectSummary>,
+    summaries_sorted: std::vec::IntoIter<Summary>,
     cumulative_percentage_threshold: f64,
-) -> Vec<ProjectSummary> {
+) -> Vec<Summary> {
     summaries_sorted
         .scan(0.0, |cumulative_percentage, entry| {
             let percentage = (entry.minutes as f64 / total_minutes) * 100.0;
@@ -100,30 +105,13 @@ fn limit_number_of_entries(
 }
 
 #[derive(Debug)]
-pub struct ProjectSummary {
-    pub(crate) project: String,
-    pub(crate) minutes: u32,
-    pub(crate) percentage: u32,
-}
-
-impl ProjectSummary {
-    pub fn new(project: String, minutes: u32, total_minutes: u32) -> Self {
-        Self {
-            project,
-            minutes,
-            percentage: calculate_percentage(minutes, total_minutes),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct TaskSummary {
+pub struct Summary {
     pub(crate) description: String,
     pub(crate) minutes: u32,
     pub(crate) percentage: u32,
 }
 
-impl TaskSummary {
+impl Summary {
     pub fn new(description: String, minutes: u32, total_minutes: u32) -> Self {
         Self {
             description,
