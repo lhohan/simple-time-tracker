@@ -27,7 +27,7 @@ fn main() -> Result<()> {
 
     time_tracker::run(
         &args.input,
-        args.project.as_deref().map(String::from),
+        args.include_details(),
         tags,
         exclude_tags,
         period,

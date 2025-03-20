@@ -49,18 +49,20 @@ pub enum TagFilter {
 }
 
 impl TagFilter {
-    pub fn parse(input: String) -> Self {
-        let tags = input
-            .as_str()
-            .split(',')
-            .map(|tag| Tag::from_raw(tag))
-            .collect();
+    pub fn parse(input: Vec<String>) -> Self {
+        let tags = input.into_iter().map(|tag| Tag::from_raw(&tag)).collect();
         TagFilter::ShowOnlyContainingAny(tags)
     }
 
     pub fn filter_tags(&self) -> Vec<Tag> {
         match self {
             TagFilter::ShowOnlyContainingAny(tags) => tags.clone(),
+        }
+    }
+
+    pub fn project(&self) -> Option<Tag> {
+        match self {
+            TagFilter::ShowOnlyContainingAny(tags) => tags.first().cloned(),
         }
     }
 }

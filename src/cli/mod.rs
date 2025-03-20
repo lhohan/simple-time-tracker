@@ -67,12 +67,29 @@ impl Args {
         }
     }
 
+    pub fn include_details(&self) -> bool {
+        self.project.is_some()
+    }
+
     /// Parses filter tags from the command line arguments.
     pub fn tags(&self) -> Option<TagFilter> {
-        self.tags
-            .as_ref()
-            .filter(|tags| !tags.is_empty())
-            .map(|tags| TagFilter::parse(tags.clone()))
+        fn parse_project_tags(maybe_project: &Option<String>) -> Vec<String> {
+            maybe_project.clone().map_or_else(Vec::new, |p| vec![p])
+        }
+
+        fn parse_tags(tags: Vec<String>, maybe_tags: &Option<String>) -> Vec<String> {
+            maybe_tags.as_ref().filter(|s| !s.is_empty()).map_or_else(
+                || tags.clone(),
+                |tag_list| tag_list.split(',').map(String::from).collect(),
+            )
+        }
+        fn to_filter(tags: Vec<String>) -> Option<TagFilter> {
+            (!tags.is_empty()).then(|| TagFilter::parse(tags))
+        }
+
+        let tags = parse_project_tags(&self.project);
+        let tags = parse_tags(tags, &self.tags);
+        to_filter(tags)
     }
 
     /// Parses the period from the command line arguments.

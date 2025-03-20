@@ -27,25 +27,23 @@ use std::path::Path;
 /// - The requested period is invalid
 pub fn run(
     input_path: &Path,
-    project_details_selected: Option<String>,
+    include_details: bool,
     tag_filter: Option<TagFilter>,
     exclude_tags: Vec<String>,
     period: Option<PeriodRequested>,
     limit: Option<OutputLimit>,
     formatter: Box<dyn Formatter>,
 ) -> Result<(), ParseError> {
-    let report_type = project_details_selected.clone().map_or(
-        ReportTypeRequested::Overview,
-        ReportTypeRequested::ProjectDetails,
-    );
+    let project = tag_filter
+        .as_ref()
+        .and_then(|filter| filter.project().map(|p| p.raw_value()));
+    let report_type = if include_details {
+        ReportTypeRequested::ProjectDetails(project.expect("tags filter does not contain project"))
+    } else {
+        ReportTypeRequested::Overview
+    };
 
-    let tracking_result = process_inputs(
-        input_path,
-        project_details_selected,
-        tag_filter,
-        exclude_tags,
-        &period,
-    )?;
+    let tracking_result = process_inputs(input_path, tag_filter, exclude_tags, &period)?;
 
     print_result(period, limit, report_type, &tracking_result, formatter);
     print_warnings(&tracking_result.errors);
@@ -55,17 +53,11 @@ pub fn run(
 
 fn process_inputs(
     input_path: &Path,
-    project_details_selected: Option<String>,
     tags_filter: Option<TagFilter>,
     exclude_tags: Vec<String>,
     period: &Option<PeriodRequested>,
 ) -> Result<domain::TimeTrackingResult, ParseError> {
-    let filter = create_filter(
-        &project_details_selected,
-        &tags_filter,
-        &exclude_tags,
-        period,
-    );
+    let filter = create_filter(&tags_filter, &exclude_tags, period);
     let tracking_result = parsing::process_input(input_path, &filter)?;
     Ok(tracking_result)
 }
@@ -98,12 +90,10 @@ fn print_warnings(parse_errors: &Vec<ParseError>) {
 }
 
 fn create_filter(
-    main_context_requested: &Option<String>,
     tags_filter: &Option<TagFilter>,
     exclude_tags: &Vec<String>,
     period: &Option<PeriodRequested>,
 ) -> Option<Filter> {
-    let project_filter = main_context_requested.clone().map(Filter::MainContext);
     let period_filter = period
         .clone()
         .map(|period| Filter::DateRange(period.date_range()));
@@ -112,10 +102,9 @@ fn create_filter(
         .map(|filter| Filter::Tags(filter.filter_tags()));
     let exclude_tag_filter = Filter::ExcludeTags(exclude_tags.clone());
 
-    project_filter
+    tags_filter
         .into_iter()
         .chain(period_filter)
-        .chain(tags_filter)
         .chain(Some(exclude_tag_filter))
         .reduce(Filter::combine)
 }
