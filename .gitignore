@@ -19,3 +19,6 @@ target/
 # Project
 tarpaulin-report.html
 .env
+
+# local temp files
+tmp*
