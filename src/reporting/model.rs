@@ -6,10 +6,8 @@ use crate::domain::{
 };
 use itertools::Itertools;
 
-struct Report {}
-
 #[derive(Debug)]
-pub enum ReportOld {
+pub enum Report {
     Overview {
         entries: Vec<Summary>,
         period: TrackingPeriod,
@@ -30,7 +28,7 @@ pub enum ReportTypeRequested {
     ProjectDetails(Vec<Tag>),
 }
 
-impl ReportOld {
+impl Report {
     pub fn overview(
         time_report: &TrackedTime,
         limit: Option<OutputLimit>,
@@ -55,7 +53,7 @@ impl ReportOld {
             None => summaries_sorted.collect(),
         };
 
-        ReportOld::Overview {
+        Report::Overview {
             entries,
             period: time_report.period,
             period_requested: period_requested.clone(),
@@ -66,7 +64,7 @@ impl ReportOld {
     pub fn project_details(time_report: &TrackedTime, project: &Tag) -> Self {
         let summarized = summarize_tasks(&time_report.entries);
 
-        ReportOld::ProjectDetail {
+        Report::ProjectDetail {
             project: project.raw_value().to_string(),
             tasks: summarized
                 .into_iter()
@@ -80,8 +78,8 @@ impl ReportOld {
 
     pub fn period(&self) -> &TrackingPeriod {
         match self {
-            ReportOld::Overview { period, .. } => &period,
-            ReportOld::ProjectDetail { period, .. } => &period,
+            Report::Overview { period, .. } => &period,
+            Report::ProjectDetail { period, .. } => &period,
         }
     }
 }

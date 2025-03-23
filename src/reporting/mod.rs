@@ -1,6 +1,6 @@
 pub mod format;
 mod model;
-pub use crate::reporting::model::ReportOld;
+pub use crate::reporting::model::Report;
 pub use crate::reporting::model::ReportTypeRequested;
 
 #[cfg(test)]
@@ -14,7 +14,7 @@ mod tests {
         use crate::domain::TrackedTime;
 
         use super::helpers::*;
-        use crate::ReportOld;
+        use crate::Report;
 
         #[test]
         fn test_overview_report_ordering() {
@@ -27,9 +27,9 @@ mod tests {
 
             let (start, end) = default_period();
             let time_report = TrackedTime::new(entries, start, end, 1);
-            let report = ReportOld::overview(&time_report, None, &None);
+            let report = Report::overview(&time_report, None, &None);
 
-            if let ReportOld::Overview { entries, .. } = report {
+            if let Report::Overview { entries, .. } = report {
                 let projects: Vec<_> = entries.iter().map(|e| e.description.as_str()).collect();
                 assert_eq!(projects, vec!["also-long", "longest", "medium", "short"]);
             } else {

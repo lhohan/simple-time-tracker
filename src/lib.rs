@@ -7,7 +7,7 @@ pub mod domain;
 use domain::reports::OutputLimit;
 use domain::tags::Tag;
 use domain::tags::TagFilter;
-use reporting::ReportOld;
+use reporting::Report;
 
 use crate::domain::ParseError;
 use crate::domain::PeriodRequested;
@@ -83,9 +83,9 @@ fn print_result(
         };
 
         let report = match report_type {
-            ReportTypeRequested::Overview => ReportOld::overview(time_report, limit, &period),
+            ReportTypeRequested::Overview => Report::overview(time_report, limit, &period),
             ReportTypeRequested::ProjectDetails(tags) => {
-                ReportOld::project_details(&time_report, &tags.first().unwrap().clone())
+                Report::project_details(&time_report, &tags.first().unwrap().clone())
             }
         };
 

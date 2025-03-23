@@ -3,14 +3,14 @@ use crate::domain::TrackingPeriod;
 
 use crate::reporting::format::format_duration;
 use crate::reporting::format::Formatter;
-use crate::reporting::model::{ReportOld, Summary};
+use crate::reporting::model::{Report, Summary};
 
 pub struct TextFormatter;
 
 impl Formatter for TextFormatter {
-    fn format(&self, report: &ReportOld) -> String {
+    fn format(&self, report: &Report) -> String {
         match report {
-            ReportOld::Overview {
+            Report::Overview {
                 entries,
                 period,
                 period_requested,
@@ -19,7 +19,7 @@ impl Formatter for TextFormatter {
                 let description = period_requested.as_ref().map(|p| p.description());
                 Self::format_overview(entries, period, &description, *total_minutes)
             }
-            ReportOld::ProjectDetail {
+            Report::ProjectDetail {
                 project,
                 tasks,
                 period,

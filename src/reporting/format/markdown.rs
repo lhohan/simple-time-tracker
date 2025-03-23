@@ -1,18 +1,18 @@
 use crate::reporting::format::{format_duration, Formatter};
-use crate::reporting::model::ReportOld;
+use crate::reporting::model::Report;
 
 pub struct MarkdownFormatter;
 
 impl Formatter for MarkdownFormatter {
-    fn format(&self, report: &ReportOld) -> String {
+    fn format(&self, report: &Report) -> String {
         match report {
-            ReportOld::Overview {
+            Report::Overview {
                 entries,
                 period,
                 period_requested: _,
                 total_minutes,
             } => Self::format_overview(entries, period, *total_minutes),
-            ReportOld::ProjectDetail {
+            Report::ProjectDetail {
                 project: _,
                 tasks: _,
                 period: _,
