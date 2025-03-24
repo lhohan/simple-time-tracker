@@ -24,7 +24,7 @@ impl Formatter for MarkdownFormatter {
 
 impl MarkdownFormatter {
     fn format_overview(
-        entries: &[crate::reporting::model::Summary],
+        entries: &[crate::reporting::model::ContextSummary],
         period: &crate::domain::TrackingPeriod,
         total_minutes: u32,
     ) -> String {

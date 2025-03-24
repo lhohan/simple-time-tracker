@@ -3,7 +3,8 @@ use crate::domain::TrackingPeriod;
 
 use crate::reporting::format::format_duration;
 use crate::reporting::format::Formatter;
-use crate::reporting::model::{Report, Summary};
+use crate::reporting::model::TaskSummary;
+use crate::reporting::model::{ContextSummary, Report};
 
 pub struct TextFormatter;
 
@@ -39,7 +40,7 @@ fn format_interval(period: &TrackingPeriod) -> String {
 
 impl TextFormatter {
     fn format_overview(
-        entries: &[Summary],
+        entries: &[ContextSummary],
         period: &TrackingPeriod,
         range_description: &Option<PeriodDescription>,
         total_minutes: u32,
@@ -67,7 +68,7 @@ impl TextFormatter {
 
     fn format_project_detail(
         project: &str,
-        tasks: &[Summary],
+        tasks: &[TaskSummary],
         period: &TrackingPeriod,
         total_minutes: u32,
     ) -> String {

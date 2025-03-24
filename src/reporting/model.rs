@@ -9,14 +9,14 @@ use itertools::Itertools;
 #[derive(Debug)]
 pub enum Report {
     Overview {
-        entries: Vec<Summary>,
+        entries: Vec<ContextSummary>,
         period: TrackingPeriod,
         period_requested: Option<PeriodRequested>,
         total_minutes: u32,
     },
     ProjectDetail {
         project: String,
-        tasks: Vec<Summary>,
+        tasks: Vec<TaskSummary>,
         period: TrackingPeriod,
         total_minutes: u32,
     },
@@ -38,7 +38,9 @@ impl Report {
 
         let summaries_sorted = summarized
             .into_iter()
-            .map(|(project, minutes)| Summary::new(project, minutes, time_report.total_minutes))
+            .map(|(project, minutes)| {
+                ContextSummary::new(project, minutes, time_report.total_minutes)
+            })
             .sorted_by(|a, b| {
                 b.minutes
                     .cmp(&a.minutes)
@@ -68,7 +70,7 @@ impl Report {
             project: project.raw_value().to_string(),
             tasks: summarized
                 .into_iter()
-                .map(|(desc, minutes)| Summary::new(desc, minutes, time_report.total_minutes))
+                .map(|(desc, minutes)| TaskSummary::new(desc, minutes, time_report.total_minutes))
                 .sorted_by(|a, b| b.minutes.cmp(&a.minutes))
                 .collect(),
             period: time_report.period,
@@ -86,9 +88,9 @@ impl Report {
 
 fn limit_number_of_entries(
     total_minutes: f64,
-    summaries_sorted: std::vec::IntoIter<Summary>,
+    summaries_sorted: std::vec::IntoIter<ContextSummary>,
     cumulative_percentage_threshold: f64,
-) -> Vec<Summary> {
+) -> Vec<ContextSummary> {
     summaries_sorted
         .scan(0.0, |cumulative_percentage, entry| {
             let percentage = (entry.minutes as f64 / total_minutes) * 100.0;
@@ -103,13 +105,30 @@ fn limit_number_of_entries(
 }
 
 #[derive(Debug)]
-pub struct Summary {
+pub struct ContextSummary {
     pub(crate) description: String,
     pub(crate) minutes: u32,
     pub(crate) percentage: u32,
 }
 
-impl Summary {
+impl ContextSummary {
+    pub fn new(description: String, minutes: u32, total_minutes: u32) -> Self {
+        Self {
+            description,
+            minutes,
+            percentage: calculate_percentage(minutes, total_minutes),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct TaskSummary {
+    pub(crate) description: String,
+    pub(crate) minutes: u32,
+    pub(crate) percentage: u32,
+}
+
+impl TaskSummary {
     pub fn new(description: String, minutes: u32, total_minutes: u32) -> Self {
         Self {
             description,
