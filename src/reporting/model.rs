@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
-use crate::domain::reports::TasksReport;
+use crate::domain::reporting::TasksReport;
 use crate::domain::tags::Tag;
 use crate::domain::{
-    reports::OutputLimit, PeriodRequested, TimeEntry, TrackedTime, TrackingPeriod,
+    reporting::OutputLimit, PeriodRequested, TimeEntry, TrackedTime, TrackingPeriod,
 };
 use itertools::Itertools;
 

@@ -1,5 +1,5 @@
-use crate::domain::reports;
-use crate::domain::reports::TasksReport;
+use crate::domain::reporting;
+use crate::domain::reporting::TasksReport;
 use crate::domain::PeriodDescription;
 use crate::domain::TrackingPeriod;
 
@@ -79,7 +79,7 @@ impl TextFormatter {
 
     fn format_tasks_context(
         context: &str,
-        tasks: &[reports::TaskSummary],
+        tasks: &[reporting::TaskSummary],
         period: &TrackingPeriod,
         total_minutes: u32,
     ) -> String {

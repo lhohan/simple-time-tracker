@@ -7,6 +7,78 @@ use chrono::NaiveDate;
 use chrono::{Datelike, IsoWeek};
 use itertools::Itertools;
 
+#[derive(Debug)]
+pub struct TimeTrackingResult {
+    pub time_entries: Option<TrackedTime>,
+    pub errors: Vec<ParseError>,
+}
+
+#[derive(Debug)]
+pub struct TrackedTime {
+    pub entries: Vec<TimeEntry>,
+    pub period: TrackingPeriod,
+    pub total_minutes: u32,
+}
+
+impl TrackedTime {
+    #[must_use]
+    pub fn new(entries: Vec<TimeEntry>, start: StartDate, end: EndDate, days: u32) -> Self {
+        let total_minutes = entries.iter().map(|e| e.minutes).sum();
+        Self {
+            entries,
+            period: TrackingPeriod::new(start, end, days),
+            total_minutes,
+        }
+    }
+
+    pub fn tasks_tracked_for(&self, tags: Vec<Tag>) -> TasksReport {
+        let mut per_tag_summaries = Vec::new();
+
+        for tag in tags.iter() {
+            let tag_summary = self.summarize_tasks_for_context(tag);
+            per_tag_summaries.push(tag_summary);
+        }
+
+        TasksReport::new(per_tag_summaries, self.period, self.total_minutes)
+    }
+
+    fn summarize_tasks_for_context(&self, tag: &Tag) -> TaskSummariesForContext {
+        let total_times_for_tasks = self.calculate_totals_for_tasks(tag);
+
+        let total_time_for_tag: u32 = total_times_for_tasks.values().sum();
+
+        let task_summaries = total_times_for_tasks
+            .into_iter()
+            .map(|(desc, minutes)| TaskSummary::new(desc, minutes, total_time_for_tag));
+        let sorted_summaries = TrackedTime::sort_by_time(task_summaries).collect::<Vec<_>>();
+
+        TaskSummariesForContext::new(tag.clone(), sorted_summaries)
+    }
+
+    fn calculate_totals_for_tasks(&self, tag: &Tag) -> HashMap<String, u32> {
+        let mut total_times_for_tasks = HashMap::new();
+
+        let entries_for_tag = self.entries.iter().filter(|entry| entry.tags.contains(tag));
+        for entry in entries_for_tag {
+            let key = entry
+                .description
+                .clone()
+                .unwrap_or_else(|| "<no description>".to_string());
+            *total_times_for_tasks.entry(key).or_insert(0) += entry.minutes;
+        }
+        total_times_for_tasks.clone()
+    }
+
+    fn sort_by_time(
+        map: std::iter::Map<
+            std::collections::hash_map::IntoIter<String, u32>,
+            impl FnMut((String, u32)) -> TaskSummary,
+        >,
+    ) -> std::vec::IntoIter<TaskSummary> {
+        map.sorted_by(|a, b| b.minutes.cmp(&a.minutes))
+    }
+}
+
 pub struct TasksReport {
     summaries: Vec<TaskSummariesForContext>,
     period: TrackingPeriod,
@@ -83,12 +155,6 @@ impl TaskSummary {
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 fn calculate_percentage(minutes: u32, total_minutes: u32) -> u32 {
     ((f64::from(minutes) / f64::from(total_minutes)) * 100.0).round() as u32
-}
-
-#[derive(Debug)]
-pub struct TimeTrackingResult {
-    pub time_entries: Option<TrackedTime>,
-    pub errors: Vec<ParseError>,
 }
 
 #[derive(Debug, Clone)]
@@ -171,72 +237,6 @@ impl TrackingPeriod {
     #[must_use]
     pub fn new(start: StartDate, end: EndDate, days: u32) -> Self {
         Self { start, end, days }
-    }
-}
-
-#[derive(Debug)]
-pub struct TrackedTime {
-    pub entries: Vec<TimeEntry>,
-    pub period: TrackingPeriod,
-    pub total_minutes: u32,
-}
-
-impl TrackedTime {
-    #[must_use]
-    pub fn new(entries: Vec<TimeEntry>, start: StartDate, end: EndDate, days: u32) -> Self {
-        let total_minutes = entries.iter().map(|e| e.minutes).sum();
-        Self {
-            entries,
-            period: TrackingPeriod::new(start, end, days),
-            total_minutes,
-        }
-    }
-
-    pub fn tasks_tracked_for(&self, tags: Vec<Tag>) -> TasksReport {
-        let mut per_tag_summaries = Vec::new();
-
-        for tag in tags.iter() {
-            let tag_summary = self.summarize_tasks_for_context(tag);
-            per_tag_summaries.push(tag_summary);
-        }
-
-        TasksReport::new(per_tag_summaries, self.period, self.total_minutes)
-    }
-
-    fn summarize_tasks_for_context(&self, tag: &Tag) -> TaskSummariesForContext {
-        let total_times_for_tasks = self.calculate_totals_for_tasks(tag);
-
-        let total_time_for_tag: u32 = total_times_for_tasks.values().sum();
-
-        let task_summaries = total_times_for_tasks
-            .into_iter()
-            .map(|(desc, minutes)| TaskSummary::new(desc, minutes, total_time_for_tag));
-        let sorted_summaries = TrackedTime::sort_by_time(task_summaries).collect::<Vec<_>>();
-
-        TaskSummariesForContext::new(tag.clone(), sorted_summaries)
-    }
-
-    fn calculate_totals_for_tasks(&self, tag: &Tag) -> HashMap<String, u32> {
-        let mut total_times_for_tasks = HashMap::new();
-
-        let entries_for_tag = self.entries.iter().filter(|entry| entry.tags.contains(tag));
-        for entry in entries_for_tag {
-            let key = entry
-                .description
-                .clone()
-                .unwrap_or_else(|| "<no description>".to_string());
-            *total_times_for_tasks.entry(key).or_insert(0) += entry.minutes;
-        }
-        total_times_for_tasks.clone()
-    }
-
-    fn sort_by_time(
-        map: std::iter::Map<
-            std::collections::hash_map::IntoIter<String, u32>,
-            impl FnMut((String, u32)) -> TaskSummary,
-        >,
-    ) -> std::vec::IntoIter<TaskSummary> {
-        map.sorted_by(|a, b| b.minutes.cmp(&a.minutes))
     }
 }
 

@@ -4,7 +4,7 @@ mod reporting;
 
 pub mod domain;
 
-use domain::reports::OutputLimit;
+use domain::reporting::OutputLimit;
 use domain::tags::Tag;
 use domain::tags::TagFilter;
 use reporting::FormatableReport;

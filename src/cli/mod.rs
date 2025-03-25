@@ -1,7 +1,7 @@
 use clap::Parser;
 use std::path::PathBuf;
 
-use crate::domain::reports::OutputLimit;
+use crate::domain::reporting::OutputLimit;
 use crate::domain::tags::TagFilter;
 use crate::domain::time::Clock;
 use crate::domain::ParseError;
