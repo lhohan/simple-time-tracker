@@ -1,5 +1,6 @@
 pub mod format;
 mod model;
+pub use crate::reporting::model::FormatableReport;
 pub use crate::reporting::model::Report;
 pub use crate::reporting::model::ReportTypeRequested;
 
@@ -29,12 +30,9 @@ mod tests {
             let time_report = TrackedTime::new(entries, start, end, 1);
             let report = Report::overview(&time_report, None, &None);
 
-            if let Report::Overview { entries, .. } = report {
-                let projects: Vec<_> = entries.iter().map(|e| e.description.as_str()).collect();
-                assert_eq!(projects, vec!["also-long", "longest", "medium", "short"]);
-            } else {
-                panic!("Expected Overview report");
-            }
+            let Report::Overview { entries, .. } = report;
+            let projects: Vec<_> = entries.iter().map(|e| e.description.as_str()).collect();
+            assert_eq!(projects, vec!["also-long", "longest", "medium", "short"]);
         }
     }
 

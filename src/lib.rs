@@ -7,6 +7,7 @@ pub mod domain;
 use domain::reports::OutputLimit;
 use domain::tags::Tag;
 use domain::tags::TagFilter;
+use reporting::FormatableReport;
 use reporting::Report;
 
 use crate::domain::ParseError;
@@ -35,9 +36,10 @@ pub fn run(
     limit: Option<OutputLimit>,
     formatter: Box<dyn Formatter>,
 ) -> Result<(), ParseError> {
-    let tags_details_requested = tag_filter
+    let tags_details_requested: Vec<Tag> = tag_filter
         .clone()
-        .and_then(|filter| filter.tags().first().map(|tag| tag.clone()));
+        .and_then(|filter| Some(filter.tags()))
+        .unwrap_or_else(|| vec![]);
 
     let tracking_result = process_inputs(input_path, tag_filter, exclude_tags, &period)?;
 
@@ -69,27 +71,29 @@ fn print_result(
     period: Option<PeriodRequested>,
     limit: Option<OutputLimit>,
     include_details: bool,
-    project: &Option<Tag>,
+    project: &Vec<Tag>,
     tracking_result: &domain::TimeTrackingResult,
     formatter: Box<dyn Formatter>,
 ) {
     if let Some(ref time_report) = tracking_result.time_entries {
         let report_type = if include_details {
-            ReportTypeRequested::ProjectDetails(vec![project
-                .clone()
-                .expect("tags filter does not contain project")])
+            ReportTypeRequested::ProjectDetails(project.clone())
         } else {
             ReportTypeRequested::Overview
         };
 
-        let report = match report_type {
-            ReportTypeRequested::Overview => Report::overview(time_report, limit, &period),
+        match report_type {
+            ReportTypeRequested::Overview => {
+                let overview = Report::overview(time_report, limit, &period);
+                let report = FormatableReport::LegacyReport(&overview);
+                println!("{}", formatter.format(&report));
+            }
             ReportTypeRequested::ProjectDetails(tags) => {
-                Report::project_details(&time_report, &tags.first().unwrap().clone())
+                let report = time_report.tasks_tracked_for(tags.clone());
+                let report = FormatableReport::TasksReport(&report);
+                println!("{}", formatter.format(&report));
             }
         };
-
-        println!("{}", formatter.format(&report));
     } else {
         println!("No data found.");
     }

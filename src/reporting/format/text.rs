@@ -1,31 +1,28 @@
+use crate::domain::reports;
+use crate::domain::reports::TasksReport;
 use crate::domain::PeriodDescription;
 use crate::domain::TrackingPeriod;
 
 use crate::reporting::format::format_duration;
 use crate::reporting::format::Formatter;
-use crate::reporting::model::TaskSummary;
+use crate::reporting::model::FormatableReport;
 use crate::reporting::model::{ContextSummary, Report};
 
 pub struct TextFormatter;
 
 impl Formatter for TextFormatter {
-    fn format(&self, report: &Report) -> String {
+    fn format(&self, report: &FormatableReport) -> String {
         match report {
-            Report::Overview {
+            FormatableReport::LegacyReport(Report::Overview {
                 entries,
                 period,
                 period_requested,
                 total_minutes,
-            } => {
+            }) => {
                 let description = period_requested.as_ref().map(|p| p.description());
                 Self::format_overview(entries, period, &description, *total_minutes)
             }
-            Report::ProjectDetail {
-                project,
-                tasks,
-                period,
-                total_minutes,
-            } => Self::format_project_detail(project, tasks, period, *total_minutes),
+            FormatableReport::TasksReport(report) => Self::format_tasks_report(report),
         }
     }
 }
@@ -66,15 +63,29 @@ impl TextFormatter {
         result
     }
 
-    fn format_project_detail(
-        project: &str,
-        tasks: &[TaskSummary],
+    fn format_tasks_report(report: &TasksReport) -> String {
+        let mut result = String::new();
+        for context_summary in report.summaries() {
+            result.push_str(&Self::format_tasks_context(
+                context_summary.context().raw_value().as_str(),
+                &context_summary.task_summaries(),
+                &report.period(),
+                context_summary.total_minutes(),
+            ));
+            result.push('\n');
+        }
+        result
+    }
+
+    fn format_tasks_context(
+        context: &str,
+        tasks: &[reports::TaskSummary],
         period: &TrackingPeriod,
         total_minutes: u32,
     ) -> String {
         let mut result = String::new();
 
-        result.push_str(&format!("Project: {project}"));
+        result.push_str(&format!("Project: {context}"));
         result.push('\n');
         result.push_str(&format_interval(period));
         result.push('\n');
@@ -87,7 +98,7 @@ impl TextFormatter {
                 "- {}{} ({}%)\n",
                 format_padded_description(&task.description),
                 format_duration(task.minutes),
-                task.percentage
+                task.percentage_of_total
             ));
         }
 

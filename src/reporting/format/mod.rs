@@ -8,6 +8,8 @@ use crate::reporting::format::text::TextFormatter;
 use crate::reporting::model::Report;
 use std::fmt;
 
+use super::model::FormatableReport;
+
 fn create_formatter(format_type: FormatType) -> Box<dyn Formatter> {
     match format_type {
         FormatType::Text => Box::new(TextFormatter),
@@ -16,7 +18,10 @@ fn create_formatter(format_type: FormatType) -> Box<dyn Formatter> {
 }
 
 pub trait Formatter {
-    fn format(&self, report: &Report) -> String;
+    fn format_legacy(&self, report: &Report) -> String {
+        self.format(&FormatableReport::LegacyReport(report))
+    }
+    fn format(&self, report: &FormatableReport) -> String;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -52,7 +57,7 @@ impl fmt::Display for Report {
         write!(
             f,
             "{}",
-            <TextFormatter as Formatter>::format(&TextFormatter, self)
+            <TextFormatter as Formatter>::format_legacy(&TextFormatter, self)
         )
     }
 }
