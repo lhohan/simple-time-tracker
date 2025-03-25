@@ -70,7 +70,6 @@ fn details_flag_should_only_include_tasks_of_given_context_and_duration() {
         .expect_task_with_duration("Task A", "1h 00m");
 }
 
-#[ignore]
 #[test]
 fn details_flag_with_multiple_tags_should_show_tasks_of_multiple_tags() {
     let some_content = r#"## TT 2020-01-01
