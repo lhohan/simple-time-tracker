@@ -1,7 +1,6 @@
 pub mod format;
 mod model;
 pub use crate::reporting::model::FormatableReport;
-pub use crate::reporting::model::ReportTypeRequested;
 
 #[cfg(test)]
 mod tests {
@@ -26,7 +25,7 @@ mod tests {
 
             let (start, end) = default_period();
             let time_report = TrackedTime::new(entries, start, end, 1);
-            let report = OverviewReport::overview(&time_report, None, &None);
+            let report = OverviewReport::overview(&time_report, &None, &None);
 
             let entries = report.summaries();
             let projects: Vec<_> = entries.iter().map(|e| e.description.as_str()).collect();

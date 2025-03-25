@@ -89,7 +89,7 @@ pub struct OverviewReport {
 impl OverviewReport {
     pub fn overview(
         time_report: &TrackedTime,
-        limit: Option<OutputLimit>,
+        limit: &Option<OutputLimit>,
         period_requested: &Option<PeriodRequested>,
     ) -> Self {
         let summarized = summarize_entries(&time_report.entries);
@@ -141,7 +141,7 @@ impl OverviewReport {
 fn limit_number_of_entries(
     total_minutes: f64,
     summaries_sorted: std::vec::IntoIter<ContextSummary>,
-    cumulative_percentage_threshold: f64,
+    cumulative_percentage_threshold: &f64,
 ) -> Vec<ContextSummary> {
     summaries_sorted
         .scan(0.0, |cumulative_percentage, entry| {
@@ -150,7 +150,7 @@ fn limit_number_of_entries(
             Some((entry, *cumulative_percentage))
         })
         .take_while(|(_, cumulative_percentage)| {
-            *cumulative_percentage <= cumulative_percentage_threshold
+            *cumulative_percentage <= *cumulative_percentage_threshold
         })
         .map(|(entry, _)| entry)
         .collect()

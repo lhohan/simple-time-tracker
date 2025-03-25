@@ -89,7 +89,7 @@ impl Args {
     }
 
     /// Parses filter tags from the command line arguments.
-    pub fn tags(&self) -> Option<TagFilter> {
+    pub fn context_filter(&self) -> Option<TagFilter> {
         fn parse_project_tags(maybe_project: &Option<String>) -> Vec<String> {
             maybe_project.clone().map_or_else(Vec::new, |p| vec![p])
         }

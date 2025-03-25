@@ -14,7 +14,6 @@ use crate::domain::ParseError;
 use crate::domain::PeriodRequested;
 use crate::parsing::filter::Filter;
 use crate::reporting::format::Formatter;
-use crate::reporting::ReportTypeRequested;
 use std::path::Path;
 
 /// Run the time tracking report generation
@@ -36,18 +35,17 @@ pub fn run(
     limit: Option<OutputLimit>,
     formatter: Box<dyn Formatter>,
 ) -> Result<(), ParseError> {
-    let tags_details_requested: Vec<Tag> = tag_filter
+    let tracking_result = process_inputs(input_path, tag_filter.clone(), exclude_tags, &period)?;
+
+    let contexts_requested: Vec<Tag> = tag_filter
         .clone()
         .and_then(|filter| Some(filter.tags()))
         .unwrap_or_else(|| vec![]);
-
-    let tracking_result = process_inputs(input_path, tag_filter, exclude_tags, &period)?;
-
     print_result(
         period,
         limit,
         include_details,
-        &tags_details_requested,
+        &contexts_requested,
         &tracking_result,
         formatter,
     );
@@ -76,24 +74,15 @@ fn print_result(
     formatter: Box<dyn Formatter>,
 ) {
     if let Some(ref time_report) = tracking_result.time_entries {
-        let report_type = if include_details {
-            ReportTypeRequested::ProjectDetails(project.clone())
+        if include_details {
+            let report = time_report.tasks_tracked_for(project.clone());
+            let report = FormatableReport::TasksReport(&report);
+            println!("{}", formatter.format(&report));
         } else {
-            ReportTypeRequested::Overview
-        };
-
-        match report_type {
-            ReportTypeRequested::Overview => {
-                let overview = OverviewReport::overview(time_report, limit, &period);
-                let report = FormatableReport::OverviewReport(&overview);
-                println!("{}", formatter.format(&report));
-            }
-            ReportTypeRequested::ProjectDetails(tags) => {
-                let report = time_report.tasks_tracked_for(tags.clone());
-                let report = FormatableReport::TasksReport(&report);
-                println!("{}", formatter.format(&report));
-            }
-        };
+            let overview = OverviewReport::overview(time_report, &limit, &period);
+            let report = FormatableReport::OverviewReport(&overview);
+            println!("{}", formatter.format(&report));
+        }
     } else {
         println!("No data found.");
     }
