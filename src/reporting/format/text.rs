@@ -1,28 +1,21 @@
 use crate::domain::reporting;
+use crate::domain::reporting::ContextSummary;
 use crate::domain::reporting::DetailReport;
+use crate::domain::reporting::OverviewReport;
 use crate::domain::PeriodDescription;
 use crate::domain::TrackingPeriod;
 
 use crate::reporting::format::format_duration;
 use crate::reporting::format::Formatter;
 use crate::reporting::model::FormatableReport;
-use crate::reporting::model::{ContextSummary, Report};
 
 pub struct TextFormatter;
 
 impl Formatter for TextFormatter {
     fn format(&self, report: &FormatableReport) -> String {
         match report {
-            FormatableReport::LegacyReport(Report::Overview {
-                entries,
-                period,
-                period_requested,
-                total_minutes,
-            }) => {
-                let description = period_requested.as_ref().map(|p| p.description());
-                Self::format_overview(entries, period, &description, *total_minutes)
-            }
             FormatableReport::TasksReport(report) => Self::format_tasks_report(report),
+            FormatableReport::OverviewReport(report) => Self::format_overview_report(report),
         }
     }
 }
@@ -36,8 +29,18 @@ fn format_interval(period: &TrackingPeriod) -> String {
 }
 
 impl TextFormatter {
+    fn format_overview_report(report: &OverviewReport) -> String {
+        let description = report.period_requested().as_ref().map(|p| p.description());
+        Self::format_overview(
+            &report.summaries(),
+            &report.period(),
+            &description,
+            report.total_minutes(),
+        )
+    }
+
     fn format_overview(
-        entries: &[ContextSummary],
+        entries: &Vec<ContextSummary>,
         period: &TrackingPeriod,
         range_description: &Option<PeriodDescription>,
         total_minutes: u32,

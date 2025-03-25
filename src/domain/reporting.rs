@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use super::dates::{EndDate, StartDate};
 use super::tags::Tag;
-use super::{ParseError, TimeEntry};
+use super::{ParseError, PeriodRequested, TimeEntry};
 use chrono::NaiveDate;
 use chrono::{Datelike, IsoWeek};
 use itertools::Itertools;
@@ -76,6 +76,110 @@ impl TrackedTime {
         >,
     ) -> std::vec::IntoIter<TaskSummary> {
         map.sorted_by(|a, b| b.minutes.cmp(&a.minutes))
+    }
+}
+
+pub struct OverviewReport {
+    summaries: Vec<ContextSummary>,
+    period: TrackingPeriod,
+    period_requested: Option<PeriodRequested>,
+    total_minutes: u32,
+}
+
+impl OverviewReport {
+    pub fn overview(
+        time_report: &TrackedTime,
+        limit: Option<OutputLimit>,
+        period_requested: &Option<PeriodRequested>,
+    ) -> Self {
+        let summarized = summarize_entries(&time_report.entries);
+
+        let summaries_sorted = summarized
+            .into_iter()
+            .map(|(project, minutes)| {
+                ContextSummary::new(project, minutes, time_report.total_minutes)
+            })
+            .sorted_by(|a, b| {
+                b.minutes
+                    .cmp(&a.minutes)
+                    .then(a.description.cmp(&b.description))
+            });
+
+        let entries = match limit {
+            Some(OutputLimit::CummalitivePercentageThreshhold(threshold)) => {
+                let total_minutes = time_report.total_minutes as f64;
+                limit_number_of_entries(total_minutes, summaries_sorted, threshold)
+            }
+            None => summaries_sorted.collect(),
+        };
+
+        OverviewReport {
+            summaries: entries,
+            period: time_report.period,
+            period_requested: period_requested.clone(),
+            total_minutes: time_report.total_minutes,
+        }
+    }
+
+    pub fn summaries(&self) -> &Vec<ContextSummary> {
+        &self.summaries
+    }
+
+    pub fn period(&self) -> &TrackingPeriod {
+        &self.period
+    }
+
+    pub fn period_requested(&self) -> &Option<PeriodRequested> {
+        &self.period_requested
+    }
+
+    pub fn total_minutes(&self) -> u32 {
+        self.total_minutes
+    }
+}
+
+fn limit_number_of_entries(
+    total_minutes: f64,
+    summaries_sorted: std::vec::IntoIter<ContextSummary>,
+    cumulative_percentage_threshold: f64,
+) -> Vec<ContextSummary> {
+    summaries_sorted
+        .scan(0.0, |cumulative_percentage, entry| {
+            let percentage = (entry.minutes as f64 / total_minutes) * 100.0;
+            *cumulative_percentage += percentage;
+            Some((entry, *cumulative_percentage))
+        })
+        .take_while(|(_, cumulative_percentage)| {
+            *cumulative_percentage <= cumulative_percentage_threshold
+        })
+        .map(|(entry, _)| entry)
+        .collect()
+}
+
+fn summarize_entries(entries: &[TimeEntry]) -> Vec<(String, u32)> {
+    let mut summary = HashMap::new();
+
+    for entry in entries {
+        *summary.entry(entry.main_context().clone()).or_insert(0) += entry.minutes;
+    }
+
+    summary.into_iter().collect()
+}
+
+#[derive(Debug, Clone)]
+pub struct ContextSummary {
+    pub(crate) description: String,
+    pub(crate) minutes: u32,
+    pub(crate) percentage: u32,
+}
+
+impl ContextSummary {
+    pub fn new(description: String, minutes: u32, total_minutes: u32) -> Self {
+        Self {
+            description,
+            minutes,
+            percentage: calculate_percentage(minutes, total_minutes),
+        }
     }
 }
 

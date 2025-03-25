@@ -5,10 +5,10 @@ mod reporting;
 pub mod domain;
 
 use domain::reporting::OutputLimit;
+use domain::reporting::OverviewReport;
 use domain::tags::Tag;
 use domain::tags::TagFilter;
 use reporting::FormatableReport;
-use reporting::Report;
 
 use crate::domain::ParseError;
 use crate::domain::PeriodRequested;
@@ -84,8 +84,8 @@ fn print_result(
 
         match report_type {
             ReportTypeRequested::Overview => {
-                let overview = Report::overview(time_report, limit, &period);
-                let report = FormatableReport::LegacyReport(&overview);
+                let overview = OverviewReport::overview(time_report, limit, &period);
+                let report = FormatableReport::OverviewReport(&overview);
                 println!("{}", formatter.format(&report));
             }
             ReportTypeRequested::ProjectDetails(tags) => {
