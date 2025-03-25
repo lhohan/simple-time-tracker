@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::domain::reporting::TasksReport;
+use crate::domain::reporting::DetailReport;
 use crate::domain::tags::Tag;
 use crate::domain::{
     reporting::OutputLimit, PeriodRequested, TimeEntry, TrackedTime, TrackingPeriod,
@@ -9,7 +9,7 @@ use itertools::Itertools;
 
 pub enum FormatableReport<'a> {
     LegacyReport(&'a Report),
-    TasksReport(&'a TasksReport),
+    TasksReport(&'a DetailReport),
 }
 
 #[derive(Debug)]

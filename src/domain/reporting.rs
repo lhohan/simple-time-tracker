@@ -31,7 +31,7 @@ impl TrackedTime {
         }
     }
 
-    pub fn tasks_tracked_for(&self, tags: Vec<Tag>) -> TasksReport {
+    pub fn tasks_tracked_for(&self, tags: Vec<Tag>) -> DetailReport {
         let mut per_tag_summaries = Vec::new();
 
         for tag in tags.iter() {
@@ -39,7 +39,7 @@ impl TrackedTime {
             per_tag_summaries.push(tag_summary);
         }
 
-        TasksReport::new(per_tag_summaries, self.period, self.total_minutes)
+        DetailReport::new(per_tag_summaries, self.period, self.total_minutes)
     }
 
     fn summarize_tasks_for_context(&self, tag: &Tag) -> TaskSummariesForContext {
@@ -79,13 +79,13 @@ impl TrackedTime {
     }
 }
 
-pub struct TasksReport {
+pub struct DetailReport {
     summaries: Vec<TaskSummariesForContext>,
     period: TrackingPeriod,
     total_minutes: u32,
 }
 
-impl TasksReport {
+impl DetailReport {
     pub fn new(
         summaries: Vec<TaskSummariesForContext>,
         period: TrackingPeriod,

@@ -1,5 +1,5 @@
 use crate::domain::reporting;
-use crate::domain::reporting::TasksReport;
+use crate::domain::reporting::DetailReport;
 use crate::domain::PeriodDescription;
 use crate::domain::TrackingPeriod;
 
@@ -63,7 +63,7 @@ impl TextFormatter {
         result
     }
 
-    fn format_tasks_report(report: &TasksReport) -> String {
+    fn format_tasks_report(report: &DetailReport) -> String {
         let mut result = String::new();
         for context_summary in report.summaries() {
             result.push_str(&Self::format_tasks_context(
