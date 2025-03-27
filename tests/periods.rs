@@ -1,4 +1,5 @@
 pub mod test_helpers;
+
 use rstest::rstest;
 use test_helpers::*;
 
@@ -121,6 +122,45 @@ fn today_report(
         .expect_output(&expected_output)
         .expect_project("dev")
         .taking(expected_duration) // Only tasks of 'today'
+        .validate();
+}
+
+struct YesterdayReport<'a> {
+    input_clock_date: &'a str,
+    expected_reported_date: &'a str,
+    expected_reported_duration: &'a str,
+}
+#[rstest]
+fn yesterday_report(
+    #[values("yesterday", "y")] period_value: &str,
+    #[values(
+        YesterdayReport{input_clock_date: "2020-01-02", expected_reported_date: "2020-01-01", expected_reported_duration: "1h 00m"},
+        YesterdayReport{input_clock_date: "2020-01-03", expected_reported_date: "2020-01-02", expected_reported_duration: "2h 00m"},
+        YesterdayReport{input_clock_date: "2020-01-04", expected_reported_date: "2020-01-03", expected_reported_duration:    "4h 00m"},
+    )]
+    test_data: YesterdayReport,
+) {
+    let content = r"## TT 2020-01-01
+    - #dev 1h Task1
+    ## TT 2020-01-02
+    - #dev 2h Task2
+    ## TT 2020-01-03
+    - #dev 4h Task3";
+
+    let clock_date = test_data.input_clock_date;
+
+    let expected_output = format!("of {}", test_data.expected_reported_date);
+    let expected_duration = test_data.expected_reported_duration;
+
+    CommandSpec::new()
+        .with_file(content)
+        .at_date(clock_date)
+        .with_period(period_value)
+        .when_run()
+        .should_succeed()
+        .expect_output(&expected_output)
+        .expect_project("dev")
+        .taking(expected_duration) // Only tasks of 'yesterday'
         .validate();
 }
 

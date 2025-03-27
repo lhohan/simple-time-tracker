@@ -42,6 +42,7 @@ impl PeriodRequested {
     fn date_from_literal(s: &str, clock: &Clock) -> Option<PeriodRequested> {
         match s {
             "today" | "t" => Some(Self::Day(today(clock))),
+            "yesterday" | "y" => Some(Self::Day(yesterday(clock))),
             "this-week" | "tw" => Some(Self::WeekOf(date_of_this_week(clock))),
             "last-week" | "lw" => Some(Self::WeekOf(date_of_last_week(clock))),
             "this-month" | "tm" => Some(Self::MonthOf(this_month(clock))),
@@ -175,6 +176,10 @@ impl PeriodRequested {
 
 fn today(clock: &Clock) -> NaiveDate {
     clock.today()
+}
+
+fn yesterday(clock: &Clock) -> NaiveDate {
+    clock.today() - Duration::days(1)
 }
 
 fn date_of_this_week(clock: &Clock) -> NaiveDate {
