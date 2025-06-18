@@ -8,7 +8,9 @@ fn shows_help_information() {
 }
 
 #[rstest]
-fn test_empties(#[values("", "## TT 2020-01-01")] empty_input: &str) {
+fn no_time_tracking_should_report_no_data_found(
+    #[values("", "## TT 2020-01-01")] empty_input: &str,
+) {
     CommandSpec::new()
         .with_file(empty_input.trim())
         .when_run()
@@ -17,7 +19,7 @@ fn test_empties(#[values("", "## TT 2020-01-01")] empty_input: &str) {
 }
 
 #[test]
-fn test_basic_time_tracking() {
+fn simple_time_tracking_example_should_report() {
     CommandSpec::new()
         .with_file(
             r"
@@ -120,11 +122,11 @@ fn when_entry_has_error_and_not_in_time_tracking_section_should_not_report_warni
 }
 
 #[test]
-fn test_summary_statistics() {
+fn summary_statistics() {
     let content = r"## TT 2020-01-01
     - #work 2h
     - #exercise 2h
-    ## TT 2020-01-16
+    ## TT 2020-01-02
     - #work 3h
     - #exercise 1h";
 
@@ -144,7 +146,7 @@ fn test_summary_statistics() {
 }
 
 #[test]
-fn test_project_filter() {
+fn project_filter() {
     let content = r"## TT 2020-01-01
 - #dev #rust 2h implementing filters
 - #dev 1h planning
@@ -163,7 +165,7 @@ fn test_project_filter() {
 }
 
 #[test]
-fn test_when_project_filter_should_total_task_with_same_name() {
+fn when_project_filter_should_total_task_with_same_name() {
     let content = r"## TT 2020-01-01
 - #dev 1h My task
 - #dev 1h My task";
@@ -178,7 +180,7 @@ fn test_when_project_filter_should_total_task_with_same_name() {
 }
 
 #[test]
-fn test_when_project_filter_should_default_task_description_if_empty() {
+fn when_project_filter_should_default_task_description_if_empty() {
     let content = r"## TT 2020-01-01
 - #dev 2h";
 
@@ -193,7 +195,7 @@ fn test_when_project_filter_should_default_task_description_if_empty() {
 }
 
 #[test]
-fn test_when_errors_should_report_warnings() {
+fn when_errors_should_report_warnings() {
     let content = r"## TT 2020-01-01
 - #dev 1h Task1
 - #dev Task 2 - Forgot to add time";
@@ -209,7 +211,7 @@ fn test_when_errors_should_report_warnings() {
 }
 
 #[test]
-fn test_report_should_include_interval_start() {
+fn report_should_include_interval_start() {
     let content = r"## TT 2020-01-01
 - #dev 5h Task1
 ## TT 2020-01-02
@@ -223,7 +225,7 @@ fn test_report_should_include_interval_start() {
 }
 
 #[test]
-fn test_report_should_include_interval_end() {
+fn report_should_include_interval_end() {
     let content = r"## TT 2020-01-01
 - #dev 5h Task1
 ## TT 2020-01-02
@@ -237,7 +239,7 @@ fn test_report_should_include_interval_end() {
 }
 
 #[test]
-fn test_date_filtering_from_date_shows_correct_start_date() {
+fn date_filtering_from_date_shows_correct_start_date() {
     let content = r"## TT 2020-01-01
 - #prj-1 3h Task 1
 ## TT 2020-02-01
@@ -252,7 +254,7 @@ fn test_date_filtering_from_date_shows_correct_start_date() {
 }
 
 #[test]
-fn test_date_filtering_from_date_shows_correct_description() {
+fn date_filtering_from_date_shows_correct_description() {
     let content = r"## TT 2020-01-01
 - #prj-1 1h Task 1";
 
@@ -265,7 +267,7 @@ fn test_date_filtering_from_date_shows_correct_description() {
 }
 
 #[test]
-fn test_combined_filtering_project_and_from_date() {
+fn combined_filtering_project_and_from_date() {
     let content = r"## TT 2020-01-01
 - #prj-1 3h Task 1
 ## TT 2020-01-02
@@ -284,7 +286,7 @@ fn test_combined_filtering_project_and_from_date() {
 }
 
 #[test]
-fn test_parsing_errors_should_show_line_numbers() {
+fn parsing_errors_should_show_line_numbers() {
     let content = r"## TT 2020-01-01
 - #dev 1h Task1
 - #dev invalid time format
@@ -298,7 +300,7 @@ fn test_parsing_errors_should_show_line_numbers() {
 }
 
 #[test]
-fn test_invalid_date_format_shows_line_number() {
+fn invalid_date_format_shows_line_number() {
     let content = r"## TT invalid-date
 - #dev 1h Task1";
 
@@ -310,7 +312,7 @@ fn test_invalid_date_format_shows_line_number() {
 }
 
 #[test]
-fn test_only_warnings_for_sections_with_tt_in() {
+fn only_warnings_for_sections_with_tt_in() {
     let content = r"## A section title without teetee in
 - #dev 1h Task1";
 
@@ -322,7 +324,7 @@ fn test_only_warnings_for_sections_with_tt_in() {
 }
 
 #[test]
-fn test_multiple_errors_show_correct_line_numbers() {
+fn multiple_errors_show_correct_line_numbers() {
     let content = r"## TT 2020-01-01
 - #dev 1h Task1
 - #dev Task2
@@ -338,7 +340,7 @@ fn test_multiple_errors_show_correct_line_numbers() {
 }
 
 #[test]
-fn test_errors_show_file_name() {
+fn errors_show_file_name() {
     let content = r"## TT 2020-01-01
 - #dev 1h Task1
 - #dev missing_time_entry";
@@ -351,7 +353,7 @@ fn test_errors_show_file_name() {
 }
 
 #[test]
-fn test_process_directory() {
+fn process_directory() {
     CommandSpec::new()
         .with_directory_containing_files(&[
             ("file1.md", "## TT 2024-01-01\n- #prj-1 2h Task1"),
@@ -367,7 +369,7 @@ fn test_process_directory() {
 }
 
 #[test]
-fn test_process_directory_with_multiple_files_should_merge_days() {
+fn process_directory_with_multiple_files_should_merge_days() {
     CommandSpec::new()
         .with_directory_containing_files(&[
             ("file1.md", "## TT 2020-01-15\n- #dev 1h Task1"),
@@ -381,7 +383,7 @@ fn test_process_directory_with_multiple_files_should_merge_days() {
 }
 
 #[test]
-fn test_process_nested_directories() {
+fn process_nested_directories() {
     CommandSpec::new()
         .with_directory_containing_files(&[
             ("2024/jan.md", "## TT 2024-01-01\n- #prj-1 2h Task1"),
@@ -395,7 +397,7 @@ fn test_process_nested_directories() {
 }
 
 #[test]
-fn test_process_directory_file_filtering() {
+fn process_directory_file_filtering() {
     CommandSpec::new()
         .with_directory_containing_files(&[
             ("notes.md", "## TT 2024-01-01\n- #prj-1 2h Task1"),
@@ -410,7 +412,7 @@ fn test_process_directory_file_filtering() {
 }
 
 #[test]
-fn test_directory_processing_with_invalid_files() {
+fn directory_processing_with_invalid_files() {
     CommandSpec::new()
         .with_directory_containing_files(&[
             ("valid.md", "## TT 2024-01-01\n- #prj-1 2h Task1"),
