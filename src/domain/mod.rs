@@ -213,7 +213,7 @@ mod tests {
                 .when_parsed()
                 .expect_valid_entry()
                 .expect_minutes(10)
-                .expect_main_context("project-alpha")
+                .expect_context("project-alpha")
                 .expect_description("Task A");
         }
 
@@ -321,7 +321,7 @@ mod tests {
                 LineSpec::given_line("- #prj-alpha 1h Task A")
                     .when_parsed()
                     .expect_valid_entry()
-                    .expect_main_context("prj-alpha");
+                    .expect_context("prj-alpha");
             }
 
             #[test]
@@ -329,7 +329,7 @@ mod tests {
                 LineSpec::given_line("- #tag1 #prj-alpha 1h Task A")
                     .when_parsed()
                     .expect_valid_entry()
-                    .expect_main_context("tag1");
+                    .expect_context("tag1");
             }
 
             #[test]
@@ -337,7 +337,7 @@ mod tests {
                 LineSpec::given_line("- #tag1 #tag2 #tag3 1h Task A")
                     .when_parsed()
                     .expect_valid_entry()
-                    .expect_main_context("tag1");
+                    .expect_context("tag1");
             }
         }
 
@@ -389,7 +389,7 @@ mod tests {
                     self
                 }
 
-                pub fn expect_main_context(self, expected_project: &str) -> TimeEntry {
+                pub fn expect_context(self, expected_project: &str) -> TimeEntry {
                     assert_eq!(*self.main_context(), expected_project.to_string());
                     self
                 }

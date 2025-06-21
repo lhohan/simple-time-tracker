@@ -133,12 +133,12 @@ impl CommandSpec {
         self
     }
 
-    pub fn with_project_filter(mut self, project_name: &str) -> Self {
+    pub fn with_filter_project(mut self, project_name: &str) -> Self {
         self.args.add_option("project", project_name);
         self
     }
 
-    pub fn with_from_date_filter(mut self, from_date: &str) -> Self {
+    pub fn with_filter_from_date(mut self, from_date: &str) -> Self {
         self.args.add_option("from", from_date);
         self
     }

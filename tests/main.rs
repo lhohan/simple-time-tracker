@@ -46,7 +46,7 @@ fn simple_time_tracking_example_should_report() {
 }
 
 #[rstest]
-fn test_non_entries_should_be_ignored(
+fn non_entries_should_be_ignored(
     #[values(
     "", // empty line
     "    ", // empty line with spaces
@@ -71,7 +71,7 @@ fn test_non_entries_should_be_ignored(
 }
 
 #[test]
-fn test_verbose_output() {
+fn verbose_output() {
     CommandSpec::new()
         .with_verbose()
         .with_file(
@@ -154,7 +154,7 @@ fn project_filter() {
 
     CommandSpec::new()
         .with_file(content)
-        .with_project_filter("dev")
+        .with_filter_project("dev")
         .when_run()
         .should_succeed()
         // expectations could be more precise
@@ -172,7 +172,7 @@ fn when_project_filter_should_total_task_with_same_name() {
 
     CommandSpec::new()
         .with_file(content)
-        .with_project_filter("dev")
+        .with_filter_project("dev")
         .when_run()
         .should_succeed()
         .expect_output("Project: dev")
@@ -186,7 +186,7 @@ fn when_project_filter_should_default_task_description_if_empty() {
 
     CommandSpec::new()
         .with_file(content)
-        .with_project_filter("dev")
+        .with_filter_project("dev")
         .when_run()
         .should_succeed()
         // expectations could be more precise
@@ -247,7 +247,7 @@ fn date_filtering_from_date_shows_correct_start_date() {
 
     CommandSpec::new()
         .with_file(content)
-        .with_from_date_filter("2020-01-02")
+        .with_filter_from_date("2020-01-02")
         .when_run()
         .should_succeed()
         .expect_start_date("2020-02-01");
@@ -260,7 +260,7 @@ fn date_filtering_from_date_shows_correct_description() {
 
     CommandSpec::new()
         .with_file(content)
-        .with_from_date_filter("2020-01-01")
+        .with_filter_from_date("2020-01-01")
         .when_run()
         .should_succeed()
         .expect_output("Time tracking report from 2020-01-01 until today");
@@ -276,8 +276,8 @@ fn combined_filtering_project_and_from_date() {
 
     CommandSpec::new()
         .with_file(content)
-        .with_from_date_filter("2020-01-02")
-        .with_project_filter("prj-1")
+        .with_filter_from_date("2020-01-02")
+        .with_filter_project("prj-1")
         .when_run()
         .should_succeed()
         .expect_start_date("2020-01-02")
@@ -451,7 +451,7 @@ fn invalid_from(#[values("01-01-2020", "2020-00-01", "2020-01-00", "abc")] value
 - #dev 1h Task1",
         )
         .at_date("2020-01-01")
-        .with_from_date_filter(value)
+        .with_filter_from_date(value)
         .when_run()
         .should_fail();
 }

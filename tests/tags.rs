@@ -25,7 +25,7 @@ mod filter_tags {
 
         CommandSpec::new()
             .with_file(content)
-            .with_project_filter(tag)
+            .with_filter_project(tag)
             .when_run()
             .should_succeed()
             .expect_task("Task A");
