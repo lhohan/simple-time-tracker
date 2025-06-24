@@ -7,7 +7,7 @@ fn details_flag_only_should_fail() {
 - #context-1 1h Task A"#;
 
     CommandSpec::new()
-        .with_file(some_content)
+        .with_file_with_content(some_content)
         .with_details()
         .when_run()
         .should_fail()
@@ -20,7 +20,7 @@ fn details_flag_should_require_tags_value() {
 - #context-1 1h Task A"#;
 
     CommandSpec::new()
-        .with_file(some_content)
+        .with_file_with_content(some_content)
         .with_details()
         .with_tags_filter(&["context-1"])
         .when_run()
@@ -34,7 +34,7 @@ fn details_flag_should_only_include_tasks_of_given_context() {
 - #context-2 2h Task A"#;
 
     CommandSpec::new()
-        .with_file(some_content)
+        .with_file_with_content(some_content)
         .with_details()
         .with_tags_filter(&["context-1"])
         .when_run()
@@ -48,7 +48,7 @@ fn details_flag_should_include_tasks() {
 - #context-1 1h Task A"#;
 
     CommandSpec::new()
-        .with_file(some_content)
+        .with_file_with_content(some_content)
         .with_details()
         .with_tags_filter(&["context-1"])
         .when_run()
@@ -62,7 +62,7 @@ fn details_flag_should_only_include_tasks_of_given_context_and_duration() {
 - #context-1 1h Task A"#;
 
     CommandSpec::new()
-        .with_file(some_content)
+        .with_file_with_content(some_content)
         .with_details()
         .with_tags_filter(&["context-1"])
         .when_run()
@@ -77,7 +77,7 @@ fn details_flag_with_multiple_tags_should_show_tasks_of_multiple_tags() {
 - #context-2 2h Task B"#;
 
     CommandSpec::new()
-        .with_file(some_content)
+        .with_file_with_content(some_content)
         .with_details()
         .with_tags_filter(&["context-1", "context-2"])
         .when_run()

@@ -7,7 +7,7 @@ fn limit_flag_should_work() {
 - #tag1 1h Task A"#;
 
     CommandSpec::new()
-        .with_file(some_content)
+        .with_file_with_content(some_content)
         .with_limit()
         .when_run()
         .should_succeed();
@@ -21,7 +21,7 @@ fn limit_flag_should_show_only_until_percentage_threshold_of_90() {
 "#; // 9 is 90% of 10.
 
     CommandSpec::new()
-        .with_file(some_content)
+        .with_file_with_content(some_content)
         .with_limit()
         .when_run()
         .should_succeed()
@@ -38,7 +38,7 @@ fn without_limit_flag_should_show_all() {
 "#;
 
     CommandSpec::new()
-        .with_file(some_content)
+        .with_file_with_content(some_content)
         .when_run()
         .should_succeed()
         .expect_project("prj-1")

@@ -4,7 +4,7 @@ use test_helpers::*;
 #[test]
 fn test_basic_markdown_output() {
     CommandSpec::new()
-        .with_file(
+        .with_file_with_content(
             r"
         ## TT 2020-01-01
         - #prj-1 1h

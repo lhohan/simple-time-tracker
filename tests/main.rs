@@ -12,7 +12,7 @@ fn no_time_tracking_should_report_no_data_found(
     #[values("", "## TT 2020-01-01")] empty_input: &str,
 ) {
     CommandSpec::new()
-        .with_file(empty_input.trim())
+        .with_file_with_content(empty_input.trim())
         .when_run()
         .should_succeed()
         .expect_no_data_found();
@@ -21,7 +21,7 @@ fn no_time_tracking_should_report_no_data_found(
 #[test]
 fn simple_time_tracking_example_should_report() {
     CommandSpec::new()
-        .with_file(
+        .with_file_with_content(
             r"
         ## TT 2020-01-01
         - #prj-1 30m
@@ -64,7 +64,7 @@ fn non_entries_should_be_ignored(
     );
 
     CommandSpec::new()
-        .with_file(&content)
+        .with_file_with_content(&content)
         .when_run()
         .should_succeed()
         .expect_no_warnings();
@@ -74,7 +74,7 @@ fn non_entries_should_be_ignored(
 fn verbose_output() {
     CommandSpec::new()
         .with_verbose()
-        .with_file(
+        .with_file_with_content(
             r"## TT 2020-01-01
     - #test 30m",
         )
@@ -86,7 +86,7 @@ fn verbose_output() {
 #[test]
 fn should_only_process_entries_in_time_tracking_sections() {
     CommandSpec::new()
-        .with_file(
+        .with_file_with_content(
             r"# Random Header
 Some random content
 - #coding 1h
@@ -112,7 +112,7 @@ Some random content
 #[test]
 fn when_entry_has_error_and_not_in_time_tracking_section_should_not_report_warning() {
     CommandSpec::new()
-        .with_file(
+        .with_file_with_content(
             r"# Random Header
             - #1. If you don’t get the requirements right",
         )
@@ -131,7 +131,7 @@ fn summary_statistics() {
     - #exercise 1h";
 
     CommandSpec::new()
-        .with_file(content)
+        .with_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_project("work")
@@ -153,7 +153,7 @@ fn project_filter() {
 - #sport 30m";
 
     CommandSpec::new()
-        .with_file(content)
+        .with_file_with_content(content)
         .with_filter_project("dev")
         .when_run()
         .should_succeed()
@@ -171,7 +171,7 @@ fn when_project_filter_should_total_task_with_same_name() {
 - #dev 1h My task";
 
     CommandSpec::new()
-        .with_file(content)
+        .with_file_with_content(content)
         .with_filter_project("dev")
         .when_run()
         .should_succeed()
@@ -185,7 +185,7 @@ fn when_project_filter_should_default_task_description_if_empty() {
 - #dev 2h";
 
     CommandSpec::new()
-        .with_file(content)
+        .with_file_with_content(content)
         .with_filter_project("dev")
         .when_run()
         .should_succeed()
@@ -201,7 +201,7 @@ fn when_errors_should_report_warnings() {
 - #dev Task 2 - Forgot to add time";
 
     CommandSpec::new()
-        .with_file(content)
+        .with_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_project("dev")
@@ -218,7 +218,7 @@ fn report_should_include_interval_start() {
 - #dev 5h Task2";
 
     CommandSpec::new()
-        .with_file(content)
+        .with_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_start_date("2020-01-01");
@@ -232,7 +232,7 @@ fn report_should_include_interval_end() {
 - #dev 5h Task2";
 
     CommandSpec::new()
-        .with_file(content)
+        .with_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_end_date("2020-01-02");
@@ -246,7 +246,7 @@ fn date_filtering_from_date_shows_correct_start_date() {
 - #prj-2 2h Task 2";
 
     CommandSpec::new()
-        .with_file(content)
+        .with_file_with_content(content)
         .with_filter_from_date("2020-01-02")
         .when_run()
         .should_succeed()
@@ -259,7 +259,7 @@ fn date_filtering_from_date_shows_correct_description() {
 - #prj-1 1h Task 1";
 
     CommandSpec::new()
-        .with_file(content)
+        .with_file_with_content(content)
         .with_filter_from_date("2020-01-01")
         .when_run()
         .should_succeed()
@@ -275,7 +275,7 @@ fn combined_filtering_project_and_from_date() {
 - #prj-2 2h Task 2";
 
     CommandSpec::new()
-        .with_file(content)
+        .with_file_with_content(content)
         .with_filter_from_date("2020-01-02")
         .with_filter_project("prj-1")
         .when_run()
@@ -293,7 +293,7 @@ fn parsing_errors_should_show_line_numbers() {
 - #dev 2h Task3";
 
     CommandSpec::new()
-        .with_file(content)
+        .with_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_warning_at_line(3, "missing time: - #dev invalid time format");
@@ -305,7 +305,7 @@ fn invalid_date_format_shows_line_number() {
 - #dev 1h Task1";
 
     CommandSpec::new()
-        .with_file(content)
+        .with_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_warning_at_line(1, "invalid date format: invalid-date");
@@ -317,7 +317,7 @@ fn only_warnings_for_sections_with_tt_in() {
 - #dev 1h Task1";
 
     CommandSpec::new()
-        .with_file(content)
+        .with_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_no_warnings();
@@ -332,7 +332,7 @@ fn multiple_errors_show_correct_line_numbers() {
 - #dev 1h Task4";
 
     CommandSpec::new()
-        .with_file(content)
+        .with_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_warning_at_line(3, "missing time: - #dev Task2")
@@ -346,7 +346,7 @@ fn errors_show_file_name() {
 - #dev missing_time_entry";
 
     CommandSpec::new()
-        .with_file(content)
+        .with_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_warning_with_file("test.md", "missing time: - #dev missing_time_entry");
@@ -434,7 +434,7 @@ fn report_header_format_should_include_date_when_no_period_filter() {
 - #dev 1h Task1";
 
     CommandSpec::new()
-        .with_file(content)
+        .with_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_start_date("2020-01-15")
@@ -446,7 +446,7 @@ fn report_header_format_should_include_date_when_no_period_filter() {
 #[rstest]
 fn invalid_from(#[values("01-01-2020", "2020-00-01", "2020-01-00", "abc")] value: &str) {
     CommandSpec::new()
-        .with_file(
+        .with_file_with_content(
             r"## TT 2020-01-01
 - #dev 1h Task1",
         )

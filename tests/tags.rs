@@ -7,7 +7,7 @@ fn first_tag_is_main_context() {
 - #tag1 #tag2 #tag3 1h Task A"#;
 
     CommandSpec::new()
-        .with_file(content)
+        .with_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_project("tag1")
@@ -24,7 +24,7 @@ mod filter_tags {
 - #tag1 #tag2 #tag3 1h Task A"#;
 
         CommandSpec::new()
-            .with_file(content)
+            .with_file_with_content(content)
             .with_filter_project(tag)
             .when_run()
             .should_succeed()
@@ -37,7 +37,7 @@ mod filter_tags {
 - #tag1 1h Task A"#;
 
         CommandSpec::new()
-            .with_file(content)
+            .with_file_with_content(content)
             .with_tags_filter(&["tag1"])
             .when_run()
             .should_succeed();
@@ -50,7 +50,7 @@ mod filter_tags {
 - #tag-2 2h Task B"#;
 
         CommandSpec::new()
-            .with_file(content)
+            .with_file_with_content(content)
             .with_tags_filter(&["tag-1"])
             .when_run()
             .should_succeed()
@@ -66,7 +66,7 @@ mod filter_tags {
 "#;
 
         CommandSpec::new()
-            .with_file(content)
+            .with_file_with_content(content)
             .with_tags_filter(&[])
             .when_run()
             .should_succeed()
@@ -81,7 +81,7 @@ mod filter_tags {
 "#;
 
         CommandSpec::new()
-            .with_file(content)
+            .with_file_with_content(content)
             .with_tags_filter(&["tag-2"])
             .when_run()
             .should_succeed()
@@ -96,7 +96,7 @@ mod filter_tags {
 - #tag-3 4h Task C"#;
 
         CommandSpec::new()
-            .with_file(content)
+            .with_file_with_content(content)
             .with_tags_filter(&["tag-1", "tag-2"])
             .when_run()
             .should_succeed()
@@ -118,7 +118,7 @@ mod exclude_tags {
 - #tag2 1h Task B"#;
 
         CommandSpec::new()
-            .with_file(content)
+            .with_file_with_content(content)
             .with_exclude_tags_filter(&["tag2"])
             .when_run()
             .should_succeed()
@@ -135,7 +135,7 @@ mod exclude_tags {
 - #tag3 1h Task C"#;
 
         CommandSpec::new()
-            .with_file(content)
+            .with_file_with_content(content)
             .with_exclude_tags_filter(&["tag2", "tag3"])
             .when_run()
             .should_succeed()
@@ -152,7 +152,7 @@ mod exclude_tags {
 - #tag1 1h Task B"#;
 
         CommandSpec::new()
-            .with_file(content)
+            .with_file_with_content(content)
             .with_exclude_tags_filter(&["tag2"])
             .when_run()
             .should_succeed()
@@ -168,7 +168,7 @@ mod exclude_tags {
 - #tag1 1h Task A"#;
 
         CommandSpec::new()
-            .with_file(content)
+            .with_file_with_content(content)
             .with_exclude_tags_filter(&["tag1"])
             .when_run()
             .should_succeed();

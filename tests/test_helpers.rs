@@ -168,7 +168,7 @@ impl CommandSpec {
         self
     }
 
-    pub fn with_file(mut self, content: &str) -> Self {
+    pub fn with_file_with_content(mut self, content: &str) -> Self {
         self.input = Some(InputSource::file(content));
         self
     }
