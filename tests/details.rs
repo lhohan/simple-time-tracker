@@ -6,7 +6,7 @@ fn details_flag_only_should_fail() {
     let some_content = r#"## TT 2020-01-01
 - #context-1 1h Task A"#;
 
-    CommandSpec::new()
+    CommandSpec::describe()
         .with_file_with_content(some_content)
         .with_details()
         .when_run()
@@ -19,7 +19,7 @@ fn details_flag_should_require_tags_value() {
     let some_content = r#"## TT 2020-01-01
 - #context-1 1h Task A"#;
 
-    CommandSpec::new()
+    CommandSpec::describe()
         .with_file_with_content(some_content)
         .with_details()
         .with_tags_filter(&["context-1"])
@@ -33,7 +33,7 @@ fn details_flag_should_only_include_tasks_of_given_context() {
 - #context-1 1h Task A
 - #context-2 2h Task A"#;
 
-    CommandSpec::new()
+    CommandSpec::describe()
         .with_file_with_content(some_content)
         .with_details()
         .with_tags_filter(&["context-1"])
@@ -47,7 +47,7 @@ fn details_flag_should_include_tasks() {
     let some_content = r#"## TT 2020-01-01
 - #context-1 1h Task A"#;
 
-    CommandSpec::new()
+    CommandSpec::describe()
         .with_file_with_content(some_content)
         .with_details()
         .with_tags_filter(&["context-1"])
@@ -61,7 +61,7 @@ fn details_flag_should_only_include_tasks_of_given_context_and_duration() {
     let some_content = r#"## TT 2020-01-01
 - #context-1 1h Task A"#;
 
-    CommandSpec::new()
+    CommandSpec::describe()
         .with_file_with_content(some_content)
         .with_details()
         .with_tags_filter(&["context-1"])
@@ -76,7 +76,7 @@ fn details_flag_with_multiple_tags_should_show_tasks_of_multiple_tags() {
 - #context-1 1h Task A
 - #context-2 2h Task B"#;
 
-    CommandSpec::new()
+    CommandSpec::describe()
         .with_file_with_content(some_content)
         .with_details()
         .with_tags_filter(&["context-1", "context-2"])

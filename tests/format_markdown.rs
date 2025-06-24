@@ -3,7 +3,7 @@ use test_helpers::*;
 
 #[test]
 fn test_basic_markdown_output() {
-    CommandSpec::new()
+    CommandSpec::describe()
         .with_file_with_content(
             r"
         ## TT 2020-01-01

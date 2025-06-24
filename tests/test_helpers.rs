@@ -95,12 +95,12 @@ pub struct CommandSpec {
 
 impl Default for CommandSpec {
     fn default() -> Self {
-        Self::new()
+        Self::describe()
     }
 }
 
 impl CommandSpec {
-    pub fn new() -> Self {
+    pub fn describe() -> Self {
         Self {
             args: CommandArgs::new(),
             input: None,
