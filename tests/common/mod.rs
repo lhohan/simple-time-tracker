@@ -86,6 +86,14 @@ impl ExecutionContext {
     }
 }
 
+pub struct Cmd;
+
+impl Cmd {
+    pub fn given() -> CommandSpec {
+        CommandSpec::new()
+    }
+}
+
 #[derive(Clone)]
 pub struct CommandSpec {
     args: CommandArgs,
@@ -95,12 +103,12 @@ pub struct CommandSpec {
 
 impl Default for CommandSpec {
     fn default() -> Self {
-        Self::describe()
+        Self::new()
     }
 }
 
 impl CommandSpec {
-    pub fn describe() -> Self {
+    fn new() -> Self {
         Self {
             args: CommandArgs::new(),
             input: None,
@@ -108,57 +116,61 @@ impl CommandSpec {
         }
     }
 
-    pub fn with_help(mut self) -> Self {
+    pub fn and(self) -> Self {
+        self
+    }
+
+    pub fn help_flag(mut self) -> Self {
         self.args.add_flag("help");
         self
     }
 
-    pub fn with_verbose(mut self) -> Self {
+    pub fn verbose_flag(mut self) -> Self {
         self.args.add_flag("verbose");
         self
     }
 
-    pub fn with_details(mut self) -> Self {
+    pub fn details_flag(mut self) -> Self {
         self.args.add_flag("details");
         self
     }
 
-    pub fn with_limit(mut self) -> Self {
+    pub fn limit_flag(mut self) -> Self {
         self.args.add_flag("limit");
         self
     }
 
-    pub fn with_period(mut self, period: &str) -> Self {
+    pub fn period_filter(mut self, period: &str) -> Self {
         self.args.add_option("period", period);
         self
     }
 
-    pub fn with_filter_project(mut self, project_name: &str) -> Self {
+    pub fn project_filter(mut self, project_name: &str) -> Self {
         self.args.add_option("project", project_name);
         self
     }
 
-    pub fn with_filter_from_date(mut self, from_date: &str) -> Self {
+    pub fn from_date_filter(mut self, from_date: &str) -> Self {
         self.args.add_option("from", from_date);
         self
     }
 
-    pub fn with_tags_filter(mut self, tags: &[&str]) -> Self {
+    pub fn tags_filter(mut self, tags: &[&str]) -> Self {
         self.args.add_option("tags", &tags.join(","));
         self
     }
 
-    pub fn with_exclude_tags_filter(mut self, tags: &[&str]) -> Self {
+    pub fn exclude_tags_filter(mut self, tags: &[&str]) -> Self {
         self.args.add_option("exclude-tags", &tags.join(","));
         self
     }
 
-    pub fn with_format(mut self, format: &str) -> Self {
+    pub fn output_format(mut self, format: &str) -> Self {
         self.args.add_option("format", format);
         self
     }
 
-    pub fn with_directory_containing_files(mut self, files: &[(&str, &str)]) -> Self {
+    pub fn a_directory_containing_files(mut self, files: &[(&str, &str)]) -> Self {
         let files = files
             .iter()
             .map(|(name, content)| InputSource::path_file(name, content))
@@ -168,7 +180,7 @@ impl CommandSpec {
         self
     }
 
-    pub fn with_file_with_content(mut self, content: &str) -> Self {
+    pub fn a_file_with_content(mut self, content: &str) -> Self {
         self.input = Some(InputSource::file(content));
         self
     }

@@ -2,8 +2,9 @@ use crate::common::*;
 
 #[test]
 fn test_basic_markdown_output() {
-    CommandSpec::describe()
-        .with_file_with_content(
+    Cmd::given()
+        .output_format("markdown")
+        .a_file_with_content(
             r"
             ## TT 2020-01-01
             - #prj-1 1h
@@ -11,7 +12,6 @@ fn test_basic_markdown_output() {
             - #prj-3 4h
             ",
         )
-        .with_format("markdown")
         .when_run()
         .should_succeed()
         .expect_output("# Time Tracking Report")

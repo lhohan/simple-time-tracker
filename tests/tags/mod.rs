@@ -5,8 +5,8 @@ fn first_tag_is_main_context() {
     let content = r#"## TT 2020-01-01
 - #tag1 #tag2 #tag3 1h Task A"#;
 
-    CommandSpec::describe()
-        .with_file_with_content(content)
+    Cmd::given()
+        .a_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_project("tag1")
@@ -22,9 +22,9 @@ mod filter_tags {
         let content = r#"## TT 2024-01-15
 - #tag1 #tag2 #tag3 1h Task A"#;
 
-        CommandSpec::describe()
-            .with_file_with_content(content)
-            .with_filter_project(tag)
+        Cmd::given()
+            .project_filter(tag)
+            .a_file_with_content(content)
             .when_run()
             .should_succeed()
             .expect_task("Task A");
@@ -35,9 +35,9 @@ mod filter_tags {
         let content = r#"## TT 2020-01-01
 - #tag1 1h Task A"#;
 
-        CommandSpec::describe()
-            .with_file_with_content(content)
-            .with_tags_filter(&["tag1"])
+        Cmd::given()
+            .tags_filter(&["tag1"])
+            .a_file_with_content(content)
             .when_run()
             .should_succeed();
     }
@@ -48,9 +48,9 @@ mod filter_tags {
 - #tag-1 1h Task A
 - #tag-2 2h Task B"#;
 
-        CommandSpec::describe()
-            .with_file_with_content(content)
-            .with_tags_filter(&["tag-1"])
+        Cmd::given()
+            .tags_filter(&["tag-1"])
+            .a_file_with_content(content)
             .when_run()
             .should_succeed()
             .expect_project("tag-1")
@@ -64,9 +64,9 @@ mod filter_tags {
 - #tag-1 1h Task A
 "#;
 
-        CommandSpec::describe()
-            .with_file_with_content(content)
-            .with_tags_filter(&[])
+        Cmd::given()
+            .tags_filter(&[])
+            .a_file_with_content(content)
             .when_run()
             .should_succeed()
             .expect_project("tag-1")
@@ -79,9 +79,9 @@ mod filter_tags {
 - #tag-1 1h Task A
 "#;
 
-        CommandSpec::describe()
-            .with_file_with_content(content)
-            .with_tags_filter(&["tag-2"])
+        Cmd::given()
+            .tags_filter(&["tag-2"])
+            .a_file_with_content(content)
             .when_run()
             .should_succeed()
             .expect_no_data_found();
@@ -94,9 +94,9 @@ mod filter_tags {
 - #tag-2 2h Task B
 - #tag-3 4h Task C"#;
 
-        CommandSpec::describe()
-            .with_file_with_content(content)
-            .with_tags_filter(&["tag-1", "tag-2"])
+        Cmd::given()
+            .tags_filter(&["tag-1", "tag-2"])
+            .a_file_with_content(content)
             .when_run()
             .should_succeed()
             .expect_project("tag-1")
@@ -116,9 +116,9 @@ mod exclude_tags {
 - #tag1 1h Task A
 - #tag2 1h Task B"#;
 
-        CommandSpec::describe()
-            .with_file_with_content(content)
-            .with_exclude_tags_filter(&["tag2"])
+        Cmd::given()
+            .exclude_tags_filter(&["tag2"])
+            .a_file_with_content(content)
             .when_run()
             .should_succeed()
             .expect_no_text("tag2")
@@ -133,9 +133,9 @@ mod exclude_tags {
 - #tag2 1h Task B
 - #tag3 1h Task C"#;
 
-        CommandSpec::describe()
-            .with_file_with_content(content)
-            .with_exclude_tags_filter(&["tag2", "tag3"])
+        Cmd::given()
+            .exclude_tags_filter(&["tag2", "tag3"])
+            .a_file_with_content(content)
             .when_run()
             .should_succeed()
             .expect_no_text("tag2")
@@ -150,9 +150,9 @@ mod exclude_tags {
 - #tag1 #tag2 1h Task A
 - #tag1 1h Task B"#;
 
-        CommandSpec::describe()
-            .with_file_with_content(content)
-            .with_exclude_tags_filter(&["tag2"])
+        Cmd::given()
+            .exclude_tags_filter(&["tag2"])
+            .a_file_with_content(content)
             .when_run()
             .should_succeed()
             .expect_no_text("tag2")
@@ -166,9 +166,9 @@ mod exclude_tags {
         let content = r#"## TT 2020-01-01
 - #tag1 1h Task A"#;
 
-        CommandSpec::describe()
-            .with_file_with_content(content)
-            .with_exclude_tags_filter(&["tag1"])
+        Cmd::given()
+            .exclude_tags_filter(&["tag1"])
+            .a_file_with_content(content)
             .when_run()
             .should_succeed();
     }

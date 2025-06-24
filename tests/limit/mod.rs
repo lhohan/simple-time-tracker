@@ -5,9 +5,9 @@ fn limit_flag_should_work() {
     let some_content = r#"## TT 2020-01-01
 - #tag1 1h Task A"#;
 
-    CommandSpec::describe()
-        .with_file_with_content(some_content)
-        .with_limit()
+    Cmd::given()
+        .limit_flag()
+        .a_file_with_content(some_content)
         .when_run()
         .should_succeed();
 }
@@ -19,9 +19,9 @@ fn limit_flag_should_show_only_until_percentage_threshold_of_90() {
 - #prj-2 1h Task A
 "#; // 9 is 90% of 10.
 
-    CommandSpec::describe()
-        .with_file_with_content(some_content)
-        .with_limit()
+    Cmd::given()
+        .limit_flag()
+        .a_file_with_content(some_content)
         .when_run()
         .should_succeed()
         .expect_project("prj-1")
@@ -36,8 +36,8 @@ fn without_limit_flag_should_show_all() {
 - #prj-2 1h Task A
 "#;
 
-    CommandSpec::describe()
-        .with_file_with_content(some_content)
+    Cmd::given()
+        .a_file_with_content(some_content)
         .when_run()
         .should_succeed()
         .expect_project("prj-1")

@@ -3,7 +3,7 @@ use rstest::rstest;
 
 /// Literal period tests.
 #[rstest]
-fn this_week_report(#[values("this-week", "tw")] period_value: &str) {
+fn this_week_report(#[values("this-week", "tw")] this_week: &str) {
     let content = r"## TT 2020-01-01
     - #dev 1h Task1
     ## TT 2020-01-02
@@ -11,10 +11,10 @@ fn this_week_report(#[values("this-week", "tw")] period_value: &str) {
     ## TT 2020-01-20
     - #dev 1h Task3";
 
-    CommandSpec::describe()
-        .with_file_with_content(content)
+    Cmd::given()
         .at_date("2020-01-01") // Testing as if we're running on Jan 1st
-        .with_period(period_value)
+        .period_filter(this_week)
+        .a_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_output("week 1, 2020")
@@ -24,7 +24,7 @@ fn this_week_report(#[values("this-week", "tw")] period_value: &str) {
 }
 
 #[rstest]
-fn last_week_report(#[values("last-week", "lw")] period_value: &str) {
+fn last_week_report(#[values("last-week", "lw")] last_week: &str) {
     let content = r"## TT 2020-01-01
     - #dev 1h Task1
     ## TT 2020-01-02
@@ -32,10 +32,10 @@ fn last_week_report(#[values("last-week", "lw")] period_value: &str) {
     ## TT 2020-01-08
     - #dev 1h Task3";
 
-    CommandSpec::describe()
-        .with_file_with_content(content)
+    Cmd::given()
         .at_date("2020-01-08") // Testing as if we're running on Jan 8th
-        .with_period(period_value)
+        .period_filter(last_week)
+        .a_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_output("week 1, 2020")
@@ -46,7 +46,7 @@ fn last_week_report(#[values("last-week", "lw")] period_value: &str) {
 
 #[rstest]
 fn last_month_report(
-    #[values("last-month", "lm")] period_value: &str,
+    #[values("last-month", "lm")] last_month: &str,
     #[values("2020-02-01", "2020-02-02", "2020-02-28")] at_date: &str,
 ) {
     let content = r"## TT 2020-01-01
@@ -56,10 +56,10 @@ fn last_month_report(
     ## TT 2020-02-01
     - #dev 1h Task3";
 
-    CommandSpec::describe()
-        .with_file_with_content(content)
+    Cmd::given()
         .at_date(at_date)
-        .with_period(period_value)
+        .period_filter(last_month)
+        .a_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_output("2020-01")
@@ -69,7 +69,7 @@ fn last_month_report(
 }
 
 #[rstest]
-fn this_month_report(#[values("this-month", "tm")] period_value: &str) {
+fn this_month_report(#[values("this-month", "tm")] this_month: &str) {
     let content = r"## TT 2020-01-01
     - #dev 1h Task1
     ## TT 2020-01-31
@@ -77,10 +77,10 @@ fn this_month_report(#[values("this-month", "tm")] period_value: &str) {
     ## TT 2020-02-01
     - #dev 1h Task3";
 
-    CommandSpec::describe()
-        .with_file_with_content(content)
+    Cmd::given()
         .at_date("2020-01-01")
-        .with_period(period_value)
+        .period_filter(this_month)
+        .a_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_output("2020-01")
@@ -91,7 +91,7 @@ fn this_month_report(#[values("this-month", "tm")] period_value: &str) {
 
 #[rstest]
 fn today_report(
-    #[values("today", "t")] period_value: &str,
+    #[values("today", "t")] today: &str,
     #[values(
         ("2020-01-01", "1h 00m"),
         ("2020-01-02", "2h 00m"),
@@ -111,10 +111,10 @@ fn today_report(
     let expected_output = format!("of {}", at_date);
     let expected_duration = at_date_and_expected_duration.1;
 
-    CommandSpec::describe()
-        .with_file_with_content(content)
+    Cmd::given()
         .at_date(at_date)
-        .with_period(period_value)
+        .period_filter(today)
+        .a_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_output(&expected_output)
@@ -130,7 +130,7 @@ struct YesterdayReport<'a> {
 }
 #[rstest]
 fn yesterday_report(
-    #[values("yesterday", "y")] period_value: &str,
+    #[values("yesterday", "y")] yesterday: &str,
     #[values(
         YesterdayReport{input_clock_date: "2020-01-02", expected_reported_date: "2020-01-01", expected_reported_duration: "1h 00m"},
         YesterdayReport{input_clock_date: "2020-01-03", expected_reported_date: "2020-01-02", expected_reported_duration: "2h 00m"},
@@ -150,10 +150,10 @@ fn yesterday_report(
     let expected_output = format!("of {}", test_data.expected_reported_date);
     let expected_duration = test_data.expected_reported_duration;
 
-    CommandSpec::describe()
-        .with_file_with_content(content)
+    Cmd::given()
         .at_date(clock_date)
-        .with_period(period_value)
+        .period_filter(yesterday)
+        .a_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_output(&expected_output)
@@ -165,7 +165,7 @@ fn yesterday_report(
 /// (Semi-/)value period tests.
 #[rstest]
 fn month_1_for_current_year_report(
-    #[values("month-1", "m-1")] period_value: &str,
+    #[values("month-1", "m-1")] month_1: &str,
     #[values(
         ("2019", "1h 00m", "2019-01"),
         ("2020", "2h 00m", "2020-01"),
@@ -187,10 +187,10 @@ fn month_1_for_current_year_report(
     let expected_taking = data.1;
     let expected_output = data.2;
 
-    CommandSpec::describe()
-        .with_file_with_content(content)
+    Cmd::given()
         .at_date(&at_date) // Testing as if we are running in year 'at_year'
-        .with_period(period_value)
+        .period_filter(month_1)
+        .a_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_output(&expected_output)
@@ -201,7 +201,7 @@ fn month_1_for_current_year_report(
 
 #[rstest]
 fn month_2_for_current_year_report(
-    #[values("month-2", "m-2")] period_value: &str,
+    #[values("month-2", "m-2")] month_2: &str,
     #[values(
         ("2019", "1h 00m", "2019-02"),
         ("2020", "2h 00m", "2020-02"),
@@ -221,10 +221,10 @@ fn month_2_for_current_year_report(
     let expected_taking = data.1;
     let expected_output = data.2;
 
-    CommandSpec::describe()
-        .with_file_with_content(content)
+    Cmd::given()
         .at_date(&at_date) // Testing as if we are running in year 'at_year'
-        .with_period(period_value)
+        .period_filter(month_2)
+        .a_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_output(&expected_output)
@@ -252,14 +252,14 @@ fn date_value_speficied(
     - #dev 2h Task2
     ";
 
-    let period_value = test_data.date_value;
+    let date_value = test_data.date_value;
 
     let expected_output = test_data.expectations.0;
     let expected_taking = test_data.expectations.1;
 
-    CommandSpec::describe()
-        .with_file_with_content(content)
-        .with_period(period_value)
+    Cmd::given()
+        .period_filter(date_value)
+        .a_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_output(&expected_output)
@@ -288,14 +288,14 @@ fn month_value_speficied(
     - #dev 2h Task2
     ";
 
-    let period_value = test_data.month_value;
+    let month_value = test_data.month_value;
 
     let expected_output = test_data.expectations.0;
     let expected_taking = test_data.expectations.1;
 
-    CommandSpec::describe()
-        .with_file_with_content(content)
-        .with_period(period_value)
+    Cmd::given()
+        .period_filter(month_value)
+        .a_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_output(&expected_output)
@@ -323,14 +323,14 @@ fn year_value_speficied(
     - #dev 2h Task2
     ";
 
-    let period_value = test_data.year_value;
+    let year_value = test_data.year_value;
 
     let expected_output = test_data.expectations.0;
     let expected_taking = test_data.expectations.1;
 
-    CommandSpec::describe()
-        .with_file_with_content(content)
-        .with_period(period_value)
+    Cmd::given()
+        .period_filter(year_value)
+        .a_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_output(&expected_output)
@@ -359,14 +359,14 @@ fn week_value_speficied(
     - #dev 2h Task2
     ";
 
-    let period_value = test_data.week_value;
+    let week_value = test_data.week_value;
 
     let expected_output = test_data.expectations.0;
     let expected_taking = test_data.expectations.1;
 
-    CommandSpec::describe()
-        .with_file_with_content(content)
-        .with_period(period_value)
+    Cmd::given()
+        .period_filter(week_value)
+        .a_file_with_content(content)
         .when_run()
         .should_succeed()
         .expect_output(&expected_output)
@@ -392,17 +392,17 @@ fn invalid_period(
         "2020-00-00",
         "2020-01-32"
     )]
-    period_value: &str,
+    invalid_period_value: &str,
 ) {
     let content = r"## TT 2020-01-01
     - #dev 1h Task1";
 
     let at_date = "2020-01-01";
 
-    CommandSpec::describe()
-        .with_file_with_content(content)
+    Cmd::given()
         .at_date(at_date)
-        .with_period(period_value)
+        .period_filter(invalid_period_value)
+        .a_file_with_content(content)
         .when_run()
         .should_fail();
 }
