@@ -1,5 +1,4 @@
-pub mod test_helpers;
-use test_helpers::*;
+use crate::common::*;
 
 #[test]
 fn first_tag_is_main_context() {
@@ -15,7 +14,7 @@ fn first_tag_is_main_context() {
 }
 
 mod filter_tags {
-    use crate::test_helpers::CommandSpec;
+    use crate::common::*;
     use rstest::rstest;
 
     #[rstest]
@@ -109,7 +108,7 @@ mod filter_tags {
 }
 
 mod exclude_tags {
-    use crate::test_helpers::CommandSpec;
+    use crate::common::*;
 
     #[test]
     fn excluded_tags_are_filtered() {

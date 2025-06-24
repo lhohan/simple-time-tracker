@@ -1,16 +1,15 @@
-pub mod test_helpers;
-use test_helpers::*;
+use crate::common::*;
 
 #[test]
 fn test_basic_markdown_output() {
     CommandSpec::describe()
         .with_file_with_content(
             r"
-        ## TT 2020-01-01
-        - #prj-1 1h
-        - #prj-2 2h
-        - #prj-3 4h
-        ",
+            ## TT 2020-01-01
+            - #prj-1 1h
+            - #prj-2 2h
+            - #prj-3 4h
+            ",
         )
         .with_format("markdown")
         .when_run()

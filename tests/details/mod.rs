@@ -1,5 +1,4 @@
-pub mod test_helpers;
-use test_helpers::*;
+use crate::common::*;
 
 #[test]
 fn details_flag_only_should_fail() {

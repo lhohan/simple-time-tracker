@@ -1,6 +1,5 @@
-pub mod test_helpers;
+use crate::common::*;
 use rstest::rstest;
-use test_helpers::*;
 
 #[test]
 fn shows_help_information() {
@@ -26,12 +25,12 @@ fn simple_time_tracking_example_should_report() {
     CommandSpec::describe()
         .with_file_with_content(
             r"
-        ## TT 2020-01-01
-        - #prj-1 30m
-        - #prj-2  2p
-        - #prj-3  20m
-        - #prj-1  1h
-        ",
+            ## TT 2020-01-01
+            - #prj-1 30m
+            - #prj-2  2p
+            - #prj-3  20m
+            - #prj-1  1h
+            ",
         )
         .when_run()
         .should_succeed()
@@ -51,19 +50,19 @@ fn simple_time_tracking_example_should_report() {
 #[rstest]
 fn non_entries_should_be_ignored(
     #[values(
-    "", // empty line
-    "    ", // empty line with spaces
-    "some text in a time tracking section", // time tracking section should allow for some text that are not entries
-)]
+        "", // empty line
+        "    ", // empty line with spaces
+        "some text in a time tracking section", // time tracking section should allow for some text that are not entries
+    )]
     non_entry_input: &str,
 ) {
     let content = format!(
         r"
-        ## TT 2020-01-01
-        {non_entry_input}
-        - #prj-1 1h
-        {non_entry_input}
-        ",
+            ## TT 2020-01-01
+            {non_entry_input}
+            - #prj-1 1h
+            {non_entry_input}
+            ",
     );
 
     CommandSpec::describe()
@@ -79,7 +78,7 @@ fn verbose_output() {
         .with_verbose()
         .with_file_with_content(
             r"## TT 2020-01-01
-    - #test 30m",
+        - #test 30m",
         )
         .when_run()
         .should_succeed()
@@ -91,15 +90,15 @@ fn should_only_process_entries_in_time_tracking_sections() {
     CommandSpec::describe()
         .with_file_with_content(
             r"# Random Header
-Some random content
-- #coding 1h
+    Some random content
+    - #coding 1h
 
-## TT 2020-01-01
-- #sport 1h
-- #coding 2p
+    ## TT 2020-01-01
+    - #sport 1h
+    - #coding 2p
 
-# Another Section
-- #sport 1h",
+    # Another Section
+    - #sport 1h",
         )
         .when_run()
         .should_succeed()
@@ -117,7 +116,7 @@ fn when_entry_has_error_and_not_in_time_tracking_section_should_not_report_warni
     CommandSpec::describe()
         .with_file_with_content(
             r"# Random Header
-            - #1. If you don't get the requirements right",
+                - #1. If you don't get the requirements right",
         )
         .when_run()
         .should_succeed()
@@ -127,11 +126,11 @@ fn when_entry_has_error_and_not_in_time_tracking_section_should_not_report_warni
 #[test]
 fn summary_statistics() {
     let content = r"## TT 2020-01-01
-    - #work 2h
-    - #exercise 2h
-    ## TT 2020-01-02
-    - #work 3h
-    - #exercise 1h";
+        - #work 2h
+        - #exercise 2h
+        ## TT 2020-01-02
+        - #work 3h
+        - #exercise 1h";
 
     CommandSpec::describe()
         .with_file_with_content(content)
@@ -151,9 +150,9 @@ fn summary_statistics() {
 #[test]
 fn project_filter() {
     let content = r"## TT 2020-01-01
-- #dev #rust 2h implementing filters
-- #dev 1h planning
-- #sport 30m";
+    - #dev #rust 2h implementing filters
+    - #dev 1h planning
+    - #sport 30m";
 
     CommandSpec::describe()
         .with_file_with_content(content)
@@ -170,8 +169,8 @@ fn project_filter() {
 #[test]
 fn when_project_filter_should_total_task_with_same_name() {
     let content = r"## TT 2020-01-01
-- #dev 1h My task
-- #dev 1h My task";
+    - #dev 1h My task
+    - #dev 1h My task";
 
     CommandSpec::describe()
         .with_file_with_content(content)
@@ -185,7 +184,7 @@ fn when_project_filter_should_total_task_with_same_name() {
 #[test]
 fn when_project_filter_should_default_task_description_if_empty() {
     let content = r"## TT 2020-01-01
-- #dev 2h";
+    - #dev 2h";
 
     CommandSpec::describe()
         .with_file_with_content(content)
@@ -200,8 +199,8 @@ fn when_project_filter_should_default_task_description_if_empty() {
 #[test]
 fn when_errors_should_report_warnings() {
     let content = r"## TT 2020-01-01
-- #dev 1h Task1
-- #dev Task 2 - Forgot to add time";
+    - #dev 1h Task1
+    - #dev Task 2 - Forgot to add time";
 
     CommandSpec::describe()
         .with_file_with_content(content)
@@ -216,9 +215,9 @@ fn when_errors_should_report_warnings() {
 #[test]
 fn report_should_include_interval_start() {
     let content = r"## TT 2020-01-01
-- #dev 5h Task1
-## TT 2020-01-02
-- #dev 5h Task2";
+    - #dev 5h Task1
+    ## TT 2020-01-02
+    - #dev 5h Task2";
 
     CommandSpec::describe()
         .with_file_with_content(content)
@@ -230,9 +229,9 @@ fn report_should_include_interval_start() {
 #[test]
 fn report_should_include_interval_end() {
     let content = r"## TT 2020-01-01
-- #dev 5h Task1
-## TT 2020-01-02
-- #dev 5h Task2";
+    - #dev 5h Task1
+    ## TT 2020-01-02
+    - #dev 5h Task2";
 
     CommandSpec::describe()
         .with_file_with_content(content)
@@ -244,9 +243,9 @@ fn report_should_include_interval_end() {
 #[test]
 fn date_filtering_from_date_shows_correct_start_date() {
     let content = r"## TT 2020-01-01
-- #prj-1 3h Task 1
-## TT 2020-02-01
-- #prj-2 2h Task 2";
+    - #prj-1 3h Task 1
+    ## TT 2020-02-01
+    - #prj-2 2h Task 2";
 
     CommandSpec::describe()
         .with_file_with_content(content)
@@ -259,7 +258,7 @@ fn date_filtering_from_date_shows_correct_start_date() {
 #[test]
 fn date_filtering_from_date_shows_correct_description() {
     let content = r"## TT 2020-01-01
-- #prj-1 1h Task 1";
+    - #prj-1 1h Task 1";
 
     CommandSpec::describe()
         .with_file_with_content(content)
@@ -272,10 +271,10 @@ fn date_filtering_from_date_shows_correct_description() {
 #[test]
 fn combined_filtering_project_and_from_date() {
     let content = r"## TT 2020-01-01
-- #prj-1 3h Task 1
-## TT 2020-01-02
-- #prj-1 7h Task 3
-- #prj-2 2h Task 2";
+    - #prj-1 3h Task 1
+    ## TT 2020-01-02
+    - #prj-1 7h Task 3
+    - #prj-2 2h Task 2";
 
     CommandSpec::describe()
         .with_file_with_content(content)
@@ -291,9 +290,9 @@ fn combined_filtering_project_and_from_date() {
 #[test]
 fn parsing_errors_should_show_line_numbers() {
     let content = r"## TT 2020-01-01
-- #dev 1h Task1
-- #dev invalid time format
-- #dev 2h Task3";
+    - #dev 1h Task1
+    - #dev invalid time format
+    - #dev 2h Task3";
 
     CommandSpec::describe()
         .with_file_with_content(content)
@@ -305,7 +304,7 @@ fn parsing_errors_should_show_line_numbers() {
 #[test]
 fn invalid_date_format_shows_line_number() {
     let content = r"## TT invalid-date
-- #dev 1h Task1";
+    - #dev 1h Task1";
 
     CommandSpec::describe()
         .with_file_with_content(content)
@@ -317,7 +316,7 @@ fn invalid_date_format_shows_line_number() {
 #[test]
 fn only_warnings_for_sections_with_tt_in() {
     let content = r"## A section title without teetee in
-- #dev 1h Task1";
+    - #dev 1h Task1";
 
     CommandSpec::describe()
         .with_file_with_content(content)
@@ -329,10 +328,10 @@ fn only_warnings_for_sections_with_tt_in() {
 #[test]
 fn multiple_errors_show_correct_line_numbers() {
     let content = r"## TT 2020-01-01
-- #dev 1h Task1
-- #dev Task2
-- #dev 2x Task3
-- #dev 1h Task4";
+    - #dev 1h Task1
+    - #dev Task2
+    - #dev 2x Task3
+    - #dev 1h Task4";
 
     CommandSpec::describe()
         .with_file_with_content(content)
@@ -345,8 +344,8 @@ fn multiple_errors_show_correct_line_numbers() {
 #[test]
 fn errors_show_file_name() {
     let content = r"## TT 2020-01-01
-- #dev 1h Task1
-- #dev missing_time_entry";
+    - #dev 1h Task1
+    - #dev missing_time_entry";
 
     CommandSpec::describe()
         .with_file_with_content(content)
@@ -432,9 +431,9 @@ fn directory_processing_with_invalid_files() {
 #[test]
 fn report_header_format_should_include_date_when_no_period_filter() {
     let content = r"## TT 2020-01-15
-- #dev 1h Task1
-## TT 2020-01-16
-- #dev 1h Task1";
+    - #dev 1h Task1
+    ## TT 2020-01-16
+    - #dev 1h Task1";
 
     CommandSpec::describe()
         .with_file_with_content(content)
@@ -451,7 +450,7 @@ fn invalid_from(#[values("01-01-2020", "2020-00-01", "2020-01-00", "abc")] value
     CommandSpec::describe()
         .with_file_with_content(
             r"## TT 2020-01-01
-- #dev 1h Task1",
+    - #dev 1h Task1",
         )
         .at_date("2020-01-01")
         .with_filter_from_date(value)
