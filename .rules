@@ -41,3 +41,61 @@
 
 - Lead with concrete usage examples
 - Anchor documentation near usage context
+# Test Naming Convention Guidelines
+
+## Format
+```
+[subject]_should_[expected_behavior]_[optional_when_condition]
+```
+
+## Components
+
+**Subject**: The component, feature, or system under test
+- Examples: `user`, `api`, `database`, `validator`, `cache`
+
+**Expected Behavior**: What should happen, described as an action or outcome
+- Examples: `return_success`, `validate_input`, `store_data`, `throw_error`
+
+**Optional When Condition**: Include only when necessary for clarity or disambiguation
+- Format: `when_[condition]`
+- Examples: `when_input_valid`, `when_user_authenticated`, `when_cache_empty`
+
+## Guidelines for When Conditions
+
+### ✅ Include `when_[condition]` if:
+- **Essential for understanding**: The condition is crucial to know what's being tested
+- **Multiple variants exist**: Similar tests with different conditions need distinction
+- **Specific circumstances**: The behavior only occurs under particular conditions
+
+### ❌ Omit `when_[condition]` for:
+- **Basic/default behavior**: Standard functionality that doesn't require special conditions
+- **Self-evident scenarios**: Cases where the expected behavior already implies the context
+- **Overly obvious conditions**: When the condition adds no meaningful information
+
+## Examples
+
+**Good (concise when appropriate):**
+```
+api_should_return_200
+user_should_be_created
+validator_should_reject_input_when_email_invalid
+cache_should_return_null_when_key_missing
+```
+
+**Avoid (unnecessarily verbose):**
+```
+api_should_return_200_when_request_valid  // "valid" is implied by 200 response
+user_should_be_created_when_data_provided  // data is obviously needed
+```
+
+**Good (meaningful distinctions):**
+```
+user_should_login_successfully_when_credentials_valid
+user_should_be_rejected_when_credentials_invalid
+database_should_return_cached_result_when_data_exists
+database_should_query_source_when_cache_empty
+```
+
+## Principle
+
+Keep test names **as short as possible while maintaining clarity**. The `when_` clause is a tool for disambiguation, not a mandatory requirement.
