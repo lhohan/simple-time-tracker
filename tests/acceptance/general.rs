@@ -1,5 +1,6 @@
-use crate::common::*;
 use rstest::rstest;
+
+use crate::common::Cmd;
 
 #[test]
 fn help_flag_should_show_help_information() {
@@ -285,7 +286,7 @@ fn from_filter_should_fail_when_date_invalid(
 }
 
 mod error_reporting {
-    use crate::common::*;
+    use crate::common::Cmd;
 
     #[test]
     fn app_should_report_warnings_when_entries_invalid() {
@@ -384,7 +385,7 @@ mod error_reporting {
 }
 
 mod directory_processing {
-    use crate::common::*;
+    use crate::common::Cmd;
 
     #[test]
     fn app_should_process_multiple_files() {

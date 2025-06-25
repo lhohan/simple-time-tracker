@@ -17,9 +17,10 @@ target/
 .aider*
 
 # Project
-tarpaulin-report.html
 .env
+tarpaulin-report.html
 cobertura.xml
+build_rs_cov.profraw
 
 # local temp files
 tmp*

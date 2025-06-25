@@ -116,10 +116,6 @@ impl CommandSpec {
         }
     }
 
-    pub fn and(self) -> Self {
-        self
-    }
-
     pub fn help_flag(mut self) -> Self {
         self.args.add_flag("help");
         self
@@ -499,16 +495,6 @@ impl ProjectAssertion {
         let formatted_percentage = format!("({percentage:>3}%)");
         let mut new_expectations = self.expectations;
         new_expectations.push(("Percentage", formatted_percentage));
-        Self {
-            cmd_result: self.cmd_result,
-            expectations: new_expectations,
-            project_name: self.project_name,
-        }
-    }
-
-    pub fn with_context(self, expected_tag: &str) -> Self {
-        let mut new_expectations = self.expectations;
-        new_expectations.push(("Context", expected_tag.to_string()));
         Self {
             cmd_result: self.cmd_result,
             expectations: new_expectations,

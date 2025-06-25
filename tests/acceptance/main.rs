@@ -1,5 +1,4 @@
-pub mod common;
-
+mod common;
 mod details;
 mod general;
 mod limit;

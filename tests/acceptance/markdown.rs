@@ -1,4 +1,4 @@
-use crate::common::*;
+use crate::common::Cmd;
 
 #[test]
 fn output_should_format_as_markdown_when_format_specified() {

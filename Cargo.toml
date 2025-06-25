@@ -7,10 +7,6 @@ edition = "2021"
 name = "tt"
 path = "src/main.rs"
 
-[[test]]
-name = "acceptance_tests"
-path = "tests/acceptance_tests.rs"
-
 [dependencies]
 anyhow = "1.0"                                     # Error handling
 clap = { version = "4.4", features = ["derive"] }  # CLI argument parsing
