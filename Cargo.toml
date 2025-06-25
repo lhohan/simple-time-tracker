@@ -20,6 +20,10 @@ regex = "1.10"
 time = { version = "0.3", features = ["parsing"] } # Date parsing
 walkdir = "2.4"
 
+# This dependencies fixed an SSL issue when running tests in Github actions.
+# https://github.com/sfackler/rust-openssl/issues/2217
+openssl = { version = "0.10.72", features = ["vendored"] }
+
 [dev-dependencies]
 assert_fs = "1.0"
 assert_cmd = "2.0.16"    # CLI testing

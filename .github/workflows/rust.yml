@@ -1,0 +1,39 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/flakehub-cache-action@main
+
+      - name: Install cargo-tarpaulin
+        run: |
+          # The nix develop command will put us in the right environment
+          # to use cargo, and then we install tarpaulin.
+          nix develop --command cargo install cargo-tarpaulin --locked
+
+      - name: Run tests and test coveragein Nix shell
+        run: |
+          nix develop --command just test-coverage
+
+      - name: Coveralls
+        uses: coverallsapp/github-action@v2
