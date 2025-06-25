@@ -25,15 +25,11 @@ jobs:
       - name: Setup Nix cache
         uses: DeterminateSystems/flakehub-cache-action@main
 
-      - name: Install cargo-tarpaulin
-        run: |
-          # The nix develop command will put us in the right environment
-          # to use cargo, and then we install tarpaulin.
-          nix develop --command cargo install cargo-tarpaulin --locked
-
       - name: Run tests and test coveragein Nix shell
         run: |
           nix develop --command just test-coverage
 
       - name: Coveralls
         uses: coverallsapp/github-action@v2
+        with:
+          file: cobertura.xml

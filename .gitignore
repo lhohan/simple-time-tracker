@@ -19,6 +19,7 @@ target/
 # Project
 tarpaulin-report.html
 .env
+cobertura.xml
 
 # local temp files
 tmp*
