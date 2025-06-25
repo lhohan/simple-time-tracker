@@ -1,7 +1,7 @@
 use crate::common::*;
 
 #[test]
-fn first_tag_is_main_context() {
+fn app_should_use_first_tag_as_main_project() {
     let content = r#"## TT 2020-01-01
 - #tag1 #tag2 #tag3 1h Task A"#;
 
@@ -13,12 +13,12 @@ fn first_tag_is_main_context() {
         .validate();
 }
 
-mod filter_tags {
+mod project_filter {
     use crate::common::*;
     use rstest::rstest;
 
     #[rstest]
-    fn project_filter_works_on_all_tags(#[values("tag1", "tag2", "tag3")] tag: &str) {
+    fn project_filter_should_match_any_tag_in_entry(#[values("tag1", "tag2", "tag3")] tag: &str) {
         let content = r#"## TT 2024-01-15
 - #tag1 #tag2 #tag3 1h Task A"#;
 
@@ -29,9 +29,13 @@ mod filter_tags {
             .should_succeed()
             .expect_task("Task A");
     }
+}
+
+mod tags_filter {
+    use crate::common::*;
 
     #[test]
-    fn supports_tags_filter() {
+    fn app_should_support_tags_filter() {
         let content = r#"## TT 2020-01-01
 - #tag1 1h Task A"#;
 
@@ -43,7 +47,7 @@ mod filter_tags {
     }
 
     #[test]
-    fn tags_filter() {
+    fn tags_filter_should_show_matching_entries() {
         let content = r#"## TT 2024-01-15
 - #tag-1 1h Task A
 - #tag-2 2h Task B"#;
@@ -59,7 +63,7 @@ mod filter_tags {
     }
 
     #[test]
-    fn tags_filter_empty() {
+    fn tags_filter_should_show_all_entries_when_empty() {
         let content = r#"## TT 2024-01-15
 - #tag-1 1h Task A
 "#;
@@ -74,7 +78,7 @@ mod filter_tags {
     }
 
     #[test]
-    fn tags_filter_non_existing_tag() {
+    fn tags_filter_should_show_no_data_when_no_match() {
         let content = r#"## TT 2024-01-15
 - #tag-1 1h Task A
 "#;
@@ -88,7 +92,7 @@ mod filter_tags {
     }
 
     #[test]
-    fn tags_filter_multiple_tags() {
+    fn tags_filter_should_show_entries_matching_any_tag() {
         let content = r#"## TT 2024-01-15
 - #tag-1 1h Task A
 - #tag-2 2h Task B
@@ -107,11 +111,11 @@ mod filter_tags {
     }
 }
 
-mod exclude_tags {
+mod exclude_tags_filter {
     use crate::common::*;
 
     #[test]
-    fn excluded_tags_are_filtered() {
+    fn exclude_tags_filter_should_hide_matching_entries() {
         let content = r#"## TT 2020-01-01
 - #tag1 1h Task A
 - #tag2 1h Task B"#;
@@ -127,7 +131,7 @@ mod exclude_tags {
     }
 
     #[test]
-    fn excluded_tags_are_filtered_multiple_tags_excluded() {
+    fn exclude_tags_filter_should_hide_entries_matching_any_tag() {
         let content = r#"## TT 2020-01-01
 - #tag1 1h Task A
 - #tag2 1h Task B
@@ -145,7 +149,7 @@ mod exclude_tags {
             .validate();
     }
     #[test]
-    fn excluded_tags_are_filtered_entry_with_multiple_tags() {
+    fn exclude_tags_filter_should_hide_entry_if_any_tag_matches() {
         let content = r#"## TT 2020-01-01
 - #tag1 #tag2 1h Task A
 - #tag1 1h Task B"#;
@@ -162,7 +166,7 @@ mod exclude_tags {
     }
 
     #[test]
-    fn exclude_tags_filter_should_work() {
+    fn app_should_support_exclude_tags_filter() {
         let content = r#"## TT 2020-01-01
 - #tag1 1h Task A"#;
 

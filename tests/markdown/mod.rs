@@ -1,7 +1,7 @@
 use crate::common::*;
 
 #[test]
-fn test_basic_markdown_output() {
+fn output_should_format_as_markdown_when_format_specified() {
     Cmd::given()
         .output_format("markdown")
         .a_file_with_content(

@@ -143,17 +143,19 @@ fn limit_number_of_entries(
     summaries_sorted: std::vec::IntoIter<ContextSummary>,
     cumulative_percentage_threshold: &f64,
 ) -> Vec<ContextSummary> {
-    summaries_sorted
-        .scan(0.0, |cumulative_percentage, entry| {
-            let percentage = (entry.minutes as f64 / total_minutes) * 100.0;
-            *cumulative_percentage += percentage;
-            Some((entry, *cumulative_percentage))
-        })
-        .take_while(|(_, cumulative_percentage)| {
-            *cumulative_percentage <= *cumulative_percentage_threshold
-        })
-        .map(|(entry, _)| entry)
-        .collect()
+    let mut result = Vec::new();
+    let mut cumulative_percentage = 0.0;
+
+    for entry in summaries_sorted {
+        let percentage = (entry.minutes as f64 / total_minutes) * 100.0;
+        cumulative_percentage += percentage;
+        result.push(entry);
+
+        if cumulative_percentage >= *cumulative_percentage_threshold {
+            break;
+        }
+    }
+    result
 }
 
 fn summarize_entries(entries: &[TimeEntry]) -> Vec<(String, u32)> {

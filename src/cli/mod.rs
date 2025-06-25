@@ -136,7 +136,7 @@ impl Args {
     #[must_use]
     pub fn limit(&self) -> Option<OutputLimit> {
         if self.limit {
-            Some(OutputLimit::CummalitivePercentageThreshhold(90.01))
+            Some(OutputLimit::CummalitivePercentageThreshhold(90.00))
         } else {
             None
         }
