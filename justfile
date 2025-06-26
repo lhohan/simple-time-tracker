@@ -16,11 +16,11 @@ run:
 
 # Test the 'tt' app
 test:
-    cargo test
+    cargo nextest run
 
 # Run tests on change continuously
 test-w:
-    cargo watch -c -x test
+    cargo watch -c -x "nextest run"
 
 # Run tests with coverage
 test-coverage:

@@ -12,6 +12,7 @@
     devShell = pkgs.mkShell {
       buildInputs = with pkgs; [
         cargo-tarpaulin
+        cargo-nextest
         rustup
         just
       ];
