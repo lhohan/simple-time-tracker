@@ -24,11 +24,11 @@ test-w:
 
 # Run tests with coverage
 test-coverage:
-    cargo llvm-cov
+    cargo llvm-cov nextest
 
 # CI specific - Run tests with coverage
-ci-test-coverage:
-    cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+ci-test-coverage: test-coverage
+    cargo llvm-cov report --lcov --output-path lcov.info
 
 # Run tests with coverage and open the report
 test-coverage-report:
