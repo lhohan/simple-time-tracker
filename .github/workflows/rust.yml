@@ -25,7 +25,7 @@ jobs:
       - name: Setup Nix cache
         uses: DeterminateSystems/flakehub-cache-action@main
 
-      - name: Run tests and test coveragein Nix shell
+      - name: Run test coverage
         run: |
           nix develop --command just test-coverage
 

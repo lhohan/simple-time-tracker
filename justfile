@@ -24,11 +24,11 @@ test-w:
 
 # Run tests with coverage
 test-coverage:
-    cargo tarpaulin --tests --out xml -- --test-threads=1
+    cargo tarpaulin --engine llvm --out xml -- --test-threads=1
 
 # Run tests with coverage and open the report
 test-coverage-report:
-    cargo tarpaulin --tests --out Html && open ./tarpaulin-report.html
+    cargo tarpaulin --engine llvm --out Html && open ./tarpaulin-report.html
 
 # Run extensive Clippy linter checks
 run-clippy:
