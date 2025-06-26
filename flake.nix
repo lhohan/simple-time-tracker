@@ -11,8 +11,9 @@
   in {
     devShell = pkgs.mkShell {
       buildInputs = with pkgs; [
-        cargo-tarpaulin
+        # cargo-llvm-cov   # currently broken on nix packages... for now install manually
         cargo-nextest
+        cargo-tarpaulin
         rustup
         just
       ];
