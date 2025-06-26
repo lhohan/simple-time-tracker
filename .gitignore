@@ -18,9 +18,8 @@ target/
 
 # Project
 .env
-tarpaulin-report.html
-cobertura.xml
-build_rs_cov.profraw
+# Code coverage
+lcov.info
 
 # local temp files
 tmp*

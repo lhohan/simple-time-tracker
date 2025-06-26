@@ -13,7 +13,6 @@
       buildInputs = with pkgs; [
         # cargo-llvm-cov   # currently broken on nix packages... for now install manually
         cargo-nextest
-        cargo-tarpaulin
         rustup
         just
       ];
