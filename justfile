@@ -32,7 +32,7 @@ ci-test-coverage: test-coverage
 
 # Run tests with coverage and open the report
 test-coverage-report:
-    cargo llvm-cov --open
+    cargo llvm-cov nextest --open
 
 # Run extensive Clippy linter checks
 run-clippy:
