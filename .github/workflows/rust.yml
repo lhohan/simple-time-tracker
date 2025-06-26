@@ -27,7 +27,7 @@ jobs:
 
       - name: Run test coverage
         run: |
-          nix develop --command just test-coverage
+          nix develop --command just ci-test-coverage
 
       - name: Coveralls
         uses: coverallsapp/github-action@v2

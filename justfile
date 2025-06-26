@@ -26,6 +26,10 @@ test-w:
 test-coverage:
     cargo tarpaulin --engine llvm --out xml -- --test-threads=1
 
+# CI specific - Run tests with coverage
+ci-test-coverage:
+    cargo tarpaulin --engine llvm --out xml --features ci -- --test-threads=1
+
 # Run tests with coverage and open the report
 test-coverage-report:
     cargo tarpaulin --engine llvm --out Html && open ./tarpaulin-report.html
