@@ -53,12 +53,6 @@ impl TagFilter {
         }
     }
 
-    pub fn project(&self) -> Option<Tag> {
-        match self {
-            TagFilter::Any(tags) => tags.first().cloned(),
-        }
-    }
-
     pub fn tags(&self) -> Vec<Tag> {
         match self {
             TagFilter::Any(tags) => tags.clone(),
