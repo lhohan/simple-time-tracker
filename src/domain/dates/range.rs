@@ -125,7 +125,7 @@ impl PeriodRequested {
 
     #[must_use]
     fn get_first_day_of_week(year: i32, week: u32) -> Option<NaiveDate> {
-        if week == 0 || week > 53 {
+        if week == 0 || week >= 53 {
             return None;
         }
 
