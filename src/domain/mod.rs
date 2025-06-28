@@ -33,21 +33,6 @@ impl TimeEntry {
     pub fn get_tags(&self) -> &[Tag] {
         &self.tags
     }
-
-    #[must_use]
-    pub fn project_tags(&self) -> Vec<&Tag> {
-        self.tags.iter().filter(|t| t.is_project()).collect()
-    }
-
-    #[must_use]
-    pub fn context_tags(&self) -> Vec<&Tag> {
-        self.tags.iter().filter(|t| !t.is_project()).collect()
-    }
-
-    #[must_use]
-    pub fn has_project_tag(&self) -> bool {
-        self.tags.iter().any(|t| t.is_project())
-    }
 }
 
 struct EntryLine<'a>(pub(crate) &'a str);

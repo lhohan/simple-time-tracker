@@ -188,7 +188,6 @@ impl CommandSpec {
         self
     }
 
-
     fn setup_test_files(input: InputSource) -> (Arc<assert_fs::TempDir>, PathBuf) {
         let temp =
             Arc::new(assert_fs::TempDir::new().expect("Failed to create temporary directory"));

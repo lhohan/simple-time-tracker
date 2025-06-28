@@ -15,10 +15,6 @@ impl Tag {
         }
     }
 
-    pub fn is_project(&self) -> bool {
-        matches!(self, Tag::Project(_))
-    }
-
     pub fn is_actvity(&self) -> bool {
         matches!(self, Tag::Context(_))
     }
