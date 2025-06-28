@@ -20,6 +20,7 @@ target/
 .env
 # Code coverage
 lcov.info
-
+# Mutant testing
+mutants.out**/**
 # local temp files
 tmp*
