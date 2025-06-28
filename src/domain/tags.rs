@@ -15,13 +15,6 @@ impl Tag {
         }
     }
 
-    pub fn name(&self) -> &str {
-        match self {
-            Tag::Project(name) => name,
-            Tag::Context(name) => name,
-        }
-    }
-
     pub fn raw_value(&self) -> String {
         match self {
             Tag::Project(name) => format!("prj-{}", name),
