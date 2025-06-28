@@ -188,9 +188,6 @@ impl CommandSpec {
         self
     }
 
-    fn create_base_command() -> Command {
-        Command::cargo_bin("tt").expect("Failed to create cargo command")
-    }
 
     fn setup_test_files(input: InputSource) -> (Arc<assert_fs::TempDir>, PathBuf) {
         let temp =
@@ -234,7 +231,7 @@ impl CommandSpec {
     }
 
     pub fn when_run(self) -> CommandResult {
-        let mut command = Self::create_base_command();
+        let mut command = Command::cargo_bin("tt").expect("Failed to create cargo command");
         let temp_dir = self.input.map(|input| {
             let (temp_dir, input_path) = Self::setup_test_files(input);
             command.arg("--input").arg(input_path);
