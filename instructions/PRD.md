@@ -103,8 +103,7 @@ An entry for a sub-project 'sub-proj' below main project 'proj'. Further nesting
   * Report and set treshholds for clippy warnings
 
 ### Task 001: Add support for outcomes or goals (Integrated into Phase 2 of Development Roadmap):**
-    * Allow users to associate tasks with broader outcomes or goals.
-    * Explore the use of "domains" as a hierarchical structure above projects.
+ See file with spec.
 
 ### Task 002: Support for Multiple Projects and Activities
 

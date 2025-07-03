@@ -13,6 +13,7 @@ pub struct TimeEntry {
     tags: Vec<Tag>,
     pub minutes: u32,
     pub description: Option<String>,
+    pub outcome: Option<String>,
 }
 
 impl TimeEntry {
@@ -68,6 +69,8 @@ fn parse_line(entry_line: EntryLine) -> Result<TimeEntry, ParseError> {
     let mut minutes = 0;
     let mut description = Vec::new();
     let mut time_found = false;
+    let mut multiple_outcomes_found = false;
+    let mut outcome = None;
 
     for part in parts {
         match parse_part(part) {
@@ -78,6 +81,12 @@ fn parse_line(entry_line: EntryLine) -> Result<TimeEntry, ParseError> {
             Ok(LinePart::Tag(project_found)) => {
                 projects.push_back(project_found);
             }
+            Ok(LinePart::Outcome(outcome_found)) => {
+                if outcome.is_some() {
+                    multiple_outcomes_found = true;
+                }
+                outcome = Some(outcome_found);
+            }
             Ok(LinePart::DescriptionPart(desc)) => description.push(desc),
             Err(err) => return Err(err),
         }
@@ -85,6 +94,12 @@ fn parse_line(entry_line: EntryLine) -> Result<TimeEntry, ParseError> {
 
     if !time_found {
         return Err(ParseError::MissingTime(entry_line.get_line().to_string()));
+    }
+
+    if multiple_outcomes_found {
+        return Err(ParseError::MultipleOutcomes(
+            entry_line.get_line().to_string(),
+        ));
     }
 
     let description =
@@ -102,17 +117,24 @@ fn parse_line(entry_line: EntryLine) -> Result<TimeEntry, ParseError> {
         tags,
         minutes,
         description,
+        outcome,
     })
 }
 
 enum LinePart<'a> {
     Time(u32),
     Tag(Tag),
+    Outcome(String),
     DescriptionPart(&'a str),
 }
 
 fn parse_part(part: &str) -> Result<LinePart, ParseError> {
-    if part.starts_with('#') {
+    if part.starts_with("##") {
+        let outcome = part
+            .strip_prefix("##")
+            .expect("outcome should have had '##' prefix");
+        Ok(LinePart::Outcome(outcome.to_string()))
+    } else if part.starts_with('#') {
         let raw_tag = part
             .strip_prefix("#")
             .expect("project should have had '#' prefix");
@@ -159,6 +181,7 @@ pub enum ParseError {
     InvalidDate(String),
     MissingTime(String),
     MissingProject(String),
+    MultipleOutcomes(String),
     InvalidPeriod(String),
     Located {
         error: Box<ParseError>,
@@ -176,6 +199,7 @@ impl std::fmt::Display for ParseError {
             ParseError::MissingProject(line) => write!(f, "missing project: {line}"),
             ParseError::ErrorReading(file) => write!(f, "error reading file: {file}"),
             ParseError::InvalidPeriod(period) => write!(f, "invalid period: {period}"),
+            ParseError::MultipleOutcomes(line) => write!(f, "multiple outcomes: {line}"),
             ParseError::Located { error, location } => {
                 write!(f, "{}: line {}: {}", location.file, location.line, error)
             }
@@ -298,6 +322,44 @@ mod tests {
                 .expect_invalid_with(&ParseError::MissingProject(input.to_string()));
         }
 
+        #[test]
+        fn parse_outcome() {
+            let input = "- #project ##my-outcome 1h";
+
+            LineSpec::given_line(input)
+                .when_parsed()
+                .expect_valid_entry()
+                .expect_outcome("my-outcome");
+        }
+        #[test]
+        fn parse_outcome_should_fail_when_multiple_outcomes() {
+            let input = "- #project ##my-outcome ##another-outcome 1h";
+
+            LineSpec::given_line(input)
+                .when_parsed()
+                .expect_invalid_with(&ParseError::MultipleOutcomes(input.to_string()));
+        }
+
+        #[test]
+        fn parse_outcome_when_outcome_is_missing() {
+            let input = "- #project 1h";
+
+            LineSpec::given_line(input)
+                .when_parsed()
+                .expect_valid_entry()
+                .expect_no_outcome();
+        }
+
+        #[test]
+        fn parse_outcome_first_hash_in_line() {
+            let input = "- ##my-outcome #project 1h";
+
+            LineSpec::given_line(input)
+                .when_parsed()
+                .expect_valid_entry()
+                .expect_outcome("my-outcome");
+        }
+
         mod tag_parsing {
             use super::*;
 
@@ -386,6 +448,16 @@ mod tests {
 
                 pub fn expect_no_description(self) -> TimeEntry {
                     assert!(self.description.is_none());
+                    self
+                }
+
+                pub fn expect_outcome(self, expected_outcome: &str) -> TimeEntry {
+                    assert_eq!(self.outcome, Some(expected_outcome.to_string()));
+                    self
+                }
+
+                pub fn expect_no_outcome(self) -> TimeEntry {
+                    assert!(self.outcome.is_none());
                     self
                 }
             }
