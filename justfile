@@ -11,8 +11,8 @@ check-w:
     cargo watch -c -x check
 
 # Run the 'tt' app
-run:
-    cargo run -- --help
+run path period:
+    cargo run -- -i "{{path}}" --period {{period}}
 
 # Test the 'tt' app
 test:
