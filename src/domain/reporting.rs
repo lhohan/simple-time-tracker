@@ -81,6 +81,7 @@ impl TrackedTime {
 
 pub struct OverviewReport {
     summaries: Vec<ContextSummary>,
+    outcome_summaries: Vec<OutcomeSummary>,
     period: TrackingPeriod,
     period_requested: Option<PeriodRequested>,
     total_minutes: u32,
@@ -92,29 +93,12 @@ impl OverviewReport {
         limit: &Option<OutputLimit>,
         period_requested: &Option<PeriodRequested>,
     ) -> Self {
-        let summarized = summarize_entries(&time_report.entries);
-
-        let summaries_sorted = summarized
-            .into_iter()
-            .map(|(project, minutes)| {
-                ContextSummary::new(project, minutes, time_report.total_minutes)
-            })
-            .sorted_by(|a, b| {
-                b.minutes
-                    .cmp(&a.minutes)
-                    .then(a.description.cmp(&b.description))
-            });
-
-        let entries = match limit {
-            Some(OutputLimit::CummalitivePercentageThreshhold(threshold)) => {
-                let total_minutes = time_report.total_minutes as f64;
-                limit_number_of_entries(total_minutes, summaries_sorted, threshold)
-            }
-            None => summaries_sorted.collect(),
-        };
+        let summarized_entries = summarize_time_entries(time_report, limit);
+        let summarized_outcomes = summarize_outcomes(time_report);
 
         OverviewReport {
-            summaries: entries,
+            summaries: summarized_entries,
+            outcome_summaries: summarized_outcomes,
             period: time_report.period,
             period_requested: period_requested.clone(),
             total_minutes: time_report.total_minutes,
@@ -123,6 +107,10 @@ impl OverviewReport {
 
     pub fn summaries(&self) -> &Vec<ContextSummary> {
         &self.summaries
+    }
+
+    pub fn outcome_summaries(&self) -> &Vec<OutcomeSummary> {
+        &self.outcome_summaries
     }
 
     pub fn period(&self) -> &TrackingPeriod {
@@ -136,6 +124,31 @@ impl OverviewReport {
     pub fn total_minutes(&self) -> u32 {
         self.total_minutes
     }
+}
+
+fn summarize_time_entries(
+    time_report: &TrackedTime,
+    limit: &Option<OutputLimit>,
+) -> Vec<ContextSummary> {
+    let summarized_entries = summarize_entries(&time_report.entries);
+
+    let summarized_entries_sorted = summarized_entries
+        .into_iter()
+        .map(|(project, minutes)| ContextSummary::new(project, minutes, time_report.total_minutes))
+        .sorted_by(|a, b| {
+            b.minutes
+                .cmp(&a.minutes)
+                .then(a.description.cmp(&b.description))
+        });
+
+    let entries = match limit {
+        Some(OutputLimit::CummalitivePercentageThreshhold(threshold)) => {
+            let total_minutes = time_report.total_minutes as f64;
+            limit_number_of_entries(total_minutes, summarized_entries_sorted, threshold)
+        }
+        None => summarized_entries_sorted.collect(),
+    };
+    entries
 }
 
 fn limit_number_of_entries(
@@ -168,6 +181,24 @@ fn summarize_entries(entries: &[TimeEntry]) -> Vec<(String, u32)> {
     summary.into_iter().collect()
 }
 
+fn summarize_outcomes(time_report: &TrackedTime) -> Vec<OutcomeSummary> {
+    let entries: &[TimeEntry] = &time_report.entries;
+    let mut summary = HashMap::new();
+
+    for entry in entries {
+        if let Some(outcome) = &entry.outcome {
+            *summary.entry(outcome.0.clone()).or_insert(0) += entry.minutes;
+        }
+    }
+
+    summary
+        .into_iter()
+        .map(|(outcome, duration)| {
+            OutcomeSummary::new(outcome, duration, time_report.total_minutes)
+        })
+        .collect()
+}
+
 #[derive(Debug, Clone)]
 pub struct ContextSummary {
     pub(crate) description: String,
@@ -176,6 +207,23 @@ pub struct ContextSummary {
 }
 
 impl ContextSummary {
+    pub fn new(description: String, minutes: u32, total_minutes: u32) -> Self {
+        Self {
+            description,
+            minutes,
+            percentage: calculate_percentage(minutes, total_minutes),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct OutcomeSummary {
+    pub(crate) description: String,
+    pub(crate) minutes: u32,
+    pub(crate) percentage: u32,
+}
+
+impl OutcomeSummary {
     pub fn new(description: String, minutes: u32, total_minutes: u32) -> Self {
         Self {
             description,

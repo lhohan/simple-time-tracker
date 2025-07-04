@@ -344,6 +344,22 @@ impl CommandResult {
         Self { output: new_output }
     }
 
+    pub fn expect_outcome_with_duration(
+        self,
+        outcome_description: &str,
+        expected_duration: &str,
+    ) -> Self {
+        let escaped_description = regex::escape(outcome_description);
+        let escaped_duration = regex::escape(expected_duration);
+        let pattern = format!(r"\* {escaped_description}\s*\.+\s*{escaped_duration}.*",);
+
+        let new_output = self
+            .output
+            .stdout(predicate::str::is_match(pattern).unwrap());
+
+        Self { output: new_output }
+    }
+
     fn expect_warning_pattern(self, pattern: &str) -> Self {
         Self {
             output: self

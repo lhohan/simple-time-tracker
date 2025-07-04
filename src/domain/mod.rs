@@ -13,7 +13,7 @@ pub struct TimeEntry {
     tags: Vec<Tag>,
     pub minutes: u32,
     pub description: Option<String>,
-    pub outcome: Option<String>,
+    pub outcome: Option<Outcome>,
 }
 
 impl TimeEntry {
@@ -33,6 +33,14 @@ impl TimeEntry {
     #[must_use]
     pub fn get_tags(&self) -> &[Tag] {
         &self.tags
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct Outcome(String);
+impl Outcome {
+    pub fn new(description: String) -> Self {
+        Outcome(description)
     }
 }
 
@@ -85,7 +93,7 @@ fn parse_line(entry_line: EntryLine) -> Result<TimeEntry, ParseError> {
                 if outcome.is_some() {
                     multiple_outcomes_found = true;
                 }
-                outcome = Some(outcome_found);
+                outcome = Some(Outcome::new(outcome_found));
             }
             Ok(LinePart::DescriptionPart(desc)) => description.push(desc),
             Err(err) => return Err(err),
@@ -389,7 +397,7 @@ mod tests {
         }
 
         mod spec {
-            use crate::domain::{ParseError, TimeEntry};
+            use crate::domain::{Outcome, ParseError, TimeEntry};
 
             pub struct LineSpec {
                 line: String,
@@ -452,7 +460,10 @@ mod tests {
                 }
 
                 pub fn expect_outcome(self, expected_outcome: &str) -> TimeEntry {
-                    assert_eq!(self.outcome, Some(expected_outcome.to_string()));
+                    assert_eq!(
+                        self.outcome,
+                        Some(Outcome::new(expected_outcome.to_string()))
+                    );
                     self
                 }
 
