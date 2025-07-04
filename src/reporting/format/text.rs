@@ -1,7 +1,7 @@
 use crate::domain::reporting;
-use crate::domain::reporting::ContextSummary;
 use crate::domain::reporting::DetailReport;
-use crate::domain::reporting::OutcomeSummary;
+use crate::domain::reporting::TimeTotal;
+
 use crate::domain::reporting::OverviewReport;
 use crate::domain::PeriodDescription;
 use crate::domain::TrackingPeriod;
@@ -33,8 +33,8 @@ impl TextFormatter {
     fn format_overview_report(report: &OverviewReport) -> String {
         let description = report.period_requested().as_ref().map(|p| p.description());
         Self::format_overview(
-            &report.summaries(),
-            &report.outcome_summaries(),
+            &report.entries_time_totals(),
+            &report.outcome_time_totals(),
             &report.period(),
             &description,
             report.total_minutes(),
@@ -42,8 +42,8 @@ impl TextFormatter {
     }
 
     fn format_overview(
-        entries: &Vec<ContextSummary>,
-        outcomes: &Vec<OutcomeSummary>,
+        entries: &Vec<TimeTotal>,
+        outcomes: &Vec<TimeTotal>,
         period: &TrackingPeriod,
         range_description: &Option<PeriodDescription>,
         total_minutes: u32,

@@ -1,4 +1,4 @@
-use crate::domain::reporting::ContextSummary;
+use crate::domain::reporting::TimeTotal;
 use crate::reporting::format::{format_duration, Formatter};
 use crate::reporting::model::FormatableReport;
 
@@ -8,7 +8,7 @@ impl Formatter for MarkdownFormatter {
     fn format(&self, report: &FormatableReport) -> String {
         match report {
             FormatableReport::OverviewReport(report) => Self::format_overview(
-                report.summaries().to_vec(),
+                report.entries_time_totals().to_vec(),
                 report.period(),
                 report.total_minutes(),
             ),
@@ -19,7 +19,7 @@ impl Formatter for MarkdownFormatter {
 
 impl MarkdownFormatter {
     fn format_overview(
-        entries: Vec<ContextSummary>,
+        entries: Vec<TimeTotal>,
         period: &crate::domain::TrackingPeriod,
         total_minutes: u32,
     ) -> String {

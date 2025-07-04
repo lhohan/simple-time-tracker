@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::hash::Hash;
 
 use super::dates::{EndDate, StartDate};
 use super::tags::Tag;
@@ -56,17 +57,17 @@ impl TrackedTime {
     }
 
     fn calculate_totals_for_tasks(&self, tag: &Tag) -> HashMap<String, u32> {
-        let mut total_times_for_tasks = HashMap::new();
-
-        let entries_for_tag = self.entries.iter().filter(|entry| entry.tags.contains(tag));
-        for entry in entries_for_tag {
-            let key = entry
-                .description
-                .clone()
-                .unwrap_or_else(|| "<no description>".to_string());
-            *total_times_for_tasks.entry(key).or_insert(0) += entry.minutes;
-        }
-        total_times_for_tasks.clone()
+        sum_time_by_key(
+            self.entries.iter().filter(|entry| entry.tags.contains(tag)),
+            |entry| {
+                Some(
+                    entry
+                        .description
+                        .clone()
+                        .unwrap_or_else(|| "<no description>".to_string()),
+                )
+            },
+        )
     }
 
     fn sort_by_time(
@@ -80,8 +81,8 @@ impl TrackedTime {
 }
 
 pub struct OverviewReport {
-    summaries: Vec<ContextSummary>,
-    outcome_summaries: Vec<OutcomeSummary>,
+    entries_total_time: Vec<TimeTotal>,
+    outcomes_total_time: Vec<TimeTotal>,
     period: TrackingPeriod,
     period_requested: Option<PeriodRequested>,
     total_minutes: u32,
@@ -93,24 +94,24 @@ impl OverviewReport {
         limit: &Option<OutputLimit>,
         period_requested: &Option<PeriodRequested>,
     ) -> Self {
-        let summarized_entries = summarize_time_entries(time_report, limit);
-        let summarized_outcomes = summarize_outcomes(time_report);
+        let entries_summed = sum_time_entries(time_report, limit);
+        let outcomes_summed = sum_outcomes(time_report);
 
         OverviewReport {
-            summaries: summarized_entries,
-            outcome_summaries: summarized_outcomes,
+            entries_total_time: entries_summed,
+            outcomes_total_time: outcomes_summed,
             period: time_report.period,
             period_requested: period_requested.clone(),
             total_minutes: time_report.total_minutes,
         }
     }
 
-    pub fn summaries(&self) -> &Vec<ContextSummary> {
-        &self.summaries
+    pub fn entries_time_totals(&self) -> &Vec<TimeTotal> {
+        &self.entries_total_time
     }
 
-    pub fn outcome_summaries(&self) -> &Vec<OutcomeSummary> {
-        &self.outcome_summaries
+    pub fn outcome_time_totals(&self) -> &Vec<TimeTotal> {
+        &self.outcomes_total_time
     }
 
     pub fn period(&self) -> &TrackingPeriod {
@@ -126,15 +127,12 @@ impl OverviewReport {
     }
 }
 
-fn summarize_time_entries(
-    time_report: &TrackedTime,
-    limit: &Option<OutputLimit>,
-) -> Vec<ContextSummary> {
-    let summarized_entries = summarize_entries(&time_report.entries);
+fn sum_time_entries(time_report: &TrackedTime, limit: &Option<OutputLimit>) -> Vec<TimeTotal> {
+    let summed_entries = sum_entries(&time_report.entries);
 
-    let summarized_entries_sorted = summarized_entries
+    let summed_entries_sorted = summed_entries
         .into_iter()
-        .map(|(project, minutes)| ContextSummary::new(project, minutes, time_report.total_minutes))
+        .map(|(project, minutes)| TimeTotal::new(project, minutes, time_report.total_minutes))
         .sorted_by(|a, b| {
             b.minutes
                 .cmp(&a.minutes)
@@ -144,25 +142,25 @@ fn summarize_time_entries(
     let entries = match limit {
         Some(OutputLimit::CummalitivePercentageThreshhold(threshold)) => {
             let total_minutes = time_report.total_minutes as f64;
-            limit_number_of_entries(total_minutes, summarized_entries_sorted, threshold)
+            limit_number_of_entries(total_minutes, summed_entries_sorted, threshold)
         }
-        None => summarized_entries_sorted.collect(),
+        None => summed_entries_sorted.collect(),
     };
     entries
 }
 
 fn limit_number_of_entries(
     total_minutes: f64,
-    summaries_sorted: std::vec::IntoIter<ContextSummary>,
+    totals: std::vec::IntoIter<TimeTotal>,
     cumulative_percentage_threshold: &f64,
-) -> Vec<ContextSummary> {
+) -> Vec<TimeTotal> {
     let mut result = Vec::new();
     let mut cumulative_percentage = 0.0;
 
-    for entry in summaries_sorted {
-        let percentage = (entry.minutes as f64 / total_minutes) * 100.0;
+    for total in totals {
+        let percentage = (total.minutes as f64 / total_minutes) * 100.0;
         cumulative_percentage += percentage;
-        result.push(entry);
+        result.push(total);
 
         if cumulative_percentage >= *cumulative_percentage_threshold {
             break;
@@ -171,59 +169,46 @@ fn limit_number_of_entries(
     result
 }
 
-fn summarize_entries(entries: &[TimeEntry]) -> Vec<(String, u32)> {
-    let mut summary = HashMap::new();
-
+fn sum_time_by_key<'a, F, K>(
+    entries: impl Iterator<Item = &'a TimeEntry>,
+    key_extractor: F,
+) -> HashMap<K, u32>
+where
+    F: Fn(&TimeEntry) -> Option<K>,
+    K: Eq + Hash,
+{
+    let mut aggregated = HashMap::new();
     for entry in entries {
-        *summary.entry(entry.main_context().clone()).or_insert(0) += entry.minutes;
-    }
-
-    summary.into_iter().collect()
-}
-
-fn summarize_outcomes(time_report: &TrackedTime) -> Vec<OutcomeSummary> {
-    let entries: &[TimeEntry] = &time_report.entries;
-    let mut summary = HashMap::new();
-
-    for entry in entries {
-        if let Some(outcome) = &entry.outcome {
-            *summary.entry(outcome.0.clone()).or_insert(0) += entry.minutes;
+        if let Some(key) = key_extractor(entry) {
+            *aggregated.entry(key).or_insert(0) += entry.minutes;
         }
     }
+    aggregated
+}
 
-    summary
+fn sum_entries(entries: &[TimeEntry]) -> Vec<(String, u32)> {
+    sum_time_by_key(entries.iter(), |entry| Some(entry.main_context().clone()))
         .into_iter()
-        .map(|(outcome, duration)| {
-            OutcomeSummary::new(outcome, duration, time_report.total_minutes)
-        })
         .collect()
 }
 
+fn sum_outcomes(time_report: &TrackedTime) -> Vec<TimeTotal> {
+    sum_time_by_key(time_report.entries.iter(), |entry| {
+        entry.outcome.as_ref().map(|outcome| outcome.0.clone())
+    })
+    .into_iter()
+    .map(|(outcome, duration)| TimeTotal::new(outcome, duration, time_report.total_minutes))
+    .collect()
+}
+
 #[derive(Debug, Clone)]
-pub struct ContextSummary {
+pub struct TimeTotal {
     pub(crate) description: String,
     pub(crate) minutes: u32,
     pub(crate) percentage: u32,
 }
 
-impl ContextSummary {
-    pub fn new(description: String, minutes: u32, total_minutes: u32) -> Self {
-        Self {
-            description,
-            minutes,
-            percentage: calculate_percentage(minutes, total_minutes),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct OutcomeSummary {
-    pub(crate) description: String,
-    pub(crate) minutes: u32,
-    pub(crate) percentage: u32,
-}
-
-impl OutcomeSummary {
+impl TimeTotal {
     pub fn new(description: String, minutes: u32, total_minutes: u32) -> Self {
         Self {
             description,

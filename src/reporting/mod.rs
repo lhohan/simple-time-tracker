@@ -27,7 +27,7 @@ mod tests {
             let time_report = TrackedTime::new(entries, start, end, 1);
             let report = OverviewReport::overview(&time_report, &None, &None);
 
-            let entries = report.summaries();
+            let entries = report.entries_time_totals();
             let projects: Vec<_> = entries.iter().map(|e| e.description.as_str()).collect();
             assert_eq!(projects, vec!["also-long", "longest", "medium", "short"]);
         }
