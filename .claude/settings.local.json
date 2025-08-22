@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:jj-vcs.github.io)",
+      "Bash(jj st:*)",
+      "Bash(jj split:*)"
+    ]
+  },
+  "outputStyle": "Explanatory"
+}
