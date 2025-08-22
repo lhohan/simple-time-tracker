@@ -13,6 +13,7 @@ This is a Rust-based time tracking CLI application that parses markdown files to
 - Use `jj st --no-pager` to check status
 - Use `jj log --no-pager` to view history
 - Use `jj commit -m "message"` to create commits
+- Use `jj split -m "message" file1 file2` to commit only specific files
 - Use `jj bookmark set main -r @- && jj git push` to push to remote repository
 
 ## Common Commands
