@@ -4,7 +4,9 @@
       "WebSearch",
       "WebFetch(domain:jj-vcs.github.io)",
       "Bash(jj st:*)",
-      "Bash(jj split:*)"
+      "Bash(jj split:*)",
+      "Bash(jj log:*)",
+      "Bash(jj diff:*)"
     ]
   },
   "outputStyle": "Explanatory"
