@@ -35,9 +35,9 @@ impl TextFormatter {
     fn format_overview_report(report: &OverviewReport) -> String {
         let description = report.period_requested().as_ref().map(PeriodRequested::description);
         Self::format_overview(
-            &report.entries_time_totals(),
-            &report.outcome_time_totals(),
-            &report.period(),
+            report.entries_time_totals(),
+            report.outcome_time_totals(),
+            report.period(),
             description.as_ref(),
             report.total_minutes(),
         )
@@ -60,9 +60,9 @@ impl TextFormatter {
         result.push('\n');
 
         for entry in entries {
-            write!(
+            writeln!(
                 &mut result,
-                "{:.<20}..{} ({:>3}%)\n",
+                "{:.<20}..{} ({:>3}%)",
                 entry.description,
                 format_duration(entry.minutes),
                 entry.percentage
@@ -71,11 +71,11 @@ impl TextFormatter {
 
         if !outcomes.is_empty() {
             result.push('\n');
-            write!(&mut result, "Outcomes:\n").expect("Writing to String should never fail");
+            writeln!(&mut result, "Outcomes:").expect("Writing to String should never fail");
             for outcome in outcomes {
-                write!(
+                writeln!(
                     &mut result,
-                    "* {:.<20}..{} ({:>3}%)\n",
+                    "* {:.<20}..{} ({:>3}%)",
                     outcome.description,
                     format_duration(outcome.minutes),
                     outcome.percentage
@@ -91,8 +91,8 @@ impl TextFormatter {
         for context_summary in report.summaries() {
             result.push_str(&Self::format_tasks_context(
                 context_summary.context().raw_value().as_str(),
-                &context_summary.task_summaries(),
-                &report.period(),
+                context_summary.task_summaries(),
+                report.period(),
                 context_summary.total_minutes(),
             ));
             result.push('\n');
@@ -117,9 +117,9 @@ impl TextFormatter {
 
         result.push_str("Tasks:\n");
         for task in tasks {
-            write!(
+            writeln!(
                 &mut result,
-                "- {}{} ({}%)\n",
+                "- {}{} ({}%)",
                 format_padded_description(&task.description),
                 format_duration(task.minutes),
                 task.percentage_of_total

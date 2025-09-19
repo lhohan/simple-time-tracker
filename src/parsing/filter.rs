@@ -11,6 +11,7 @@ pub enum Filter {
 }
 
 impl Filter {
+    #[must_use]
     pub fn matches(&self, entry: &TimeEntry, date: &EntryDate) -> bool {
         match self {
             Filter::Tags(tags) => tags.iter().any(|tag| entry.get_tags().contains(tag)),
@@ -21,6 +22,7 @@ impl Filter {
             Filter::And(f1, f2) => f1.matches(entry, date) && f2.matches(entry, date),
         }
     }
+    #[must_use]
     pub fn combine(self, other: Filter) -> Filter {
         Filter::And(Box::new(self), Box::new(other))
     }

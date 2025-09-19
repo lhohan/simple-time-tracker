@@ -10,7 +10,7 @@ impl Formatter for MarkdownFormatter {
     fn format(&self, report: &FormatableReport) -> String {
         match report {
             FormatableReport::OverviewReport(report) => Self::format_overview(
-                report.entries_time_totals().to_vec(),
+                report.entries_time_totals().clone(),
                 report.period(),
                 report.total_minutes(),
             ),
@@ -41,9 +41,9 @@ impl MarkdownFormatter {
 
         result.push_str("### Projects\n");
         for entry in entries {
-            write!(
+            writeln!(
                 &mut result,
-                "- **{}**: {} ({}%)\n",
+                "- **{}**: {} ({}%)",
                 entry.description,
                 format_duration(entry.minutes),
                 entry.percentage
@@ -61,8 +61,8 @@ impl MarkdownFormatter {
         for context_summary in report.summaries() {
             result.push_str(&Self::format_tasks_context(
                 context_summary.context().raw_value().as_str(),
-                &context_summary.task_summaries(),
-                &report.period(),
+                context_summary.task_summaries(),
+                report.period(),
                 context_summary.total_minutes(),
             ));
         }
@@ -77,7 +77,7 @@ impl MarkdownFormatter {
     ) -> String {
         let mut result = String::new();
 
-        write!(&mut result, "## Project: {}\n\n", context).expect("Writing to String should never fail");
+        writeln!(&mut result, "## Project: {context}\n").expect("Writing to String should never fail");
 
         // Format period and statistics
         let hours_per_day = (f64::from(total_minutes) / 60.0) / f64::from(period.days);
@@ -93,9 +93,9 @@ impl MarkdownFormatter {
 
         result.push_str("### Tasks\n\n");
         for task in tasks {
-            write!(
+            writeln!(
                 &mut result,
-                "- **{}**: {} ({}%)\n",
+                "- **{}**: {} ({}%)",
                 task.description,
                 format_duration(task.minutes),
                 task.percentage_of_total

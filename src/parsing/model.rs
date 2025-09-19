@@ -34,7 +34,7 @@ impl LineType {
         } else if in_tt_section {
             try_parse_to_entry(line)
         } else {
-            other()
+            Ok(other())
         }
     }
 }
@@ -52,13 +52,13 @@ fn try_parse_to_header(line: &str) -> Result<LineType, ParseError> {
 fn try_parse_to_entry(line: &str) -> Result<LineType, ParseError> {
     match TimeEntry::parse(line) {
         Ok(Some(entry)) => Ok(LineType::Entry(entry)),
-        Ok(None) => other(),
+        Ok(None) => Ok(other()),
         Err(err) => Err(err),
     }
 }
 
-fn other() -> Result<LineType, ParseError> {
-    Ok(LineType::Other)
+fn other() -> LineType {
+    LineType::Other
 }
 
 #[derive(Debug, PartialEq)]

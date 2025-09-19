@@ -146,20 +146,19 @@ fn sum_time_entries(time_report: &TrackedTime, limit: Option<&OutputLimit>) -> V
                 .then(a.description.cmp(&b.description))
         });
 
-    let entries = match limit {
+    match limit {
         Some(OutputLimit::CumulativePercentageThreshold(threshold)) => {
             let total_minutes = f64::from(time_report.total_minutes);
-            limit_number_of_entries(total_minutes, summed_entries_sorted, threshold)
+            limit_number_of_entries(total_minutes, summed_entries_sorted, *threshold)
         }
         None => summed_entries_sorted.collect(),
-    };
-    entries
+    }
 }
 
 fn limit_number_of_entries(
     total_minutes: f64,
     totals: std::vec::IntoIter<TimeTotal>,
-    cumulative_percentage_threshold: &f64,
+    cumulative_percentage_threshold: f64,
 ) -> Vec<TimeTotal> {
     let mut result = Vec::new();
     let mut cumulative_percentage = 0.0;
@@ -169,7 +168,7 @@ fn limit_number_of_entries(
         cumulative_percentage += percentage;
         result.push(total);
 
-        if cumulative_percentage >= *cumulative_percentage_threshold {
+        if cumulative_percentage >= cumulative_percentage_threshold {
             break;
         }
     }
@@ -350,7 +349,7 @@ impl PeriodDescription {
 
 fn format_day(date: NaiveDate) -> String {
     let date_str = format_yyyy_mm_dd(date);
-    format!("of {}", date_str)
+    format!("of {date_str}")
 }
 
 fn format_yyyy_mm_dd(date: NaiveDate) -> String {

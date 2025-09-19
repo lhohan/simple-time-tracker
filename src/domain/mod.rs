@@ -17,6 +17,11 @@ pub struct TimeEntry {
 }
 
 impl TimeEntry {
+    /// Parses a line into a time entry, if it represents a valid entry.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `ParseError` if the line appears to be an entry but contains invalid data.
     pub fn parse(line: &str) -> Result<Option<TimeEntry>, ParseError> {
         let line = EntryLine::parse(line);
         match line {
@@ -25,6 +30,11 @@ impl TimeEntry {
         }
     }
 
+    /// Returns the main context (first tag) of this time entry.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the time entry has no tags, which should not happen for valid entries.
     #[must_use]
     pub fn main_context(&self) -> String {
         self.tags[0].raw_value().to_string()
@@ -66,12 +76,16 @@ impl EntryLine<'_> {
     }
 
     pub(crate) fn get_line(&self) -> &str {
-        &self.0
+        self.0
     }
 
-    // Return the actual content of the line, without the prefix that ids the line is an entry line.
+    /// Returns the actual content of the line, without the prefix that identifies the line as an entry line.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the entry line does not start with "- " prefix, which indicates invalid struct state.
     pub(crate) fn entry(&self) -> &str {
-        &self.0.strip_prefix("- ").expect("invalid struct state")
+        self.0.strip_prefix("- ").expect("invalid struct state")
     }
 }
 
@@ -232,7 +246,7 @@ mod tests {
 
         #[test]
         fn parse_simple_complete_line() {
-            LineSpec::given_line("- #project-alpha 10m Task A")
+            let _ = LineSpec::given_line("- #project-alpha 10m Task A")
                 .when_parsed()
                 .expect_valid_entry()
                 .expect_minutes(10)
@@ -242,7 +256,7 @@ mod tests {
 
         #[test]
         fn parse_task_description_is_optional() {
-            LineSpec::given_line("- #project-alpha 20m")
+            let _ = LineSpec::given_line("- #project-alpha 20m")
                 .when_parsed()
                 .expect_valid_entry()
                 .expect_no_description();
@@ -250,7 +264,7 @@ mod tests {
 
         #[test]
         fn parse_simple_minutes() {
-            LineSpec::given_line("- #context 15m")
+            let _ = LineSpec::given_line("- #context 15m")
                 .when_parsed()
                 .expect_valid_entry()
                 .expect_minutes(15);
@@ -258,7 +272,7 @@ mod tests {
 
         #[test]
         fn parse_simple_hours() {
-            LineSpec::given_line("- #context 2h")
+            let _ = LineSpec::given_line("- #context 2h")
                 .when_parsed()
                 .expect_valid_entry()
                 .expect_minutes(2 * 60);
@@ -266,7 +280,7 @@ mod tests {
 
         #[test]
         fn parse_pomodoros() {
-            LineSpec::given_line("- #context 2p")
+            let _ = LineSpec::given_line("- #context 2p")
                 .when_parsed()
                 .expect_valid_entry()
                 .expect_minutes(2 * 30);
@@ -274,7 +288,7 @@ mod tests {
 
         #[test]
         fn parse_multiple_time_entries() {
-            LineSpec::given_line("- #context 1h 15m 1p")
+            let _ = LineSpec::given_line("- #context 1h 15m 1p")
                 .when_parsed()
                 .expect_valid_entry()
                 .expect_minutes(60 + 15 + 30);
@@ -311,7 +325,7 @@ mod tests {
         fn parse_invalid_times_ending_in_time_unit(
             #[values('h', 'm', 'p')] supported_time_unit: char,
         ) {
-            let input = format!("- #context x{}", supported_time_unit);
+            let input = format!("- #context x{supported_time_unit}");
 
             LineSpec::given_line(&input)
                 .when_parsed()
@@ -340,7 +354,7 @@ mod tests {
         fn parse_outcome() {
             let input = "- #project ##my-outcome 1h";
 
-            LineSpec::given_line(input)
+            let _ = LineSpec::given_line(input)
                 .when_parsed()
                 .expect_valid_entry()
                 .expect_outcome("my-outcome");
@@ -358,7 +372,7 @@ mod tests {
         fn parse_outcome_when_outcome_is_missing() {
             let input = "- #project 1h";
 
-            LineSpec::given_line(input)
+            let _ = LineSpec::given_line(input)
                 .when_parsed()
                 .expect_valid_entry()
                 .expect_no_outcome();
@@ -368,7 +382,7 @@ mod tests {
         fn parse_outcome_first_hash_in_line() {
             let input = "- ##my-outcome #project 1h";
 
-            LineSpec::given_line(input)
+            let _ = LineSpec::given_line(input)
                 .when_parsed()
                 .expect_valid_entry()
                 .expect_outcome("my-outcome");
@@ -379,7 +393,7 @@ mod tests {
 
             #[test]
             fn parse_line_with_project_prefix_tag() {
-                LineSpec::given_line("- #prj-alpha 1h Task A")
+                let _ = LineSpec::given_line("- #prj-alpha 1h Task A")
                     .when_parsed()
                     .expect_valid_entry()
                     .expect_context("prj-alpha");
@@ -387,7 +401,7 @@ mod tests {
 
             #[test]
             fn parse_line_with_project_and_tags() {
-                LineSpec::given_line("- #tag1 #prj-alpha 1h Task A")
+                let _ = LineSpec::given_line("- #tag1 #prj-alpha 1h Task A")
                     .when_parsed()
                     .expect_valid_entry()
                     .expect_context("tag1");
@@ -395,7 +409,7 @@ mod tests {
 
             #[test]
             fn parse_line_with_only_context_tags() {
-                LineSpec::given_line("- #tag1 #tag2 #tag3 1h Task A")
+                let _ = LineSpec::given_line("- #tag1 #tag2 #tag3 1h Task A")
                     .when_parsed()
                     .expect_valid_entry()
                     .expect_context("tag1");
@@ -427,6 +441,11 @@ mod tests {
             }
 
             impl LineParsingResult {
+                /// Asserts that this line parsing result is a valid time entry and returns it.
+                ///
+                /// # Panics
+                ///
+                /// Panics if the parsing result is an error or if no time entry was found.
                 #[must_use]
                 pub fn expect_valid_entry(self) -> TimeEntry {
                     self.entry
@@ -434,11 +453,21 @@ mod tests {
                         .expect("Expected time entry but was not")
                 }
 
+                /// Asserts that this line parsing result is neither an entry nor an error.
+                ///
+                /// # Panics
+                ///
+                /// Panics if the parsing result is an error or if a time entry was found.
                 pub fn expect_not_an_entry_and_not_an_error(self) {
                     let maybe_entry = self.entry.expect("Expected no entry but is error");
                     assert_eq!(maybe_entry, None);
                 }
 
+                /// Asserts that this line parsing result is an error matching the expected error.
+                ///
+                /// # Panics
+                ///
+                /// Panics if the parsing result is valid or if the error doesn't match the expected error.
                 pub fn expect_invalid_with(self, expected_error: &ParseError) {
                     let error = self.entry.expect_err("Expected error but was valid");
                     assert_eq!(error, *expected_error);
@@ -446,26 +475,56 @@ mod tests {
             }
 
             impl TimeEntry {
+                /// Asserts that this time entry has the expected number of minutes.
+                ///
+                /// # Panics
+                ///
+                /// Panics if the minutes don't match the expected value.
+                #[must_use]
                 pub fn expect_minutes(self, expected_minutes: u32) -> TimeEntry {
                     assert_eq!(self.minutes, expected_minutes);
                     self
                 }
 
+                /// Asserts that this time entry has the expected main context.
+                ///
+                /// # Panics
+                ///
+                /// Panics if the main context doesn't match the expected value.
+                #[must_use]
                 pub fn expect_context(self, expected_project: &str) -> TimeEntry {
                     assert_eq!(*self.main_context(), expected_project.to_string());
                     self
                 }
 
+                /// Asserts that this time entry has the expected description.
+                ///
+                /// # Panics
+                ///
+                /// Panics if the description doesn't match the expected value.
+                #[must_use]
                 pub fn expect_description(self, expected_description: &str) -> TimeEntry {
                     assert_eq!(self.description, Some(expected_description.to_string()));
                     self
                 }
 
+                /// Asserts that this time entry has no description.
+                ///
+                /// # Panics
+                ///
+                /// Panics if the time entry has a description.
+                #[must_use]
                 pub fn expect_no_description(self) -> TimeEntry {
                     assert!(self.description.is_none());
                     self
                 }
 
+                /// Asserts that this time entry has the expected outcome.
+                ///
+                /// # Panics
+                ///
+                /// Panics if the outcome doesn't match the expected value.
+                #[must_use]
                 pub fn expect_outcome(self, expected_outcome: &str) -> TimeEntry {
                     assert_eq!(
                         self.outcome,
@@ -474,6 +533,12 @@ mod tests {
                     self
                 }
 
+                /// Asserts that this time entry has no outcome.
+                ///
+                /// # Panics
+                ///
+                /// Panics if the time entry has an outcome.
+                #[must_use]
                 pub fn expect_no_outcome(self) -> TimeEntry {
                     assert!(self.outcome.is_none());
                     self

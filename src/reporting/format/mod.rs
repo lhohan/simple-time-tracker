@@ -26,6 +26,7 @@ pub enum FormatType {
 }
 
 impl dyn Formatter {
+    #[must_use]
     pub fn from_str(s: Option<&String>) -> Box<dyn Formatter> {
         match s {
             Some(s) => {
@@ -38,10 +39,10 @@ impl dyn Formatter {
 }
 
 impl FormatType {
+    #[must_use]
     pub fn from_str(s: &str) -> Self {
         match s.to_lowercase().as_str() {
             "markdown" | "md" => FormatType::Markdown,
-            "text" => FormatType::Text,
             _ => FormatType::Text,
         }
     }

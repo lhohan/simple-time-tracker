@@ -7,6 +7,11 @@ pub enum Tag {
 }
 
 impl Tag {
+    /// Creates a tag from a raw string representation.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the string starts with "prj-" but the prefix cannot be stripped (should not happen in practice).
     #[must_use]
     pub fn from_raw(raw_tag: &str) -> Self {
         if raw_tag.starts_with("prj-") {
@@ -19,7 +24,7 @@ impl Tag {
     #[must_use]
     pub fn raw_value(&self) -> String {
         match self {
-            Tag::Project(name) => format!("prj-{}", name),
+            Tag::Project(name) => format!("prj-{name}"),
             Tag::Context(name) => name.clone(),
         }
     }

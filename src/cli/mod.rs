@@ -55,6 +55,11 @@ pub struct Args {
 }
 
 impl Args {
+    /// Parses command line arguments and validates them.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `String` error if the arguments are invalid or violate validation rules.
     #[must_use = "parsed arguments must be used to configure the application"]
     pub fn parse() -> Result<Self, String> {
         let args = Self::parse_from(std::env::args());
@@ -78,7 +83,10 @@ impl Args {
     pub fn exclude_tags(&self) -> Vec<String> {
         match &self.exclude_tags {
             Some(tags) => {
-                let parsed_tags = tags.split(',').map(|s| s.trim().to_string()).collect::<Vec<String>>();
+                let parsed_tags = tags
+                    .split(',')
+                    .map(|s| s.trim().to_string())
+                    .collect::<Vec<String>>();
                 parsed_tags
             }
             None => vec![],
@@ -118,22 +126,22 @@ impl Args {
     ///
     /// Returns a `ParseError::InvalidPeriod` if the period is not valid.
     pub fn period(&self, clock: &Clock) -> Result<Option<PeriodRequested>, ParseError> {
-        match self.from_period(clock) {
+        match self.parse_period(clock) {
             Ok(Some(period)) => Ok(Some(period)),
             Err(err) => Err(err),
-            Ok(None) => self.from_date(),
+            Ok(None) => self.parse_date(),
         }
     }
 
-    fn from_period(&self, clock: &Clock) -> Result<Option<PeriodRequested>, ParseError> {
+    fn parse_period(&self, clock: &Clock) -> Result<Option<PeriodRequested>, ParseError> {
         match self.period.as_ref() {
             Some(period) => PeriodRequested::from_str(period, clock).map(Some),
             None => Ok(None),
         }
     }
 
-    fn from_date(&self) -> Result<Option<PeriodRequested>, ParseError> {
-        PeriodRequested::from_from_date(self.from.as_deref())
+    fn parse_date(&self) -> Result<Option<PeriodRequested>, ParseError> {
+        PeriodRequested::parse_from_date(self.from.as_deref())
     }
 
     #[must_use]

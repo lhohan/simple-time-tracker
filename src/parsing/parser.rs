@@ -6,6 +6,7 @@ use crate::domain::{Location, ParseError};
 
 use super::{LineType, ParseState, ParsedLine};
 
+#[must_use]
 pub fn parse_content(content: &str, filter: Option<&Filter>, file_name: &str) -> ParseResult {
     let final_state = content
         .lines()

@@ -15,7 +15,11 @@ pub enum PeriodRequested {
 }
 
 impl PeriodRequested {
-    #[allow(clippy::missing_panics_doc)]
+    /// Parses a period request from a string representation.
+    ///
+    /// # Errors
+    ///
+    /// Returns `ParseError::InvalidPeriod` if the period string is not recognized.
     pub fn from_str(period_requested: &str, clock: &Clock) -> Result<Self, domain::ParseError> {
         Self::date_from_literal(period_requested, clock)
             .or_else(|| Self::date_from_value(period_requested, clock))
@@ -24,8 +28,12 @@ impl PeriodRequested {
             ))
     }
 
-    #[allow(clippy::missing_panics_doc)]
-    pub fn from_from_date(
+    /// Parses a period request from a from-date string.
+    ///
+    /// # Errors
+    ///
+    /// Returns `ParseError::InvalidDate` if the date string cannot be parsed.
+    pub fn parse_from_date(
         from_date_requested: Option<&str>,
     ) -> Result<Option<Self>, domain::ParseError> {
         match from_date_requested {

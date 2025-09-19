@@ -35,11 +35,10 @@ pub fn run(
     limit: Option<&OutputLimit>,
     formatter: &dyn Formatter,
 ) -> Result<(), ParseError> {
-    let period_option = &period.cloned();
-    let tracking_result = process_inputs(input_path, tag_filter, exclude_tags, period_option)?;
+    let tracking_result = process_inputs(input_path, tag_filter, exclude_tags, period)?;
 
     let contexts_requested: Vec<Tag> = tag_filter
-        .map(|filter| filter.tags())
+        .map(domain::tags::TagFilter::tags)
         .unwrap_or_default();
     print_result(
         period,
@@ -58,7 +57,7 @@ fn process_inputs(
     input_path: &Path,
     tags_filter: Option<&TagFilter>,
     exclude_tags: &[String],
-    period: &Option<PeriodRequested>,
+    period: Option<&PeriodRequested>,
 ) -> Result<domain::TimeTrackingResult, ParseError> {
     let filter = create_filter(tags_filter, exclude_tags, period);
     let tracking_result = parsing::process_input(input_path, filter.as_ref())?;
@@ -89,15 +88,15 @@ fn print_result(
 }
 
 fn print_warnings(parse_errors: &[ParseError]) {
-    parse_errors
-        .iter()
-        .for_each(|error| eprintln!("Warning: {error}"));
+    for error in parse_errors {
+        eprintln!("Warning: {error}");
+    }
 }
 
 fn create_filter(
     tags_filter: Option<&TagFilter>,
     exclude_tags: &[String],
-    period: &Option<PeriodRequested>,
+    period: Option<&PeriodRequested>,
 ) -> Option<Filter> {
     let period_filter = period
         .as_ref()

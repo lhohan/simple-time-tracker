@@ -7,7 +7,7 @@ fn main() -> Result<()> {
     let args = match Args::parse() {
         Ok(args) => args,
         Err(err) => {
-            eprintln!("Error parsing command line arguments: {}", err);
+            eprintln!("Error parsing command line arguments: {err}");
             std::process::exit(1);
         }
     };
