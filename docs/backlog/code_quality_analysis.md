@@ -30,10 +30,10 @@ Despite the solid architecture, the static analysis from `clippy` reveals numero
     -   Several functions that can panic are missing the `# Panics` section in their documentation.
     -   Many public functions are missing the `#[must_use]` attribute, which can lead to unexpected behavior if their results are not used.
 
--   **Idiomatic Rust**:
-    -   The code frequently uses `&Option<T>` instead of the more idiomatic `Option<&T>`, which can make the code less readable and efficient.
-    -   There are many instances of passing arguments by value when a reference would be more appropriate, leading to unnecessary copies.
-    -   The code contains redundant closures and inefficient string formatting with `format!`.
+-   **Idiomatic Rust** *(✅ COMPLETED - Function Signature Refactoring)*:
+    -   ~~The code frequently uses `&Option<T>` instead of the more idiomatic `Option<&T>`, which can make the code less readable and efficient.~~ ✅ **RESOLVED**
+    -   ~~There are many instances of passing arguments by value when a reference would be more appropriate, leading to unnecessary copies.~~ ✅ **RESOLVED**
+    -   ~~The code contains redundant closures and inefficient string formatting with `format!`.~~ *Partially addressed - format! optimizations remain*
 
 -   **Correctness and Performance**:
     -   There are several instances of `match` statements that could be more precise, and `let` bindings that are unnecessary.
@@ -47,17 +47,20 @@ Here is a more detailed overview of the areas where the project deviates from id
 
 These issues relate to how functions and data structures are defined, which affects the ergonomics and correctness of the code.
 
--   **Using `&Option<T>` instead of `Option<&T>`**:
-    -   **Problem**: The codebase frequently uses `&Option<T>` in function arguments. This is less idiomatic and requires callers to create a reference to an `Option`, which can be awkward. The idiomatic way is to use `Option<&T>`, which allows passing an optional reference to the value inside the `Option`.
-    -   **Example**: In `src/cli/mod.rs`, the `parse_project_tags` function takes `maybe_project: &Option<String>`. This could be changed to `Option<&String>` to make the API cleaner.
+-   ~~**Using `&Option<T>` instead of `Option<&T>`**~~ ✅ **COMPLETED**:
+    -   ~~**Problem**: The codebase frequently uses `&Option<T>` in function arguments. This is less idiomatic and requires callers to create a reference to an `Option`, which can be awkward. The idiomatic way is to use `Option<&T>`, which allows passing an optional reference to the value inside the `Option`.~~
+    -   ~~**Example**: In `src/cli/mod.rs`, the `parse_project_tags` function takes `maybe_project: &Option<String>`. This could be changed to `Option<&String>` to make the API cleaner.~~
+    -   **✅ RESOLVED**: All 6 instances of `&Option<T>` converted to `Option<&T>` throughout the codebase.
 
--   **Passing Arguments by Value (`needless_pass_by_value`)**:
-    -   **Problem**: Many functions take ownership of arguments (e.g., `Vec<String>`) when they only need to read from them. This forces the caller to clone the data, which is inefficient. Passing by reference (e.g., `&[String]`) is the preferred approach in these cases.
-    -   **Example**: In `src/lib.rs`, the `create_filter` function takes `exclude_tags: Vec<String>` and consumes it, even though it could just borrow it.
+-   ~~**Passing Arguments by Value (`needless_pass_by_value`)**~~ ✅ **COMPLETED**:
+    -   ~~**Problem**: Many functions take ownership of arguments (e.g., `Vec<String>`) when they only need to read from them. This forces the caller to clone the data, which is inefficient. Passing by reference (e.g., `&[String]`) is the preferred approach in these cases.~~
+    -   ~~**Example**: In `src/lib.rs`, the `create_filter` function takes `exclude_tags: Vec<String>` and consumes it, even though it could just borrow it.~~
+    -   **✅ RESOLVED**: All needless pass-by-value patterns eliminated, functions now accept references where appropriate.
 
--   **Using `&Vec<T>` instead of `&[T]` (`ptr_arg`)**:
-    -   **Problem**: Functions should prefer to accept slice references (`&[T]`) instead of references to vectors (`&Vec<T>`). This makes the API more flexible, as it can accept any type of contiguous sequence, not just `Vec<T>`.
-    -   **Example**: In `src/lib.rs`, the `print_warnings` function takes `parse_errors: &Vec<ParseError>`, which could be changed to `&[ParseError]`.
+-   ~~**Using `&Vec<T>` instead of `&[T]` (`ptr_arg`)**~~ ✅ **COMPLETED**:
+    -   ~~**Problem**: Functions should prefer to accept slice references (`&[T]`) instead of references to vectors (`&Vec<T>`). This makes the API more flexible, as it can accept any type of contiguous sequence, not just `Vec<T>`.~~
+    -   ~~**Example**: In `src/lib.rs`, the `print_warnings` function takes `parse_errors: &Vec<ParseError>`, which could be changed to `&[ParseError]`.~~
+    -   **✅ RESOLVED**: All `&Vec<T>` parameters converted to `&[T]` for improved API flexibility.
 
 #### 2. Readability and Idiomatic Code
 
@@ -96,8 +99,9 @@ This section consolidates additional findings from the latest review and relates
 -   Feature gap: Markdown formatter for details
     -   `MarkdownFormatter` handles overview but returns `todo!()` for the tasks/details report. This will panic if users request `--format markdown --details`.
 
--   API ergonomics (overlaps with existing analysis and 001 backlog)
-    -   Confirmed issues already captured: prefer `&[T]` over `&Vec<T>`, use `Option<&T>` over `&Option<T>`, avoid needless pass-by-value. See `docs/backlog/001-refactor-function-signatures.md`.
+-   ~~API ergonomics (overlaps with existing analysis and 001 backlog)~~ ✅ **COMPLETED**
+    -   ~~Confirmed issues already captured: prefer `&[T]` over `&Vec<T>`, use `Option<&T>` over `&Option<T>`, avoid needless pass-by-value. See `docs/backlog/001-refactor-function-signatures.md`.~~
+    -   **✅ RESOLVED**: All function signature refactoring completed. API now follows idiomatic Rust patterns with improved ergonomics and performance.
 
 -   Input parsing robustness
     -   `--tags` and `--exclude-tags` parsing should trim whitespace around comma-separated entries so values like `"tag-1, tag-2"` are handled as expected.

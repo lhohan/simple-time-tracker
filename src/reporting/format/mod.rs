@@ -26,7 +26,7 @@ pub enum FormatType {
 }
 
 impl dyn Formatter {
-    pub fn from_str(s: &Option<String>) -> Box<dyn Formatter> {
+    pub fn from_str(s: Option<&String>) -> Box<dyn Formatter> {
         match s {
             Some(s) => {
                 let format_type = FormatType::from_str(s);

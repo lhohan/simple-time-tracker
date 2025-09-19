@@ -61,7 +61,7 @@ fn process_inputs(
     period: &Option<PeriodRequested>,
 ) -> Result<domain::TimeTrackingResult, ParseError> {
     let filter = create_filter(tags_filter, exclude_tags, period);
-    let tracking_result = parsing::process_input(input_path, &filter)?;
+    let tracking_result = parsing::process_input(input_path, filter.as_ref())?;
     Ok(tracking_result)
 }
 

@@ -36,21 +36,21 @@ impl TextFormatter {
             &report.entries_time_totals(),
             &report.outcome_time_totals(),
             &report.period(),
-            &description,
+            description.as_ref(),
             report.total_minutes(),
         )
     }
 
     fn format_overview(
-        entries: &Vec<TimeTotal>,
-        outcomes: &Vec<TimeTotal>,
+        entries: &[TimeTotal],
+        outcomes: &[TimeTotal],
         period: &TrackingPeriod,
-        range_description: &Option<PeriodDescription>,
+        range_description: Option<&PeriodDescription>,
         total_minutes: u32,
     ) -> String {
         let mut result = String::new();
 
-        result.push_str(&format_header(range_description.as_ref()));
+        result.push_str(&format_header(range_description));
         result.push('\n');
         result.push_str(format_interval(period).as_str());
         result.push('\n');

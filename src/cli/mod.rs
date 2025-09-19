@@ -90,12 +90,12 @@ impl Args {
 
     /// Parses filter tags from the command line arguments.
     pub fn context_filter(&self) -> Option<TagFilter> {
-        fn parse_project_tags(maybe_project: &Option<String>) -> Vec<String> {
-            maybe_project.clone().map_or_else(Vec::new, |p| vec![p])
+        fn parse_project_tags(maybe_project: Option<&String>) -> Vec<String> {
+            maybe_project.map_or_else(Vec::new, |p| vec![p.clone()])
         }
 
-        fn parse_tags(tags: &[String], maybe_tags: &Option<String>) -> Vec<String> {
-            maybe_tags.as_ref().filter(|s| !s.is_empty()).map_or_else(
+        fn parse_tags(tags: &[String], maybe_tags: Option<&String>) -> Vec<String> {
+            maybe_tags.filter(|s| !s.is_empty()).map_or_else(
                 || tags.to_vec(),
                 |tag_list| tag_list.split(',').map(String::from).collect(),
             )
@@ -104,8 +104,8 @@ impl Args {
             (!tags.is_empty()).then(|| TagFilter::parse(tags))
         }
 
-        let tags = parse_project_tags(&self.project);
-        let tags = parse_tags(&tags, &self.tags);
+        let tags = parse_project_tags(self.project.as_ref());
+        let tags = parse_tags(&tags, self.tags.as_ref());
         to_filter(tags)
     }
 
@@ -144,6 +144,6 @@ impl Args {
 
     #[must_use]
     pub fn formatter(&self) -> Box<dyn Formatter> {
-        <dyn Formatter>::from_str(&self.format)
+        <dyn Formatter>::from_str(self.format.as_ref())
     }
 }

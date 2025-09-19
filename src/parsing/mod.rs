@@ -21,7 +21,7 @@ use crate::domain::TrackedTime;
 
 pub fn process_input(
     path: &Path,
-    filter: &Option<Filter>,
+    filter: Option<&Filter>,
 ) -> Result<TimeTrackingResult, ParseError> {
     let processor = Processor::from_path(path);
     let parse_result = parse_entries_from_path(path, filter, &processor)?;
@@ -30,7 +30,7 @@ pub fn process_input(
 
 fn parse_entries_from_path(
     path: &Path,
-    filter: &Option<Filter>,
+    filter: Option<&Filter>,
     processor: &Processor,
 ) -> Result<ParseResult, ParseError> {
     let mut parse_result = ParseResult::errors_only(vec![]);

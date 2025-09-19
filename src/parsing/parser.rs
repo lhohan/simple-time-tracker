@@ -6,7 +6,7 @@ use crate::domain::{Location, ParseError};
 
 use super::{LineType, ParseState, ParsedLine};
 
-pub fn parse_content(content: &str, filter: &Option<Filter>, file_name: &str) -> ParseResult {
+pub fn parse_content(content: &str, filter: Option<&Filter>, file_name: &str) -> ParseResult {
     let final_state = content
         .lines()
         .enumerate()
@@ -28,7 +28,7 @@ pub fn parse_content(content: &str, filter: &Option<Filter>, file_name: &str) ->
 fn process_line(
     line: &ParsedLine,
     state: &ParseState,
-    filter: &Option<Filter>,
+    filter: Option<&Filter>,
     file_name: &str,
 ) -> ParseState {
     match LineType::parse(line.content, state.in_time_tracking_section()) {
