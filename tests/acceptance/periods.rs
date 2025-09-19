@@ -73,6 +73,30 @@ mod literal_periods {
     }
 
     #[rstest]
+    fn period_filter_should_show_last_month_when_january_current(
+        #[values("last-month", "lm")] last_month: &str,
+        #[values("2020-01-01", "2020-01-15", "2020-01-31")] at_date: &str,
+    ) {
+        let content = r"## TT 2019-12-01
+        - #dev 1h Task1
+        ## TT 2019-12-31
+        - #dev 2h Task2
+        ## TT 2020-01-01
+        - #dev 1h Task3";
+
+        Cmd::given()
+            .at_date(at_date)
+            .period_filter(last_month)
+            .a_file_with_content(content)
+            .when_run()
+            .should_succeed()
+            .expect_output("2019-12")
+            .expect_project("dev")
+            .taking("3h 00m") // Only tasks from Dec (last month when current is Jan)
+            .validate();
+    }
+
+    #[rstest]
     fn period_filter_should_show_this_month_when_specified(
         #[values("this-month", "tm")] this_month: &str,
     ) {

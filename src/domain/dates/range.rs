@@ -192,18 +192,29 @@ fn date_of_last_week(clock: &Clock) -> NaiveDate {
 
 fn last_month(clock: &Clock) -> NaiveDate {
     let today = today(clock);
-    let month_of_today = today.month();
-    let previous_month = today.with_month(month_of_today - 1).unwrap();
-    calculate_1st_of_month(previous_month)
+    // Get first day of current month, then step back one day to land in previous month
+    let first_of_current_month = today.with_day(1).unwrap();
+    let last_day_of_previous_month = first_of_current_month.pred_opt().unwrap();
+    // Get first day of previous month
+    set_to_1st_of_month(last_day_of_previous_month)
 }
 
 fn this_month(clock: &Clock) -> NaiveDate {
     let today = today(clock);
-    calculate_1st_of_month(today)
+    set_to_1st_of_month(today)
 }
 
-fn calculate_1st_of_month(date: NaiveDate) -> NaiveDate {
+fn set_to_1st_of_month(date: NaiveDate) -> NaiveDate {
     date.with_day(1).unwrap()
+}
+
+fn set_to_last_of_month(date: NaiveDate) -> NaiveDate {
+    date.with_day(1)
+        .unwrap()
+        .checked_add_months(chrono::Months::new(1))
+        .unwrap()
+        .checked_sub_days(chrono::Days::new(1))
+        .unwrap()
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -231,12 +242,8 @@ impl DateRange {
     #[must_use]
     #[allow(clippy::missing_panics_doc)]
     pub fn month_of(date: NaiveDate) -> Self {
-        let first_day = date.with_day(1).unwrap();
-        let last_day = first_day
-            .with_month0(date.month0() + 1)
-            .unwrap()
-            .pred_opt()
-            .unwrap();
+        let first_day = set_to_1st_of_month(date);
+        let last_day = set_to_last_of_month(date);
         DateRange(StartDate(first_day), EndDate(last_day))
     }
 

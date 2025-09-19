@@ -77,7 +77,7 @@ impl Args {
     pub fn exclude_tags(&self) -> Vec<String> {
         match &self.exclude_tags {
             Some(tags) => {
-                let parsed_tags = tags.split(',').map(String::from).collect::<Vec<String>>();
+                let parsed_tags = tags.split(',').map(|s| s.trim().to_string()).collect::<Vec<String>>();
                 parsed_tags
             }
             None => vec![],
@@ -97,7 +97,7 @@ impl Args {
         fn parse_tags(tags: &[String], maybe_tags: Option<&String>) -> Vec<String> {
             maybe_tags.filter(|s| !s.is_empty()).map_or_else(
                 || tags.to_vec(),
-                |tag_list| tag_list.split(',').map(String::from).collect(),
+                |tag_list| tag_list.split(',').map(|s| s.trim().to_string()).collect(),
             )
         }
         fn to_filter(tags: Vec<String>) -> Option<TagFilter> {
@@ -136,7 +136,7 @@ impl Args {
     #[must_use]
     pub fn limit(&self) -> Option<OutputLimit> {
         if self.limit {
-            Some(OutputLimit::CummalitivePercentageThreshhold(90.00))
+            Some(OutputLimit::CumulativePercentageThreshold(90.00))
         } else {
             None
         }

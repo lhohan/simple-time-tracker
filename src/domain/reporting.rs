@@ -140,7 +140,7 @@ fn sum_time_entries(time_report: &TrackedTime, limit: Option<&OutputLimit>) -> V
         });
 
     let entries = match limit {
-        Some(OutputLimit::CummalitivePercentageThreshhold(threshold)) => {
+        Some(OutputLimit::CumulativePercentageThreshold(threshold)) => {
             let total_minutes = time_report.total_minutes as f64;
             limit_number_of_entries(total_minutes, summed_entries_sorted, threshold)
         }
@@ -380,5 +380,5 @@ impl TrackingPeriod {
 }
 
 pub enum OutputLimit {
-    CummalitivePercentageThreshhold(f64),
+    CumulativePercentageThreshold(f64),
 }

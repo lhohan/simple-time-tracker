@@ -38,7 +38,7 @@ mod processors {
     impl SingleFileProcessor {
         fn read_file_content(path: &Path) -> Result<String, ParseError> {
             read_to_string(path).map_err(|err| {
-                ParseError::ErrorReading(format!("Failed to read {{path.diplay()}}: {err}"))
+                ParseError::ErrorReading(format!("Failed to read {}: {err}", path.display()))
             })
         }
 
@@ -46,7 +46,7 @@ mod processors {
             path.file_name()
                 .and_then(|n| n.to_str())
                 .ok_or_else(|| {
-                    ParseError::ErrorReading("Invalid filename: {path.display()}".to_string())
+                    ParseError::ErrorReading(format!("Invalid filename: {}", path.display()))
                 })
                 .map(String::from)
         }

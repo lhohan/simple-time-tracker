@@ -15,7 +15,7 @@ The `Cargo.toml` file reveals a sensible choice of dependencies for a CLI applic
 
 -   **`clap`**: For parsing command-line arguments.
 -   **`chrono`**: Used throughout for date handling (NaiveDate, ranges, formatting).
--   **`time`**: Declared but currently unused in the codebase. Recommendation: remove unless you plan to migrate to `time` APIs.
+-   ~~**`time`**: Declared but currently unused in the codebase. Recommendation: remove unless you plan to migrate to `time` APIs.~~ ✅ **REMOVED**
 -   **`anyhow`**: For flexible error handling at the CLI boundary.
 -   **`rstest`**, **`assert_cmd`**, and **`predicates`**: For a comprehensive testing setup, including table-driven tests and CLI testing.
 
@@ -90,24 +90,29 @@ These issues can lead to unnecessary allocations and slower execution.
 
 This section consolidates additional findings from the latest review and relates them to existing backlog items.
 
--   Correctness: last-month (January) panic
-    -   In `src/domain/dates/range.rs`, computing the last month with `with_month(month - 1).unwrap()` will panic in January. Suggested approach: derive the first day of the current month, step back one day to land in the previous month, then compute that month’s first day.
+-   ~~Correctness: last-month (January) panic~~ ✅ **COMPLETED**
+    -   ~~In `src/domain/dates/range.rs`, computing the last month with `with_month(month - 1).unwrap()` will panic in January. Suggested approach: derive the first day of the current month, step back one day to land in the previous month, then compute that month's first day.~~
+    -   **✅ RESOLVED**: Fixed both January and December edge cases in date range calculations. Added comprehensive DSL tests covering January boundary conditions that revealed and fixed an additional bug in `month_of()` function for December year boundaries.
 
--   Correctness: file processor error messages and typos
-    -   In `src/parsing/processor.rs` (SingleFileProcessor), error strings use literal `{}` placeholders and contain typos, so paths aren’t displayed and messages are misleading. Replace with `format!("Failed to read {}: {err}", path.display())` and `format!("Invalid filename: {}", path.display())`.
+-   ~~Correctness: file processor error messages and typos~~ ✅ **COMPLETED**
+    -   ~~In `src/parsing/processor.rs` (SingleFileProcessor), error strings use literal `{}` placeholders and contain typos, so paths aren't displayed and messages are misleading. Replace with `format!("Failed to read {}: {err}", path.display())` and `format!("Invalid filename: {}", path.display())`.~~
+    -   **✅ RESOLVED**: Fixed error message formatting to properly display file paths and removed literal placeholder strings.
 
--   Feature gap: Markdown formatter for details
-    -   `MarkdownFormatter` handles overview but returns `todo!()` for the tasks/details report. This will panic if users request `--format markdown --details`.
+-   ~~Feature gap: Markdown formatter for details~~ ✅ **COMPLETED**
+    -   ~~`MarkdownFormatter` handles overview but returns `todo!()` for the tasks/details report. This will panic if users request `--format markdown --details`.~~
+    -   **✅ RESOLVED**: Implemented complete markdown formatting for TasksReport with hierarchical project structure and proper markdown styling.
 
 -   ~~API ergonomics (overlaps with existing analysis and 001 backlog)~~ ✅ **COMPLETED**
     -   ~~Confirmed issues already captured: prefer `&[T]` over `&Vec<T>`, use `Option<&T>` over `&Option<T>`, avoid needless pass-by-value. See `docs/backlog/001-refactor-function-signatures.md`.~~
     -   **✅ RESOLVED**: All function signature refactoring completed. API now follows idiomatic Rust patterns with improved ergonomics and performance.
 
--   Input parsing robustness
-    -   `--tags` and `--exclude-tags` parsing should trim whitespace around comma-separated entries so values like `"tag-1, tag-2"` are handled as expected.
+-   ~~Input parsing robustness~~ ✅ **COMPLETED**
+    -   ~~`--tags` and `--exclude-tags` parsing should trim whitespace around comma-separated entries so values like `"tag-1, tag-2"` are handled as expected.~~
+    -   **✅ RESOLVED**: Added whitespace trimming to tag parsing for both `--tags` and `--exclude-tags` command line arguments.
 
--   Naming/typos
-    -   `OutputLimit::CummalitivePercentageThreshhold` is misspelled (twice). Consider a deprecation/rename plan to `CumulativePercentageThreshold`.
+-   ~~Naming/typos~~ ✅ **COMPLETED**
+    -   ~~`OutputLimit::CummalitivePercentageThreshhold` is misspelled (twice). Consider a deprecation/rename plan to `CumulativePercentageThreshold`.~~
+    -   **✅ RESOLVED**: Renamed enum variant to `CumulativePercentageThreshold` across all 3 locations in the codebase.
 
 -   Diagnostics channel
     -   Warnings are printed to stdout alongside normal output. Consider moving warnings to stderr to avoid mixing with report content (tests would need to adapt).
@@ -115,7 +120,7 @@ This section consolidates additional findings from the latest review and relates
 -   CI and tooling
     -   Add clippy and rustfmt checks to CI for consistency.
     -   Ensure a `Justfile` exists (CI calls `just ci-test-coverage`).
-    -   Remove the unused `time` dependency.
+    -   ~~Remove the unused `time` dependency.~~ ✅ **COMPLETED**
     -   Optional: add `cargo-deny` for advisories/license/bans.
 
 -   UX polish (optional)
@@ -123,4 +128,13 @@ This section consolidates additional findings from the latest review and relates
 
 ### Conclusion
 
-This project has a well-designed architecture and a solid foundation. However, the implementation has a significant number of issues that deviate from Rust's best practices and idiomatic usage. The large number of clippy warnings indicates a need for a thorough code cleanup to improve maintainability, performance, and overall quality.
+This project has a well-designed architecture and a solid foundation. ~~However, the implementation has a significant number of issues that deviate from Rust's best practices and idiomatic usage. The large number of clippy warnings indicates a need for a thorough code cleanup to improve maintainability, performance, and overall quality.~~
+
+**✅ SIGNIFICANT PROGRESS MADE**: The most critical issues have been systematically addressed:
+
+- **🚨 Critical Bugs Fixed**: Eliminated runtime panics (January date calculations, `todo!()` in markdown formatter)
+- **🔧 API Improvements**: Complete function signature refactoring for idiomatic Rust patterns
+- **🛡️ Reliability**: Fixed error message formatting and input parsing edge cases
+- **🧹 Code Quality**: Removed unused dependencies, fixed typos, added comprehensive test coverage
+
+**Remaining Issues**: The remaining items are primarily style and documentation improvements (missing `#[must_use]` attributes, redundant closures, string formatting optimizations) rather than critical functionality bugs. The codebase now has a robust foundation with significantly improved reliability and maintainability.

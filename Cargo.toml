@@ -13,7 +13,6 @@ clap = { version = "4.4", features = ["derive"] }  # CLI argument parsing
 chrono = "0.4"
 itertools = "0.12"
 regex = "1.10"
-time = { version = "0.3", features = ["parsing"] } # Date parsing
 walkdir = "2.4"
 
 [dev-dependencies]
