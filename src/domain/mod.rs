@@ -32,12 +32,15 @@ impl TimeEntry {
 
     /// Returns the main context (first tag) of this time entry.
     ///
-    /// # Panics
-    ///
-    /// Panics if the time entry has no tags, which should not happen for valid entries.
+    /// This method is guaranteed to succeed for valid entries since the parser
+    /// ensures that all entries have at least one non-empty tag.
     #[must_use]
     pub fn main_context(&self) -> String {
-        self.tags[0].raw_value().to_string()
+        self.tags
+            .first()
+            .expect("TimeEntry must have at least one tag (validated during parsing)")
+            .raw_value()
+            .to_string()
     }
 
     #[must_use]
