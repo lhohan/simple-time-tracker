@@ -98,6 +98,13 @@ Format: `[subject]_should_[expected_behavior]_[optional_when_condition]`
 - **Test utilities**: Use `rstest` for table-driven testing
 - **CLI testing**: Use `assert_cmd` for command-line integration tests
 
+### Formatter Testing Strategy
+
+- **Console/Text format tests**: Test all business logic and behavior (tag filtering, time aggregation, period calculations, error handling, edge cases)
+- **Other format tests**: Focus on format-specific concerns only (syntax, structure, escaping) plus one sensible integration test
+
+This treats console/text as the canonical behavioral test suite, while other formats verify correct presentation of the same data in their specific syntax. Business logic is format-agnostic and should be tested once in the primary format.
+
 ## Environment Variables
 - `TT_TODAY` - Override current date for testing (format: YYYY-MM-DD)
 
