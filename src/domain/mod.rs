@@ -427,6 +427,7 @@ mod tests {
             }
 
             impl LineParsingResult {
+                #[must_use]
                 pub fn expect_valid_entry(self) -> TimeEntry {
                     self.entry
                         .expect("Expected time entry but was error")
@@ -445,31 +446,26 @@ mod tests {
             }
 
             impl TimeEntry {
-                #[must_use]
                 pub fn expect_minutes(self, expected_minutes: u32) -> TimeEntry {
                     assert_eq!(self.minutes, expected_minutes);
                     self
                 }
 
-                #[must_use]
                 pub fn expect_context(self, expected_project: &str) -> TimeEntry {
                     assert_eq!(*self.main_context(), expected_project.to_string());
                     self
                 }
 
-                #[must_use]
                 pub fn expect_description(self, expected_description: &str) -> TimeEntry {
                     assert_eq!(self.description, Some(expected_description.to_string()));
                     self
                 }
 
-                #[must_use]
                 pub fn expect_no_description(self) -> TimeEntry {
                     assert!(self.description.is_none());
                     self
                 }
 
-                #[must_use]
                 pub fn expect_outcome(self, expected_outcome: &str) -> TimeEntry {
                     assert_eq!(
                         self.outcome,
@@ -478,7 +474,6 @@ mod tests {
                     self
                 }
 
-                #[must_use]
                 pub fn expect_no_outcome(self) -> TimeEntry {
                     assert!(self.outcome.is_none());
                     self
