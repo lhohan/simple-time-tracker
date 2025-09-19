@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 use crate::domain::reporting;
 use crate::domain::reporting::DetailReport;
 use crate::domain::reporting::TimeTotal;
@@ -58,24 +60,26 @@ impl TextFormatter {
         result.push('\n');
 
         for entry in entries {
-            result.push_str(&format!(
+            write!(
+                &mut result,
                 "{:.<20}..{} ({:>3}%)\n",
                 entry.description,
                 format_duration(entry.minutes),
                 entry.percentage
-            ));
+            ).expect("Writing to String should never fail");
         }
 
         if !outcomes.is_empty() {
             result.push('\n');
-            result.push_str(&format!("Outcomes:\n"));
+            write!(&mut result, "Outcomes:\n").expect("Writing to String should never fail");
             for outcome in outcomes {
-                result.push_str(&format!(
+                write!(
+                    &mut result,
                     "* {:.<20}..{} ({:>3}%)\n",
                     outcome.description,
                     format_duration(outcome.minutes),
                     outcome.percentage
-                ));
+                ).expect("Writing to String should never fail");
             }
         }
 
@@ -104,7 +108,7 @@ impl TextFormatter {
     ) -> String {
         let mut result = String::new();
 
-        result.push_str(&format!("Project: {context}"));
+        write!(&mut result, "Project: {context}").expect("Writing to String should never fail");
         result.push('\n');
         result.push_str(&format_interval(period));
         result.push('\n');
@@ -113,12 +117,13 @@ impl TextFormatter {
 
         result.push_str("Tasks:\n");
         for task in tasks {
-            result.push_str(&format!(
+            write!(
+                &mut result,
                 "- {}{} ({}%)\n",
                 format_padded_description(&task.description),
                 format_duration(task.minutes),
                 task.percentage_of_total
-            ));
+            ).expect("Writing to String should never fail");
         }
 
         result

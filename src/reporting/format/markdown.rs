@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 use crate::domain::reporting::{DetailReport, TimeTotal};
 use crate::reporting::format::{format_duration, Formatter};
 use crate::reporting::model::FormatableReport;
@@ -27,23 +29,25 @@ impl MarkdownFormatter {
 
         // Format summary
         let hours_per_day = (f64::from(total_minutes) / 60.0) / f64::from(period.days);
-        result.push_str(&format!(
+        write!(
+            &mut result,
             "# Time Tracking Report\n\n## Overview\n\n- **Period**: {} -> {}\n- **Days Tracked**: {}\n- **Hours per Day**: {:.1}\n- **Total Time**: {}\n\n",
             period.start.0.format("%Y-%m-%d"),
             period.end.0.format("%Y-%m-%d"),
             period.days,
             hours_per_day,
             format_duration(total_minutes)
-        ));
+        ).expect("Writing to String should never fail");
 
         result.push_str("### Projects\n");
         for entry in entries {
-            result.push_str(&format!(
+            write!(
+                &mut result,
                 "- **{}**: {} ({}%)\n",
                 entry.description,
                 format_duration(entry.minutes),
                 entry.percentage
-            ));
+            ).expect("Writing to String should never fail");
         }
 
         result
@@ -73,27 +77,29 @@ impl MarkdownFormatter {
     ) -> String {
         let mut result = String::new();
 
-        result.push_str(&format!("## Project: {}\n\n", context));
+        write!(&mut result, "## Project: {}\n\n", context).expect("Writing to String should never fail");
 
         // Format period and statistics
         let hours_per_day = (f64::from(total_minutes) / 60.0) / f64::from(period.days);
-        result.push_str(&format!(
+        write!(
+            &mut result,
             "- **Period**: {} -> {}\n- **Days Tracked**: {}\n- **Hours per Day**: {:.1}\n- **Total Time**: {}\n\n",
             period.start.0.format("%Y-%m-%d"),
             period.end.0.format("%Y-%m-%d"),
             period.days,
             hours_per_day,
             format_duration(total_minutes)
-        ));
+        ).expect("Writing to String should never fail");
 
         result.push_str("### Tasks\n\n");
         for task in tasks {
-            result.push_str(&format!(
+            write!(
+                &mut result,
                 "- **{}**: {} ({}%)\n",
                 task.description,
                 format_duration(task.minutes),
                 task.percentage_of_total
-            ));
+            ).expect("Writing to String should never fail");
         }
         result.push('\n');
 
