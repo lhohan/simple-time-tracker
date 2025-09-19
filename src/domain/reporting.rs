@@ -32,6 +32,7 @@ impl TrackedTime {
         }
     }
 
+    #[must_use]
     pub fn tasks_tracked_for(&self, tags: &[Tag]) -> DetailReport {
         let mut per_tag_summaries = Vec::new();
 
@@ -89,6 +90,7 @@ pub struct OverviewReport {
 }
 
 impl OverviewReport {
+    #[must_use]
     pub fn overview(
         time_report: &TrackedTime,
         limit: Option<&OutputLimit>,
@@ -106,22 +108,27 @@ impl OverviewReport {
         }
     }
 
+    #[must_use]
     pub fn entries_time_totals(&self) -> &Vec<TimeTotal> {
         &self.entries_total_time
     }
 
+    #[must_use]
     pub fn outcome_time_totals(&self) -> &Vec<TimeTotal> {
         &self.outcomes_total_time
     }
 
+    #[must_use]
     pub fn period(&self) -> &TrackingPeriod {
         &self.period
     }
 
+    #[must_use]
     pub fn period_requested(&self) -> &Option<PeriodRequested> {
         &self.period_requested
     }
 
+    #[must_use]
     pub fn total_minutes(&self) -> u32 {
         self.total_minutes
     }
@@ -209,6 +216,7 @@ pub struct TimeTotal {
 }
 
 impl TimeTotal {
+    #[must_use]
     pub fn new(description: String, minutes: u32, total_minutes: u32) -> Self {
         Self {
             description,
@@ -225,6 +233,7 @@ pub struct DetailReport {
 }
 
 impl DetailReport {
+    #[must_use]
     pub fn new(
         summaries: Vec<TaskSummariesForContext>,
         period: TrackingPeriod,
@@ -237,14 +246,17 @@ impl DetailReport {
         }
     }
 
+    #[must_use]
     pub fn summaries(&self) -> &Vec<TaskSummariesForContext> {
         &self.summaries
     }
 
+    #[must_use]
     pub fn period(&self) -> &TrackingPeriod {
         &self.period
     }
 
+    #[must_use]
     pub fn total_minutes(&self) -> u32 {
         self.total_minutes
     }
@@ -261,14 +273,17 @@ impl TaskSummariesForContext {
         Self { context, entries }
     }
 
+    #[must_use]
     pub fn context(&self) -> &Tag {
         &self.context
     }
 
+    #[must_use]
     pub fn task_summaries(&self) -> &Vec<TaskSummary> {
         &self.entries
     }
 
+    #[must_use]
     pub fn total_minutes(&self) -> u32 {
         self.entries.iter().map(|entry| entry.minutes).sum()
     }
@@ -282,6 +297,7 @@ pub struct TaskSummary {
 }
 
 impl TaskSummary {
+    #[must_use]
     pub fn new(description: String, minutes: u32, total_minutes: u32) -> Self {
         Self {
             description,

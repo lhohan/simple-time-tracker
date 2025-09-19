@@ -55,7 +55,7 @@ pub struct Args {
 }
 
 impl Args {
-    #[must_use]
+    #[must_use = "parsed arguments must be used to configure the application"]
     pub fn parse() -> Result<Self, String> {
         let args = Self::parse_from(std::env::args());
         args.validate()?;
@@ -74,6 +74,7 @@ impl Args {
     }
 
     /// Parses exclude tags from the command line arguments.
+    #[must_use]
     pub fn exclude_tags(&self) -> Vec<String> {
         match &self.exclude_tags {
             Some(tags) => {
@@ -84,11 +85,13 @@ impl Args {
         }
     }
 
+    #[must_use]
     pub fn include_details(&self) -> bool {
         self.project.is_some() || self.details
     }
 
     /// Parses filter tags from the command line arguments.
+    #[must_use]
     pub fn context_filter(&self) -> Option<TagFilter> {
         fn parse_project_tags(maybe_project: Option<&String>) -> Vec<String> {
             maybe_project.map_or_else(Vec::new, |p| vec![p.clone()])

@@ -7,6 +7,7 @@ pub enum Tag {
 }
 
 impl Tag {
+    #[must_use]
     pub fn from_raw(raw_tag: &str) -> Self {
         if raw_tag.starts_with("prj-") {
             Tag::Project(raw_tag.strip_prefix("prj-").unwrap().to_string())
@@ -15,6 +16,7 @@ impl Tag {
         }
     }
 
+    #[must_use]
     pub fn raw_value(&self) -> String {
         match self {
             Tag::Project(name) => format!("prj-{}", name),
@@ -35,17 +37,20 @@ pub enum TagFilter {
 }
 
 impl TagFilter {
+    #[must_use]
     pub fn parse(input: Vec<String>) -> Self {
         let tags = input.into_iter().map(|tag| Tag::from_raw(&tag)).collect();
         TagFilter::Any(tags)
     }
 
+    #[must_use]
     pub fn filter_tags(&self) -> Vec<Tag> {
         match self {
             TagFilter::Any(tags) => tags.clone(),
         }
     }
 
+    #[must_use]
     pub fn tags(&self) -> Vec<Tag> {
         match self {
             TagFilter::Any(tags) => tags.clone(),
