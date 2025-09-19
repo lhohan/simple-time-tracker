@@ -24,14 +24,14 @@ pub fn process_input(
     filter: &Option<Filter>,
 ) -> Result<TimeTrackingResult, ParseError> {
     let processor = Processor::from_path(path);
-    let parse_result = parse_entries_from_path(path, filter, processor)?;
-    Ok(tracking_result(parse_result))
+    let parse_result = parse_entries_from_path(path, filter, &processor)?;
+    Ok(tracking_result(&parse_result))
 }
 
 fn parse_entries_from_path(
     path: &Path,
     filter: &Option<Filter>,
-    processor: Processor,
+    processor: &Processor,
 ) -> Result<ParseResult, ParseError> {
     let mut parse_result = ParseResult::errors_only(vec![]);
     processor.process(path, |input| {
@@ -64,9 +64,9 @@ fn days(parse_result: &ParseResult) -> u32 {
     parse_result.days()
 }
 
-fn tracking_result(parse_result: ParseResult) -> TimeTrackingResult {
-    let time_entries = tracked_time(&parse_result);
-    let errors = errors(&parse_result);
+fn tracking_result(parse_result: &ParseResult) -> TimeTrackingResult {
+    let time_entries = tracked_time(parse_result);
+    let errors = errors(parse_result);
     TimeTrackingResult {
         time_entries,
         errors,

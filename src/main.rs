@@ -34,11 +34,11 @@ fn main() -> Result<()> {
     time_tracker::run(
         &args.input,
         args.include_details(),
-        filter,
-        exclude_tags,
-        period,
-        args.limit(),
-        formatter,
+        filter.as_ref(),
+        &exclude_tags,
+        period.as_ref(),
+        args.limit().as_ref(),
+        &*formatter,
     )
     .map_err(anyhow::Error::from)?;
     Ok(())

@@ -94,9 +94,9 @@ impl Args {
             maybe_project.clone().map_or_else(Vec::new, |p| vec![p])
         }
 
-        fn parse_tags(tags: Vec<String>, maybe_tags: &Option<String>) -> Vec<String> {
+        fn parse_tags(tags: &[String], maybe_tags: &Option<String>) -> Vec<String> {
             maybe_tags.as_ref().filter(|s| !s.is_empty()).map_or_else(
-                || tags.clone(),
+                || tags.to_vec(),
                 |tag_list| tag_list.split(',').map(String::from).collect(),
             )
         }
@@ -105,7 +105,7 @@ impl Args {
         }
 
         let tags = parse_project_tags(&self.project);
-        let tags = parse_tags(tags, &self.tags);
+        let tags = parse_tags(&tags, &self.tags);
         to_filter(tags)
     }
 

@@ -32,10 +32,10 @@ impl TrackedTime {
         }
     }
 
-    pub fn tasks_tracked_for(&self, tags: Vec<Tag>) -> DetailReport {
+    pub fn tasks_tracked_for(&self, tags: &[Tag]) -> DetailReport {
         let mut per_tag_summaries = Vec::new();
 
-        for tag in tags.iter() {
+        for tag in tags {
             let tag_summary = self.summarize_tasks_for_context(tag);
             per_tag_summaries.push(tag_summary);
         }
@@ -91,8 +91,8 @@ pub struct OverviewReport {
 impl OverviewReport {
     pub fn overview(
         time_report: &TrackedTime,
-        limit: &Option<OutputLimit>,
-        period_requested: &Option<PeriodRequested>,
+        limit: Option<&OutputLimit>,
+        period_requested: Option<&PeriodRequested>,
     ) -> Self {
         let entries_summed = sum_time_entries(time_report, limit);
         let outcomes_summed = sum_outcomes(time_report);
@@ -101,7 +101,7 @@ impl OverviewReport {
             entries_total_time: entries_summed,
             outcomes_total_time: outcomes_summed,
             period: time_report.period,
-            period_requested: period_requested.clone(),
+            period_requested: period_requested.cloned(),
             total_minutes: time_report.total_minutes,
         }
     }
@@ -127,7 +127,7 @@ impl OverviewReport {
     }
 }
 
-fn sum_time_entries(time_report: &TrackedTime, limit: &Option<OutputLimit>) -> Vec<TimeTotal> {
+fn sum_time_entries(time_report: &TrackedTime, limit: Option<&OutputLimit>) -> Vec<TimeTotal> {
     let summed_entries = sum_entries(&time_report.entries);
 
     let summed_entries_sorted = summed_entries

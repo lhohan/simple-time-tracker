@@ -20,7 +20,7 @@ impl TimeEntry {
     pub fn parse(line: &str) -> Result<Option<TimeEntry>, ParseError> {
         let line = EntryLine::parse(line);
         match line {
-            Some(line) => parse_line(line).map(Some),
+            Some(line) => parse_line(&line).map(Some),
             None => Ok(None),
         }
     }
@@ -69,7 +69,7 @@ impl EntryLine<'_> {
     }
 }
 
-fn parse_line(entry_line: EntryLine) -> Result<TimeEntry, ParseError> {
+fn parse_line(entry_line: &EntryLine) -> Result<TimeEntry, ParseError> {
     let line_no_prefix = entry_line.entry();
     let parts = line_no_prefix.split_whitespace();
 

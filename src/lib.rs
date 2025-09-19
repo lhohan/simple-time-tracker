@@ -29,18 +29,18 @@ use std::path::Path;
 pub fn run(
     input_path: &Path,
     include_details: bool,
-    tag_filter: Option<TagFilter>,
-    exclude_tags: Vec<String>,
-    period: Option<PeriodRequested>,
-    limit: Option<OutputLimit>,
-    formatter: Box<dyn Formatter>,
+    tag_filter: Option<&TagFilter>,
+    exclude_tags: &[String],
+    period: Option<&PeriodRequested>,
+    limit: Option<&OutputLimit>,
+    formatter: &dyn Formatter,
 ) -> Result<(), ParseError> {
-    let tracking_result = process_inputs(input_path, tag_filter.clone(), exclude_tags, &period)?;
+    let period_option = &period.cloned();
+    let tracking_result = process_inputs(input_path, tag_filter, exclude_tags, period_option)?;
 
     let contexts_requested: Vec<Tag> = tag_filter
-        .clone()
-        .and_then(|filter| Some(filter.tags()))
-        .unwrap_or_else(|| vec![]);
+        .map(|filter| filter.tags())
+        .unwrap_or_default();
     print_result(
         period,
         limit,
@@ -56,30 +56,30 @@ pub fn run(
 
 fn process_inputs(
     input_path: &Path,
-    tags_filter: Option<TagFilter>,
-    exclude_tags: Vec<String>,
+    tags_filter: Option<&TagFilter>,
+    exclude_tags: &[String],
     period: &Option<PeriodRequested>,
 ) -> Result<domain::TimeTrackingResult, ParseError> {
-    let filter = create_filter(&tags_filter, &exclude_tags, period);
+    let filter = create_filter(tags_filter, exclude_tags, period);
     let tracking_result = parsing::process_input(input_path, &filter)?;
     Ok(tracking_result)
 }
 
 fn print_result(
-    period: Option<PeriodRequested>,
-    limit: Option<OutputLimit>,
+    period: Option<&PeriodRequested>,
+    limit: Option<&OutputLimit>,
     include_details: bool,
-    project: &Vec<Tag>,
+    project: &[Tag],
     tracking_result: &domain::TimeTrackingResult,
-    formatter: Box<dyn Formatter>,
+    formatter: &dyn Formatter,
 ) {
     if let Some(ref time_report) = tracking_result.time_entries {
         if include_details {
-            let report = time_report.tasks_tracked_for(project.clone());
+            let report = time_report.tasks_tracked_for(project);
             let report = FormatableReport::TasksReport(&report);
             println!("{}", formatter.format(&report));
         } else {
-            let overview = OverviewReport::overview(time_report, &limit, &period);
+            let overview = OverviewReport::overview(time_report, limit, period);
             let report = FormatableReport::OverviewReport(&overview);
             println!("{}", formatter.format(&report));
         }
@@ -88,24 +88,23 @@ fn print_result(
     }
 }
 
-fn print_warnings(parse_errors: &Vec<ParseError>) {
+fn print_warnings(parse_errors: &[ParseError]) {
     parse_errors
         .iter()
         .for_each(|error| println!("Warning: {error}"));
 }
 
 fn create_filter(
-    tags_filter: &Option<TagFilter>,
-    exclude_tags: &Vec<String>,
+    tags_filter: Option<&TagFilter>,
+    exclude_tags: &[String],
     period: &Option<PeriodRequested>,
 ) -> Option<Filter> {
     let period_filter = period
-        .clone()
+        .as_ref()
         .map(|period| Filter::DateRange(period.date_range()));
     let tags_filter = tags_filter
-        .as_ref()
         .map(|filter| Filter::Tags(filter.filter_tags()));
-    let exclude_tag_filter = Filter::ExcludeTags(exclude_tags.clone());
+    let exclude_tag_filter = Filter::ExcludeTags(exclude_tags.to_vec());
 
     tags_filter
         .into_iter()

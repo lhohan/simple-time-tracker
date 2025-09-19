@@ -14,11 +14,12 @@ This separation of concerns makes the codebase modular, easier to maintain, and 
 The `Cargo.toml` file reveals a sensible choice of dependencies for a CLI application:
 
 -   **`clap`**: For parsing command-line arguments.
--   **`chrono`** and **`time`**: For robust date and time manipulation.
--   **`anyhow`**: For flexible error handling.
+-   **`chrono`**: Used throughout for date handling (NaiveDate, ranges, formatting).
+-   **`time`**: Declared but currently unused in the codebase. Recommendation: remove unless you plan to migrate to `time` APIs.
+-   **`anyhow`**: For flexible error handling at the CLI boundary.
 -   **`rstest`**, **`assert_cmd`**, and **`predicates`**: For a comprehensive testing setup, including table-driven tests and CLI testing.
 
-These dependencies are well-suited for the application's requirements.
+Overall appropriate for a CLI. Consider dropping unused crates to reduce build time and supply-chain surface.
 
 ### Code Quality and Best Practices
 
@@ -81,6 +82,40 @@ These issues can lead to unnecessary allocations and slower execution.
 -   **Unsafe Casts (`cast_lossless`)**:
     -   **Problem**: The code uses `as` for numeric casts (e.g., `u32 as i64`). While these are safe in this case, using `i64::from(value)` is preferred because it's an infallible conversion and will cause a compilation error if the types change in a way that makes the cast lossy.
     -   **Example**: In `src/domain/dates/range.rs`, `jan_4.weekday().num_days_from_monday() as i64` can be changed to `i64::from(jan_4.weekday().num_days_from_monday())`.
+
+### Newly Identified Issues and Confirmed Overlaps
+
+This section consolidates additional findings from the latest review and relates them to existing backlog items.
+
+-   Correctness: last-month (January) panic
+    -   In `src/domain/dates/range.rs`, computing the last month with `with_month(month - 1).unwrap()` will panic in January. Suggested approach: derive the first day of the current month, step back one day to land in the previous month, then compute that month’s first day.
+
+-   Correctness: file processor error messages and typos
+    -   In `src/parsing/processor.rs` (SingleFileProcessor), error strings use literal `{}` placeholders and contain typos, so paths aren’t displayed and messages are misleading. Replace with `format!("Failed to read {}: {err}", path.display())` and `format!("Invalid filename: {}", path.display())`.
+
+-   Feature gap: Markdown formatter for details
+    -   `MarkdownFormatter` handles overview but returns `todo!()` for the tasks/details report. This will panic if users request `--format markdown --details`.
+
+-   API ergonomics (overlaps with existing analysis and 001 backlog)
+    -   Confirmed issues already captured: prefer `&[T]` over `&Vec<T>`, use `Option<&T>` over `&Option<T>`, avoid needless pass-by-value. See `docs/backlog/001-refactor-function-signatures.md`.
+
+-   Input parsing robustness
+    -   `--tags` and `--exclude-tags` parsing should trim whitespace around comma-separated entries so values like `"tag-1, tag-2"` are handled as expected.
+
+-   Naming/typos
+    -   `OutputLimit::CummalitivePercentageThreshhold` is misspelled (twice). Consider a deprecation/rename plan to `CumulativePercentageThreshold`.
+
+-   Diagnostics channel
+    -   Warnings are printed to stdout alongside normal output. Consider moving warnings to stderr to avoid mixing with report content (tests would need to adapt).
+
+-   CI and tooling
+    -   Add clippy and rustfmt checks to CI for consistency.
+    -   Ensure a `Justfile` exists (CI calls `just ci-test-coverage`).
+    -   Remove the unused `time` dependency.
+    -   Optional: add `cargo-deny` for advisories/license/bans.
+
+-   UX polish (optional)
+    -   Percentage rounding: if desired, adjust rounding so totals display 100% by distributing rounding deltas.
 
 ### Conclusion
 

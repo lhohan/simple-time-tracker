@@ -6,7 +6,9 @@
       "Bash(jj st:*)",
       "Bash(jj split:*)",
       "Bash(jj log:*)",
-      "Bash(jj diff:*)"
+      "Bash(jj diff:*)",
+      "Bash(just test:*)",
+      "Bash(just run-clippy:*)"
     ]
   },
   "outputStyle": "Explanatory"
