@@ -3,7 +3,7 @@ use crate::domain::reporting::DetailReport;
 use crate::domain::reporting::TimeTotal;
 
 use crate::domain::reporting::OverviewReport;
-use crate::domain::PeriodDescription;
+use crate::domain::{PeriodDescription, PeriodRequested};
 use crate::domain::TrackingPeriod;
 
 use crate::reporting::format::format_duration;
@@ -31,7 +31,7 @@ fn format_interval(period: &TrackingPeriod) -> String {
 
 impl TextFormatter {
     fn format_overview_report(report: &OverviewReport) -> String {
-        let description = report.period_requested().as_ref().map(|p| p.description());
+        let description = report.period_requested().as_ref().map(PeriodRequested::description);
         Self::format_overview(
             &report.entries_time_totals(),
             &report.outcome_time_totals(),
@@ -148,7 +148,7 @@ fn format_header(period_description: Option<&PeriodDescription>) -> String {
 
     result.push_str("Time tracking report ");
     let period_description_str = period_description
-        .map(|description| description.to_string())
+        .map(ToString::to_string)
         .unwrap_or_default();
     result.push_str(period_description_str.as_str());
     result

@@ -201,7 +201,7 @@ fn sum_entries(entries: &[TimeEntry]) -> Vec<(String, u32)> {
 
 fn sum_outcomes(time_report: &TrackedTime) -> Vec<TimeTotal> {
     sum_time_by_key(time_report.entries.iter(), |entry| {
-        entry.outcome.as_ref().map(|outcome| outcome.0.clone())
+        entry.outcome.as_ref().map(|outcome| outcome.description().to_string())
     })
     .into_iter()
     .map(|(outcome, duration)| TimeTotal::new(outcome, duration, time_report.total_minutes))

@@ -43,6 +43,11 @@ impl Outcome {
     pub fn new(description: String) -> Self {
         Outcome(description)
     }
+
+    #[must_use]
+    pub fn description(&self) -> &str {
+        &self.0
+    }
 }
 
 struct EntryLine<'a>(pub(crate) &'a str);
