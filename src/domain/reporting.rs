@@ -148,7 +148,7 @@ fn sum_time_entries(time_report: &TrackedTime, limit: Option<&OutputLimit>) -> V
 
     let entries = match limit {
         Some(OutputLimit::CumulativePercentageThreshold(threshold)) => {
-            let total_minutes = time_report.total_minutes as f64;
+            let total_minutes = f64::from(time_report.total_minutes);
             limit_number_of_entries(total_minutes, summed_entries_sorted, threshold)
         }
         None => summed_entries_sorted.collect(),
@@ -165,7 +165,7 @@ fn limit_number_of_entries(
     let mut cumulative_percentage = 0.0;
 
     for total in totals {
-        let percentage = (total.minutes as f64 / total_minutes) * 100.0;
+        let percentage = (f64::from(total.minutes) / total_minutes) * 100.0;
         cumulative_percentage += percentage;
         result.push(total);
 

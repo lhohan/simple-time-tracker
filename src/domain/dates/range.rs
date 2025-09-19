@@ -132,11 +132,11 @@ impl PeriodRequested {
         // January 4th is always in the first week of the year according to ISO 8601
         let jan_4 = NaiveDate::from_ymd_opt(year, 1, 4)?;
 
-        let days_to_monday = jan_4.weekday().num_days_from_monday() as i64;
+        let days_to_monday = i64::from(jan_4.weekday().num_days_from_monday());
         let first_monday = jan_4.checked_sub_signed(chrono::Duration::days(days_to_monday))?;
 
         let days_to_add = (week - 1) * 7;
-        first_monday.checked_add_signed(chrono::Duration::days(days_to_add as i64))
+        first_monday.checked_add_signed(chrono::Duration::days(i64::from(days_to_add)))
     }
 
     #[must_use]
