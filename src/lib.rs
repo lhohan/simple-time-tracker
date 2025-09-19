@@ -91,7 +91,7 @@ fn print_result(
 fn print_warnings(parse_errors: &[ParseError]) {
     parse_errors
         .iter()
-        .for_each(|error| println!("Warning: {error}"));
+        .for_each(|error| eprintln!("Warning: {error}"));
 }
 
 fn create_filter(

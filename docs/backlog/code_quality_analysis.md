@@ -126,6 +126,22 @@ This section consolidates additional findings from the latest review and relates
 -   UX polish (optional)
     -   Percentage rounding: if desired, adjust rounding so totals display 100% by distributing rounding deltas.
 
+### Remaining Open Items
+
+The following items represent code style and quality improvements that would enhance maintainability but are not critical for functionality:
+
+-   **Code style and documentation improvements**:
+    -   Move warnings from stdout to stderr for better output separation
+    -   Add missing `#[must_use]` attributes to appropriate functions
+    -   Fix redundant closures for more concise code
+    -   Optimize inefficient string formatting (replace `format!` + `push_str` with `write!`)
+    -   Replace unsafe numeric casts with safe conversions (`From::from` instead of `as`)
+
+-   **Testing completeness**:
+    -   Write dedicated tests for markdown formatter functionality to ensure output format correctness
+
+These remaining items focus on **code polish and best practices** rather than **critical functionality**. They would improve long-term maintainability and follow Rust idioms more closely, but the application is now stable and reliable for production use.
+
 ### Conclusion
 
 This project has a well-designed architecture and a solid foundation. ~~However, the implementation has a significant number of issues that deviate from Rust's best practices and idiomatic usage. The large number of clippy warnings indicates a need for a thorough code cleanup to improve maintainability, performance, and overall quality.~~

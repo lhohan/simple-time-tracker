@@ -364,7 +364,7 @@ impl CommandResult {
         Self {
             output: self
                 .output
-                .stdout(predicate::str::is_match(pattern).unwrap()),
+                .stderr(predicate::str::is_match(pattern).unwrap()),
         }
     }
 
@@ -372,7 +372,7 @@ impl CommandResult {
         Self {
             output: self
                 .output
-                .stdout(predicate::str::contains("Warning:").not()),
+                .stderr(predicate::str::contains("Warning:").not()),
         }
     }
 
