@@ -34,6 +34,11 @@ impl TimeEntry {
     ///
     /// This method is guaranteed to succeed for valid entries since the parser
     /// ensures that all entries have at least one non-empty tag.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the entry has no tags, which should never happen for entries
+    /// created through the parsing process.
     #[must_use]
     pub fn main_context(&self) -> String {
         self.tags

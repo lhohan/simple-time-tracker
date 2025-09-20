@@ -315,7 +315,9 @@ fn calculate_percentage(minutes: u32, total_minutes: u32) -> u32 {
     }
 
     let percentage = (f64::from(minutes) / f64::from(total_minutes)) * 100.0;
-    percentage.round() as u32
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let result = percentage.round() as u32;
+    result
 }
 
 #[derive(Debug, Clone)]
