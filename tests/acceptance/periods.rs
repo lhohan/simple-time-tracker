@@ -429,7 +429,9 @@ mod invalid_periods {
             "2020-13",
             "2020-00-01",
             "2020-00-00",
-            "2020-01-32"
+            "2020-01-32",
+            "0999-01",      // Year too small (below 1000)
+            "0999",         // Year too small for year-only format
         )]
         invalid_period_value: &str,
     ) {
