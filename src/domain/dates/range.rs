@@ -1,9 +1,14 @@
 use chrono::{Datelike, Duration, NaiveDate};
 use regex::Regex;
+use std::sync::LazyLock;
 
 use super::{EndDate, EntryDate, StartDate};
 use crate::domain::{self, time::Clock, PeriodDescription};
 use crate::ParseError;
+
+static MONTH_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"^(month|m)-(\d+)$").unwrap()
+});
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum PeriodRequested {
@@ -70,8 +75,7 @@ impl PeriodRequested {
 
     #[must_use]
     fn try_parse_month(s: &str, clock: &Clock) -> Option<PeriodRequested> {
-        let month_regex = Regex::new(r"^(month|m)-(\d+)$").unwrap();
-        month_regex.captures(s).and_then(|captures| {
+        MONTH_REGEX.captures(s).and_then(|captures| {
             captures.get(2).and_then(|month_str| {
                 month_str.as_str().parse::<u32>().ok().and_then(|month| {
                     if (1..=12).contains(&month) {

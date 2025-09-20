@@ -57,8 +57,6 @@ impl TagFilter {
 
     #[must_use]
     pub fn tags(&self) -> Vec<Tag> {
-        match self {
-            TagFilter::Any(tags) => tags.clone(),
-        }
+        self.filter_tags()
     }
 }

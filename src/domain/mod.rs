@@ -133,8 +133,11 @@ fn parse_line(entry_line: &EntryLine) -> Result<TimeEntry, ParseError> {
         ));
     }
 
-    let description =
-        (!description.is_empty()).then(|| description.into_iter().collect::<Vec<_>>().join(" "));
+    let description = if description.is_empty() {
+        None
+    } else {
+        Some(description.join(" "))
+    };
     let projects: Vec<Tag> = projects.into();
 
     let tags = projects;
