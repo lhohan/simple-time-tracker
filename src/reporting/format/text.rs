@@ -5,8 +5,8 @@ use crate::domain::reporting::DetailReport;
 use crate::domain::reporting::TimeTotal;
 
 use crate::domain::reporting::OverviewReport;
-use crate::domain::{PeriodDescription, PeriodRequested};
 use crate::domain::TrackingPeriod;
+use crate::domain::{PeriodDescription, PeriodRequested};
 
 use crate::reporting::format::format_duration;
 use crate::reporting::format::Formatter;
@@ -33,7 +33,10 @@ fn format_interval(period: &TrackingPeriod) -> String {
 
 impl TextFormatter {
     fn format_overview_report(report: &OverviewReport) -> String {
-        let description = report.period_requested().as_ref().map(PeriodRequested::description);
+        let description = report
+            .period_requested()
+            .as_ref()
+            .map(PeriodRequested::description);
         Self::format_overview(
             report.entries_time_totals(),
             report.outcome_time_totals(),
@@ -66,7 +69,8 @@ impl TextFormatter {
                 entry.description,
                 format_duration(entry.minutes),
                 entry.percentage
-            ).expect("Writing to String should never fail");
+            )
+            .expect("Writing to String should never fail");
         }
 
         if !outcomes.is_empty() {
@@ -79,7 +83,8 @@ impl TextFormatter {
                     outcome.description,
                     format_duration(outcome.minutes),
                     outcome.percentage
-                ).expect("Writing to String should never fail");
+                )
+                .expect("Writing to String should never fail");
             }
         }
 
@@ -123,7 +128,8 @@ impl TextFormatter {
                 format_padded_description(&task.description),
                 format_duration(task.minutes),
                 task.percentage_of_total
-            ).expect("Writing to String should never fail");
+            )
+            .expect("Writing to String should never fail");
         }
 
         result

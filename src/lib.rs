@@ -101,8 +101,7 @@ fn create_filter(
     let period_filter = period
         .as_ref()
         .map(|period| Filter::DateRange(period.date_range()));
-    let tags_filter = tags_filter
-        .map(|filter| Filter::Tags(filter.filter_tags()));
+    let tags_filter = tags_filter.map(|filter| Filter::Tags(filter.filter_tags()));
     let exclude_tag_filter = Filter::ExcludeTags(exclude_tags.to_vec());
 
     tags_filter

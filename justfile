@@ -34,6 +34,14 @@ ci-test-coverage: test-coverage
 test-coverage-report:
     cargo llvm-cov nextest --open
 
+# Format code with rustfmt
+fmt:
+    cargo fmt --all
+
+# Check code formatting without modifying files
+fmt-check:
+    cargo fmt --all -- --check
+
 # Run extensive Clippy linter checks
 run-clippy:
     cargo clippy --all-targets -- -D clippy::all -D clippy::pedantic

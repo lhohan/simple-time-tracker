@@ -6,9 +6,7 @@ use super::{EndDate, EntryDate, StartDate};
 use crate::domain::{self, time::Clock, PeriodDescription};
 use crate::ParseError;
 
-static MONTH_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"^(month|m)-(\d+)$").unwrap()
-});
+static MONTH_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(month|m)-(\d+)$").unwrap());
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum PeriodRequested {

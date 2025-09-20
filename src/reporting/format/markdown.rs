@@ -47,7 +47,8 @@ impl MarkdownFormatter {
                 entry.description,
                 format_duration(entry.minutes),
                 entry.percentage
-            ).expect("Writing to String should never fail");
+            )
+            .expect("Writing to String should never fail");
         }
 
         result
@@ -77,7 +78,8 @@ impl MarkdownFormatter {
     ) -> String {
         let mut result = String::new();
 
-        writeln!(&mut result, "## Project: {context}\n").expect("Writing to String should never fail");
+        writeln!(&mut result, "## Project: {context}\n")
+            .expect("Writing to String should never fail");
 
         // Format period and statistics
         let hours_per_day = (f64::from(total_minutes) / 60.0) / f64::from(period.days);
@@ -99,7 +101,8 @@ impl MarkdownFormatter {
                 task.description,
                 format_duration(task.minutes),
                 task.percentage_of_total
-            ).expect("Writing to String should never fail");
+            )
+            .expect("Writing to String should never fail");
         }
         result.push('\n');
 
