@@ -8,9 +8,6 @@ use crate::ParseError;
 
 static MONTH_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(month|m)-(\d+)$").unwrap());
 
-static DATE_REGEX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^(\d{4})-(\d{2})-(\d{2})$").unwrap());
-
 static MONTH_VALUE_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^(\d{4})-(\d{1,2})$").unwrap());
 
@@ -83,69 +80,76 @@ impl PeriodRequested {
     }
 
     #[must_use]
+    fn parse_month(s: &str) -> Option<u32> {
+        let month = s.parse::<u32>().ok()?;
+        (1..=12).contains(&month).then_some(month)
+    }
+
+    #[must_use]
+    fn parse_year(s: &str) -> Option<i32> {
+        let year = s.parse::<i32>().ok()?;
+        (1000..=9999).contains(&year).then_some(year)
+    }
+
+    #[must_use]
+    fn validate_week_bounds(week: u32) -> Option<u32> {
+        (week > 0 && week < 53).then_some(week)
+    }
+
+    #[must_use]
+    fn parse_week(s: &str) -> Option<u32> {
+        let week = s.parse::<u32>().ok()?;
+        Self::validate_week_bounds(week)
+    }
+
+    #[must_use]
     fn try_parse_month(s: &str, clock: &Clock) -> Option<PeriodRequested> {
-        MONTH_REGEX.captures(s).and_then(|captures| {
-            captures.get(2).and_then(|month_str| {
-                month_str.as_str().parse::<u32>().ok().and_then(|month| {
-                    if (1..=12).contains(&month) {
-                        today(clock).with_month(month).map(PeriodRequested::MonthOf)
-                    } else {
-                        None
-                    }
-                })
-            })
-        })
+        let captures = MONTH_REGEX.captures(s)?;
+        let month_str = captures.get(2)?.as_str();
+        let month = Self::parse_month(month_str)?;
+
+        let date = today(clock).with_month(month)?;
+        Some(PeriodRequested::MonthOf(date))
     }
 
     #[must_use]
     fn try_parse_date_value(s: &str) -> Option<PeriodRequested> {
-        if DATE_REGEX.is_match(s) {
-            match NaiveDate::parse_from_str(s, "%Y-%m-%d") {
-                Ok(date) => Some(PeriodRequested::Day(date)),
-                Err(_) => None,
-            }
-        } else {
-            None
-        }
+        NaiveDate::parse_from_str(s, "%Y-%m-%d")
+            .ok()
+            .map(PeriodRequested::Day)
     }
 
     #[must_use]
     fn try_parse_month_value(s: &str) -> Option<PeriodRequested> {
-        let month = MONTH_VALUE_REGEX.captures(s).and_then(|captures| {
-            captures.get(1).and_then(|year_match| {
-                captures.get(2).and_then(|month_match| {
-                    let year = year_match.as_str().parse::<i32>().unwrap();
-                    let month = month_match.as_str().parse::<u32>().unwrap();
-                    NaiveDate::from_ymd_opt(year, month, 1)
-                })
-            })
-        });
-        month.map(PeriodRequested::MonthOf)
+        let captures = MONTH_VALUE_REGEX.captures(s)?;
+
+        let year_str = captures.get(1)?.as_str();
+        let month_str = captures.get(2)?.as_str();
+
+        let year = Self::parse_year(year_str)?;
+        let month = Self::parse_month(month_str)?;
+
+        let date = NaiveDate::from_ymd_opt(year, month, 1)?;
+        Some(PeriodRequested::MonthOf(date))
     }
 
     #[must_use]
     fn try_parse_week_value(s: &str) -> Option<PeriodRequested> {
-        let week = WEEK_VALUE_REGEX.captures(s).and_then(|captures| {
-            captures.get(1).and_then(|year_match| {
-                captures.get(2).and_then(|week_match| {
-                    let week = week_match.as_str().parse::<u32>().unwrap();
-                    if (1..=53).contains(&week) {
-                        let year = year_match.as_str().parse::<i32>().unwrap();
-                        Self::get_first_day_of_week(year, week)
-                    } else {
-                        None
-                    }
-                })
-            })
-        });
-        week.map(PeriodRequested::WeekOf)
+        let captures = WEEK_VALUE_REGEX.captures(s)?;
+
+        let year_str = captures.get(1)?.as_str();
+        let week_str = captures.get(2)?.as_str();
+
+        let year = Self::parse_year(year_str)?;
+        let week = Self::parse_week(week_str)?;
+
+        let date = Self::get_first_day_of_week(year, week)?;
+        Some(PeriodRequested::WeekOf(date))
     }
 
     #[must_use]
     fn get_first_day_of_week(year: i32, week: u32) -> Option<NaiveDate> {
-        if week == 0 || week >= 53 {
-            return None;
-        }
+        let week = Self::validate_week_bounds(week)?;
 
         // January 4th is always in the first week of the year according to ISO 8601
         let jan_4 = NaiveDate::from_ymd_opt(year, 1, 4)?;
@@ -159,13 +163,12 @@ impl PeriodRequested {
 
     #[must_use]
     fn try_parse_year_value(s: &str) -> Option<PeriodRequested> {
-        let year = YEAR_VALUE_REGEX.captures(s).and_then(|captures| {
-            captures.get(1).and_then(|year_match| {
-                let year = year_match.as_str().parse::<i32>().unwrap();
-                NaiveDate::from_ymd_opt(year, 1, 1)
-            })
-        });
-        year.map(PeriodRequested::YearOf)
+        let captures = YEAR_VALUE_REGEX.captures(s)?;
+        let year_str = captures.get(1)?.as_str();
+        let year = Self::parse_year(year_str)?;
+
+        let date = NaiveDate::from_ymd_opt(year, 1, 1)?;
+        Some(PeriodRequested::YearOf(date))
     }
 
     #[must_use]
