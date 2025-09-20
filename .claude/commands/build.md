@@ -42,7 +42,7 @@ Your notes file MUST include these standardized sections for session continuity:
 
 1. Load the task described in $ARGUMENTS.
 2. Summarize the task requirements and constraints in your own words
-3. Challenge requirements early. Always question whether the requested approach is correct
+3. Challenge requirements early. Always question whether the requested approach is correct and necessary
 4. Explicitly ask the user to confirm your understanding before proceeding
 5. Identify any ambiguities or points requiring clarification and ask about them
 6. Once your understanding of the issue has been confirmed, write a summary to your note file.
@@ -176,7 +176,7 @@ Your notes file MUST include these standardized sections for session continuity:
 # Critical Reminders
 
 - **User approval gates**: Never proceed with major decisions without user confirmation - prevents overengineering and scope creep
-- **Coverage monitoring**: Establish baseline, monitor throughout, verify maintenance - enables safe large-scale refactoring  
+- **Coverage monitoring**: Establish baseline, monitor throughout, verify maintenance - enables safe large-scale refactoring
 - **Incremental implementation**: Small, verifiable steps with continuous validation - prevents catastrophic failures
 - **Agent recommendation validation**: Question agent advice against actual requirements - user domain knowledge trumps agent suggestions
 - **CLAUDE.md Compliance**: Always check CLAUDE.md for project-specific constraints (e.g., no Claude references in commits)
