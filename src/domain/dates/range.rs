@@ -8,6 +8,17 @@ use crate::ParseError;
 
 static MONTH_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(month|m)-(\d+)$").unwrap());
 
+static DATE_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(\d{4})-(\d{2})-(\d{2})$").unwrap());
+
+static MONTH_VALUE_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(\d{4})-(\d{1,2})$").unwrap());
+
+static WEEK_VALUE_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(\d{4})-w(\d{1,2})$").unwrap());
+
+static YEAR_VALUE_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(\d{4})$").unwrap());
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum PeriodRequested {
     Day(NaiveDate),
@@ -88,8 +99,7 @@ impl PeriodRequested {
 
     #[must_use]
     fn try_parse_date_value(s: &str) -> Option<PeriodRequested> {
-        let date_regex = Regex::new(r"^(\d{4})-(\d{2})-(\d{2})$").unwrap();
-        if date_regex.is_match(s) {
+        if DATE_REGEX.is_match(s) {
             match NaiveDate::parse_from_str(s, "%Y-%m-%d") {
                 Ok(date) => Some(PeriodRequested::Day(date)),
                 Err(_) => None,
@@ -101,8 +111,7 @@ impl PeriodRequested {
 
     #[must_use]
     fn try_parse_month_value(s: &str) -> Option<PeriodRequested> {
-        let month_value_regex = Regex::new(r"^(\d{4})-(\d{1,2})$").unwrap();
-        let month = month_value_regex.captures(s).and_then(|captures| {
+        let month = MONTH_VALUE_REGEX.captures(s).and_then(|captures| {
             captures.get(1).and_then(|year_match| {
                 captures.get(2).and_then(|month_match| {
                     let year = year_match.as_str().parse::<i32>().unwrap();
@@ -116,8 +125,7 @@ impl PeriodRequested {
 
     #[must_use]
     fn try_parse_week_value(s: &str) -> Option<PeriodRequested> {
-        let week_value_regex = Regex::new(r"^(\d{4})-w(\d{1,2})$").unwrap();
-        let week = week_value_regex.captures(s).and_then(|captures| {
+        let week = WEEK_VALUE_REGEX.captures(s).and_then(|captures| {
             captures.get(1).and_then(|year_match| {
                 captures.get(2).and_then(|week_match| {
                     let week = week_match.as_str().parse::<u32>().unwrap();
@@ -151,8 +159,7 @@ impl PeriodRequested {
 
     #[must_use]
     fn try_parse_year_value(s: &str) -> Option<PeriodRequested> {
-        let year_value_regex = Regex::new(r"^(\d{4})$").unwrap();
-        let year = year_value_regex.captures(s).and_then(|captures| {
+        let year = YEAR_VALUE_REGEX.captures(s).and_then(|captures| {
             captures.get(1).and_then(|year_match| {
                 let year = year_match.as_str().parse::<i32>().unwrap();
                 NaiveDate::from_ymd_opt(year, 1, 1)
