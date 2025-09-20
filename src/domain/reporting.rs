@@ -200,7 +200,10 @@ fn sum_entries(entries: &[TimeEntry]) -> Vec<(String, u32)> {
 
 fn sum_outcomes(time_report: &TrackedTime) -> Vec<TimeTotal> {
     sum_time_by_key(time_report.entries.iter(), |entry| {
-        entry.outcome.as_ref().map(|outcome| outcome.description().to_string())
+        entry
+            .outcome
+            .as_ref()
+            .map(|outcome| outcome.description().to_string())
     })
     .into_iter()
     .map(|(outcome, duration)| TimeTotal::new(outcome, duration, time_report.total_minutes))
@@ -306,9 +309,13 @@ impl TaskSummary {
     }
 }
 
-#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 fn calculate_percentage(minutes: u32, total_minutes: u32) -> u32 {
-    ((f64::from(minutes) / f64::from(total_minutes)) * 100.0).round() as u32
+    if total_minutes == 0 {
+        return 0;
+    }
+
+    let percentage = (f64::from(minutes) / f64::from(total_minutes)) * 100.0;
+    percentage.round() as u32
 }
 
 #[derive(Debug, Clone)]

@@ -10,8 +10,10 @@
       "Bash(just test:*)",
       "Bash(just run-clippy:*)",
       "Bash(cargo test:*)",
-      "Bash(cargo:*)"
+      "Bash(cargo:*)",
+      "Bash(just:*)",
+      "WebFetch(domain:stackoverflow.com)"
     ]
   },
-  "outputStyle": "Learning"
+  "outputStyle": "Explanatory"
 }
