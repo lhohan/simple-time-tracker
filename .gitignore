@@ -24,3 +24,6 @@ lcov.info
 mutants.out**/**
 # local temp files
 tmp*
+
+# local config files
+**/*.local.*
