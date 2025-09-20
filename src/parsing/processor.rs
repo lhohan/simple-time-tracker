@@ -83,7 +83,8 @@ mod processors {
             F: FnMut(ProcessingInput) -> Result<(), ParseError>,
         {
             for entry in WalkDir::new(path)
-                .follow_links(true)
+                .follow_links(false)
+                .max_depth(10)
                 .into_iter()
                 .filter_map(Result::ok)
                 .filter(|e| is_supported_file(e.path()))
