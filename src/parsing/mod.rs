@@ -42,28 +42,6 @@ fn parse_entries_from_path(
     Ok(parse_result)
 }
 
-fn entries(
-    entries: &std::collections::HashMap<chrono::NaiveDate, Vec<crate::domain::TimeEntry>>,
-) -> Vec<crate::domain::TimeEntry> {
-    entries.values().flat_map(|v| v.iter().cloned()).collect()
-}
-
-fn start_date(
-    mapped_entries: &std::collections::HashMap<chrono::NaiveDate, Vec<crate::domain::TimeEntry>>,
-) -> StartDate {
-    StartDate(*mapped_entries.keys().min().unwrap())
-}
-
-fn end_date(
-    mapped_entries: &std::collections::HashMap<chrono::NaiveDate, Vec<crate::domain::TimeEntry>>,
-) -> EndDate {
-    EndDate(*mapped_entries.keys().max().unwrap())
-}
-
-fn days(parse_result: &ParseResult) -> u32 {
-    parse_result.days()
-}
-
 fn tracking_result(parse_result: &ParseResult) -> TimeTrackingResult {
     let time_entries = tracked_time(parse_result);
     let errors = errors(parse_result);
@@ -76,14 +54,13 @@ fn tracking_result(parse_result: &ParseResult) -> TimeTrackingResult {
 fn tracked_time(parse_result: &ParseResult) -> Option<TrackedTime> {
     parse_result
         .entries_by_date()
-        .filter(|entries| !entries.is_empty())
-        .map(|mapped_entries| {
-            TrackedTime::new(
-                entries(mapped_entries),
-                start_date(mapped_entries),
-                end_date(mapped_entries),
-                days(parse_result),
-            )
+        .filter(|entries| !entries.is_empty()) // no tracked time
+        .and_then(|entries| {
+            let start = entries.keys().min().map(|&date| StartDate(date))?;
+            let end = entries.keys().max().map(|&date| EndDate(date))?;
+            let days = parse_result.days();
+            let entries = entries.values().flat_map(|v| v.iter().cloned()).collect();
+            Some(TrackedTime::new(entries, start, end, days))
         })
 }
 
