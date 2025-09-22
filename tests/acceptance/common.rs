@@ -146,7 +146,10 @@ impl CommandSpec {
         self
     }
 
-    #[expect(clippy::wrong_self_convention, reason = "Domain-specific DSL: builder reads naturally as from_date_filter")]
+    #[expect(
+        clippy::wrong_self_convention,
+        reason = "Domain-specific DSL: builder reads naturally as from_date_filter"
+    )]
     pub fn from_date_filter(mut self, from_date: &str) -> Self {
         self.args.add_option("from", from_date);
         self
@@ -427,9 +430,7 @@ impl CommandResult {
             .output
             .stdout(predicate::str::contains("Processing path"));
 
-        Self {
-            output: new_output,
-        }
+        Self { output: new_output }
     }
 
     pub fn expect_no_data_found(self) -> Self {
@@ -437,9 +438,7 @@ impl CommandResult {
             .output
             .stdout(predicate::str::contains("No data found."));
 
-        Self {
-            output: new_output,
-        }
+        Self { output: new_output }
     }
 
     fn assert_project(self, project_name: &str, expectations: &[(&str, String)]) -> Self {
