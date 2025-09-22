@@ -58,120 +58,6 @@ impl PeriodRequested {
     }
 
     #[must_use]
-    fn date_from_literal(s: &str, clock: &Clock) -> Option<PeriodRequested> {
-        match s {
-            "today" | "t" => Some(Self::Day(today(clock))),
-            "yesterday" | "y" => Some(Self::Day(yesterday(clock))),
-            "this-week" | "tw" => Some(Self::WeekOf(date_of_this_week(clock))),
-            "last-week" | "lw" => Some(Self::WeekOf(date_of_last_week(clock))),
-            "this-month" | "tm" => Some(Self::MonthOf(this_month(clock))),
-            "last-month" | "lm" => Some(Self::MonthOf(last_month(clock))),
-            _ => None,
-        }
-    }
-
-    #[must_use]
-    fn date_from_value(s: &str, clock: &Clock) -> Option<PeriodRequested> {
-        Self::try_parse_month(s, clock)
-            .or_else(|| Self::try_parse_date_value(s))
-            .or_else(|| Self::try_parse_month_value(s))
-            .or_else(|| Self::try_parse_week_value(s))
-            .or_else(|| Self::try_parse_year_value(s))
-    }
-
-    #[must_use]
-    fn parse_month(s: &str) -> Option<u32> {
-        let month = s.parse::<u32>().ok()?;
-        (1..=12).contains(&month).then_some(month)
-    }
-
-    #[must_use]
-    fn parse_year(s: &str) -> Option<i32> {
-        let year = s.parse::<i32>().ok()?;
-        (1000..=9999).contains(&year).then_some(year)
-    }
-
-    #[must_use]
-    fn validate_week_bounds(week: u32) -> Option<u32> {
-        (week > 0 && week < 53).then_some(week)
-    }
-
-    #[must_use]
-    fn parse_week(s: &str) -> Option<u32> {
-        let week = s.parse::<u32>().ok()?;
-        Self::validate_week_bounds(week)
-    }
-
-    #[must_use]
-    fn try_parse_month(s: &str, clock: &Clock) -> Option<PeriodRequested> {
-        let captures = MONTH_REGEX.captures(s)?;
-        let month_str = captures.get(2)?.as_str();
-        let month = Self::parse_month(month_str)?;
-
-        let date = today(clock).with_month(month)?;
-        Some(PeriodRequested::MonthOf(date))
-    }
-
-    #[must_use]
-    fn try_parse_date_value(s: &str) -> Option<PeriodRequested> {
-        NaiveDate::parse_from_str(s, "%Y-%m-%d")
-            .ok()
-            .map(PeriodRequested::Day)
-    }
-
-    #[must_use]
-    fn try_parse_month_value(s: &str) -> Option<PeriodRequested> {
-        let captures = MONTH_VALUE_REGEX.captures(s)?;
-
-        let year_str = captures.get(1)?.as_str();
-        let month_str = captures.get(2)?.as_str();
-
-        let year = Self::parse_year(year_str)?;
-        let month = Self::parse_month(month_str)?;
-
-        let date = NaiveDate::from_ymd_opt(year, month, 1)?;
-        Some(PeriodRequested::MonthOf(date))
-    }
-
-    #[must_use]
-    fn try_parse_week_value(s: &str) -> Option<PeriodRequested> {
-        let captures = WEEK_VALUE_REGEX.captures(s)?;
-
-        let year_str = captures.get(1)?.as_str();
-        let week_str = captures.get(2)?.as_str();
-
-        let year = Self::parse_year(year_str)?;
-        let week = Self::parse_week(week_str)?;
-
-        let date = Self::get_first_day_of_week(year, week)?;
-        Some(PeriodRequested::WeekOf(date))
-    }
-
-    #[must_use]
-    fn get_first_day_of_week(year: i32, week: u32) -> Option<NaiveDate> {
-        let week = Self::validate_week_bounds(week)?;
-
-        // January 4th is always in the first week of the year according to ISO 8601
-        let jan_4 = NaiveDate::from_ymd_opt(year, 1, 4)?;
-
-        let days_to_monday = i64::from(jan_4.weekday().num_days_from_monday());
-        let first_monday = jan_4.checked_sub_signed(chrono::Duration::days(days_to_monday))?;
-
-        let days_to_add = (week - 1) * 7;
-        first_monday.checked_add_signed(chrono::Duration::days(i64::from(days_to_add)))
-    }
-
-    #[must_use]
-    fn try_parse_year_value(s: &str) -> Option<PeriodRequested> {
-        let captures = YEAR_VALUE_REGEX.captures(s)?;
-        let year_str = captures.get(1)?.as_str();
-        let year = Self::parse_year(year_str)?;
-
-        let date = NaiveDate::from_ymd_opt(year, 1, 1)?;
-        Some(PeriodRequested::YearOf(date))
-    }
-
-    #[must_use]
     pub fn date_range(&self) -> DateRange {
         match self {
             Self::Day(date) => DateRange::day(*date),
@@ -191,6 +77,108 @@ impl PeriodRequested {
             Self::MonthOf(date) => PeriodDescription::month_of(*date),
             Self::YearOf(date) => PeriodDescription::year_of(*date),
         }
+    }
+
+    fn date_from_literal(s: &str, clock: &Clock) -> Option<PeriodRequested> {
+        match s {
+            "today" | "t" => Some(Self::Day(today(clock))),
+            "yesterday" | "y" => Some(Self::Day(yesterday(clock))),
+            "this-week" | "tw" => Some(Self::WeekOf(date_of_this_week(clock))),
+            "last-week" | "lw" => Some(Self::WeekOf(date_of_last_week(clock))),
+            "this-month" | "tm" => Some(Self::MonthOf(this_month(clock))),
+            "last-month" | "lm" => Some(Self::MonthOf(last_month(clock))),
+            _ => None,
+        }
+    }
+
+    fn date_from_value(s: &str, clock: &Clock) -> Option<PeriodRequested> {
+        Self::try_parse_month(s, clock)
+            .or_else(|| Self::try_parse_date_value(s))
+            .or_else(|| Self::try_parse_month_value(s))
+            .or_else(|| Self::try_parse_week_value(s))
+            .or_else(|| Self::try_parse_year_value(s))
+    }
+
+    fn parse_month(s: &str) -> Option<u32> {
+        let month = s.parse::<u32>().ok()?;
+        (1..=12).contains(&month).then_some(month)
+    }
+
+    fn parse_year(s: &str) -> Option<i32> {
+        let year = s.parse::<i32>().ok()?;
+        (1000..=9999).contains(&year).then_some(year)
+    }
+
+    fn validate_week_bounds(week: u32) -> Option<u32> {
+        (week > 0 && week < 53).then_some(week)
+    }
+
+    fn parse_week(s: &str) -> Option<u32> {
+        let week = s.parse::<u32>().ok()?;
+        Self::validate_week_bounds(week)
+    }
+
+    fn try_parse_month(s: &str, clock: &Clock) -> Option<PeriodRequested> {
+        let captures = MONTH_REGEX.captures(s)?;
+        let month_str = captures.get(2)?.as_str();
+        let month = Self::parse_month(month_str)?;
+
+        let date = today(clock).with_month(month)?;
+        Some(PeriodRequested::MonthOf(date))
+    }
+
+    fn try_parse_date_value(s: &str) -> Option<PeriodRequested> {
+        NaiveDate::parse_from_str(s, "%Y-%m-%d")
+            .ok()
+            .map(PeriodRequested::Day)
+    }
+
+    fn try_parse_month_value(s: &str) -> Option<PeriodRequested> {
+        let captures = MONTH_VALUE_REGEX.captures(s)?;
+
+        let year_str = captures.get(1)?.as_str();
+        let month_str = captures.get(2)?.as_str();
+
+        let year = Self::parse_year(year_str)?;
+        let month = Self::parse_month(month_str)?;
+
+        let date = NaiveDate::from_ymd_opt(year, month, 1)?;
+        Some(PeriodRequested::MonthOf(date))
+    }
+
+    fn try_parse_week_value(s: &str) -> Option<PeriodRequested> {
+        let captures = WEEK_VALUE_REGEX.captures(s)?;
+
+        let year_str = captures.get(1)?.as_str();
+        let week_str = captures.get(2)?.as_str();
+
+        let year = Self::parse_year(year_str)?;
+        let week = Self::parse_week(week_str)?;
+
+        let date = Self::get_first_day_of_week(year, week)?;
+        Some(PeriodRequested::WeekOf(date))
+    }
+
+    fn get_first_day_of_week(year: i32, week: u32) -> Option<NaiveDate> {
+        let week = Self::validate_week_bounds(week)?;
+
+        // January 4th is always in the first week of the year according to ISO 8601
+        let jan_4 = NaiveDate::from_ymd_opt(year, 1, 4)?;
+
+        let days_to_monday = i64::from(jan_4.weekday().num_days_from_monday());
+        let first_monday = jan_4.checked_sub_signed(chrono::Duration::days(days_to_monday))?;
+
+        let days_to_add = (week - 1) * 7;
+        first_monday.checked_add_signed(chrono::Duration::days(i64::from(days_to_add)))
+    }
+
+    fn try_parse_year_value(s: &str) -> Option<PeriodRequested> {
+        let captures = YEAR_VALUE_REGEX.captures(s)?;
+        let year_str = captures.get(1)?.as_str();
+        let year = Self::parse_year(year_str)?;
+
+        let date = NaiveDate::from_ymd_opt(year, 1, 1)?;
+        Some(PeriodRequested::YearOf(date))
     }
 }
 
