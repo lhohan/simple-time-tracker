@@ -2,8 +2,8 @@ use crate::common::*;
 
 #[test]
 fn details_flag_should_fail_when_no_tags_specified() {
-    let some_content = r#"## TT 2020-01-01
-- #tag-1 1h Task A"#;
+    let some_content = r"## TT 2020-01-01
+- #tag-1 1h Task A";
 
     Cmd::given()
         .details_flag()
@@ -15,8 +15,8 @@ fn details_flag_should_fail_when_no_tags_specified() {
 
 #[test]
 fn details_flag_should_succeed_when_tags_specified() {
-    let some_content = r#"## TT 2020-01-01
-- #tag-1 1h Task A"#;
+    let some_content = r"## TT 2020-01-01
+- #tag-1 1h Task A";
 
     Cmd::given()
         .details_flag()
@@ -28,9 +28,9 @@ fn details_flag_should_succeed_when_tags_specified() {
 
 #[test]
 fn details_flag_should_filter_tasks_by_tags() {
-    let some_content = r#"## TT 2020-01-01
+    let some_content = r"## TT 2020-01-01
 - #tag-1 1h Task A
-- #tag-2 2h Task A"#;
+- #tag-2 2h Task A";
 
     Cmd::given()
         .details_flag()
@@ -43,8 +43,8 @@ fn details_flag_should_filter_tasks_by_tags() {
 
 #[test]
 fn details_flag_should_show_task_details() {
-    let some_content = r#"## TT 2020-01-01
-- #tag-1 1h Task A"#;
+    let some_content = r"## TT 2020-01-01
+- #tag-1 1h Task A";
 
     Cmd::given()
         .details_flag()
@@ -57,9 +57,9 @@ fn details_flag_should_show_task_details() {
 
 #[test]
 fn details_flag_should_show_tasks_when_multiple_tags_specified() {
-    let some_content = r#"## TT 2020-01-01
+    let some_content = r"## TT 2020-01-01
 - #tag-1 1h Task A
-- #tag-2 2h Task B"#;
+- #tag-2 2h Task B";
 
     Cmd::given()
         .details_flag()

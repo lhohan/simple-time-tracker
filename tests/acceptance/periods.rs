@@ -138,7 +138,7 @@ mod literal_periods {
 
         let at_date = at_date_and_expected_duration.0;
 
-        let expected_output = format!("of {}", at_date);
+        let expected_output = format!("of {at_date}");
         let expected_duration = at_date_and_expected_duration.1;
 
         Cmd::given()
@@ -178,7 +178,8 @@ mod literal_periods {
 
         let clock_date = test_data.input_clock_date;
 
-        let expected_output = format!("of {}", test_data.expected_reported_date);
+        let expected_reported_date = test_data.expected_reported_date;
+        let expected_output = format!("of {expected_reported_date}");
         let expected_duration = test_data.expected_reported_duration;
 
         Cmd::given()
@@ -228,7 +229,7 @@ mod value_periods {
             .a_file_with_content(content)
             .when_run()
             .should_succeed()
-            .expect_output(&expected_output)
+            .expect_output(expected_output)
             .expect_project("dev")
             .taking(expected_taking)
             .validate();
@@ -262,7 +263,7 @@ mod value_periods {
             .a_file_with_content(content)
             .when_run()
             .should_succeed()
-            .expect_output(&expected_output)
+            .expect_output(expected_output)
             .expect_project("dev")
             .taking(expected_taking)
             .validate();
@@ -297,7 +298,7 @@ mod value_periods {
             .a_file_with_content(content)
             .when_run()
             .should_succeed()
-            .expect_output(&expected_output)
+            .expect_output(expected_output)
             .expect_project("dev")
             .taking(expected_taking)
             .validate();
@@ -333,7 +334,7 @@ mod value_periods {
             .a_file_with_content(content)
             .when_run()
             .should_succeed()
-            .expect_output(&expected_output)
+            .expect_output(expected_output)
             .expect_project("dev")
             .taking(expected_taking)
             .validate();
@@ -368,7 +369,7 @@ mod value_periods {
             .a_file_with_content(content)
             .when_run()
             .should_succeed()
-            .expect_output(&expected_output)
+            .expect_output(expected_output)
             .expect_project("dev")
             .taking(expected_taking)
             .validate();
@@ -404,7 +405,7 @@ mod value_periods {
             .a_file_with_content(content)
             .when_run()
             .should_succeed()
-            .expect_output(&expected_output)
+            .expect_output(expected_output)
             .expect_project("dev")
             .taking(expected_taking)
             .validate();

@@ -146,6 +146,7 @@ impl CommandSpec {
         self
     }
 
+    #[expect(clippy::wrong_self_convention, reason = "Domain-specific DSL: builder reads naturally as from_date_filter")]
     pub fn from_date_filter(mut self, from_date: &str) -> Self {
         self.args.add_option("from", from_date);
         self
@@ -428,7 +429,6 @@ impl CommandResult {
 
         Self {
             output: new_output,
-            ..self
         }
     }
 
@@ -439,7 +439,6 @@ impl CommandResult {
 
         Self {
             output: new_output,
-            ..self
         }
     }
 

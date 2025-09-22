@@ -2,8 +2,8 @@ use crate::common::*;
 
 #[test]
 fn app_should_use_first_tag_as_main_project() {
-    let content = r#"## TT 2020-01-01
-- #tag1 #tag2 #tag3 1h Task A"#;
+    let content = r"## TT 2020-01-01
+- #tag1 #tag2 #tag3 1h Task A";
 
     Cmd::given()
         .a_file_with_content(content)
@@ -19,8 +19,8 @@ mod project_filter {
 
     #[rstest]
     fn project_filter_should_match_any_tag_in_entry(#[values("tag1", "tag2", "tag3")] tag: &str) {
-        let content = r#"## TT 2024-01-15
-- #tag1 #tag2 #tag3 1h Task A"#;
+        let content = r"## TT 2024-01-15
+- #tag1 #tag2 #tag3 1h Task A";
 
         Cmd::given()
             .project_filter(tag)
@@ -36,8 +36,8 @@ mod tags_filter {
 
     #[test]
     fn app_should_support_tags_filter() {
-        let content = r#"## TT 2020-01-01
-- #tag1 1h Task A"#;
+        let content = r"## TT 2020-01-01
+- #tag1 1h Task A";
 
         Cmd::given()
             .tags_filter(&["tag1"])
@@ -48,9 +48,9 @@ mod tags_filter {
 
     #[test]
     fn tags_filter_should_show_matching_entries() {
-        let content = r#"## TT 2024-01-15
+        let content = r"## TT 2024-01-15
 - #tag-1 1h Task A
-- #tag-2 2h Task B"#;
+- #tag-2 2h Task B";
 
         Cmd::given()
             .tags_filter(&["tag-1"])
@@ -64,9 +64,9 @@ mod tags_filter {
 
     #[test]
     fn tags_filter_should_show_all_entries_when_empty() {
-        let content = r#"## TT 2024-01-15
+        let content = r"## TT 2024-01-15
 - #tag-1 1h Task A
-"#;
+";
 
         Cmd::given()
             .tags_filter(&[])
@@ -79,9 +79,9 @@ mod tags_filter {
 
     #[test]
     fn tags_filter_should_show_no_data_when_no_match() {
-        let content = r#"## TT 2024-01-15
+        let content = r"## TT 2024-01-15
 - #tag-1 1h Task A
-"#;
+";
 
         Cmd::given()
             .tags_filter(&["tag-2"])
@@ -93,10 +93,10 @@ mod tags_filter {
 
     #[test]
     fn tags_filter_should_show_entries_matching_any_tag() {
-        let content = r#"## TT 2024-01-15
+        let content = r"## TT 2024-01-15
 - #tag-1 1h Task A
 - #tag-2 2h Task B
-- #tag-3 4h Task C"#;
+- #tag-3 4h Task C";
 
         Cmd::given()
             .tags_filter(&["tag-1", "tag-2"])
@@ -116,9 +116,9 @@ mod exclude_tags_filter {
 
     #[test]
     fn exclude_tags_filter_should_hide_matching_entries() {
-        let content = r#"## TT 2020-01-01
+        let content = r"## TT 2020-01-01
 - #tag1 1h Task A
-- #tag2 1h Task B"#;
+- #tag2 1h Task B";
 
         Cmd::given()
             .exclude_tags_filter(&["tag2"])
@@ -132,10 +132,10 @@ mod exclude_tags_filter {
 
     #[test]
     fn exclude_tags_filter_should_hide_entries_matching_any_tag() {
-        let content = r#"## TT 2020-01-01
+        let content = r"## TT 2020-01-01
 - #tag1 1h Task A
 - #tag2 1h Task B
-- #tag3 1h Task C"#;
+- #tag3 1h Task C";
 
         Cmd::given()
             .exclude_tags_filter(&["tag2", "tag3"])
@@ -150,9 +150,9 @@ mod exclude_tags_filter {
     }
     #[test]
     fn exclude_tags_filter_should_hide_entry_if_any_tag_matches() {
-        let content = r#"## TT 2020-01-01
+        let content = r"## TT 2020-01-01
 - #tag1 #tag2 1h Task A
-- #tag1 1h Task B"#;
+- #tag1 1h Task B";
 
         Cmd::given()
             .exclude_tags_filter(&["tag2"])
@@ -167,8 +167,8 @@ mod exclude_tags_filter {
 
     #[test]
     fn app_should_support_exclude_tags_filter() {
-        let content = r#"## TT 2020-01-01
-- #tag1 1h Task A"#;
+        let content = r"## TT 2020-01-01
+- #tag1 1h Task A";
 
         Cmd::given()
             .exclude_tags_filter(&["tag1"])
