@@ -8,6 +8,13 @@ pub use dates::range::{DateRange, PeriodRequested};
 pub use reporting::{PeriodDescription, TimeTrackingResult, TrackedTime, TrackingPeriod};
 use tags::Tag;
 
+#[derive(Debug, PartialEq)]
+pub enum ParseOutcome {
+    Entry(TimeEntry),
+    NotAnEntry,
+    Malformed(ParseError),
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct TimeEntry {
     tags: Vec<Tag>,
@@ -17,16 +24,15 @@ pub struct TimeEntry {
 }
 
 impl TimeEntry {
-    /// Parses a line into a time entry, if it represents a valid entry.
-    ///
-    /// # Errors
-    ///
-    /// Returns a `ParseError` if the line appears to be an entry but contains invalid data.
-    pub fn parse(line: &str) -> Result<Option<TimeEntry>, ParseError> {
-        let line = EntryLine::parse(line);
-        match line {
-            Some(line) => parse_line(&line).map(Some),
-            None => Ok(None),
+    /// Attempts to parse a line as a time entry.
+    #[must_use]
+    pub fn parse(line: &str) -> ParseOutcome {
+        match EntryLine::parse(line) {
+            Some(entry_line) => match parse_line(&entry_line) {
+                Ok(entry) => ParseOutcome::Entry(entry),
+                Err(err) => ParseOutcome::Malformed(err),
+            },
+            None => ParseOutcome::NotAnEntry,
         }
     }
 
@@ -428,7 +434,7 @@ mod tests {
         }
 
         mod spec {
-            use crate::domain::{Outcome, ParseError, TimeEntry};
+            use crate::domain::{Outcome, ParseError, ParseOutcome, TimeEntry};
 
             pub struct LineSpec {
                 line: String,
@@ -442,13 +448,13 @@ mod tests {
                 }
 
                 pub fn when_parsed(self) -> LineParsingResult {
-                    let entry = TimeEntry::parse(&self.line);
-                    LineParsingResult { entry }
+                    let outcome = TimeEntry::parse(&self.line);
+                    LineParsingResult { outcome }
                 }
             }
 
             pub struct LineParsingResult {
-                entry: Result<Option<TimeEntry>, ParseError>,
+                outcome: ParseOutcome,
             }
 
             impl LineParsingResult {
@@ -459,9 +465,15 @@ mod tests {
                 /// Panics if the parsing result is an error or if no time entry was found.
                 #[must_use]
                 pub fn expect_valid_entry(self) -> TimeEntry {
-                    self.entry
-                        .expect("Expected time entry but was error")
-                        .expect("Expected time entry but was not")
+                    match self.outcome {
+                        ParseOutcome::Entry(entry) => entry,
+                        ParseOutcome::NotAnEntry => {
+                            panic!("Expected time entry but line was not an entry")
+                        }
+                        ParseOutcome::Malformed(err) => {
+                            panic!("Expected time entry but was error: {err:?}")
+                        }
+                    }
                 }
 
                 /// Asserts that this line parsing result is neither an entry nor an error.
@@ -470,8 +482,13 @@ mod tests {
                 ///
                 /// Panics if the parsing result is an error or if a time entry was found.
                 pub fn expect_not_an_entry_and_not_an_error(self) {
-                    let maybe_entry = self.entry.expect("Expected no entry but is error");
-                    assert_eq!(maybe_entry, None);
+                    match self.outcome {
+                        ParseOutcome::NotAnEntry => {}
+                        ParseOutcome::Entry(_) => panic!("Expected no entry but found entry"),
+                        ParseOutcome::Malformed(err) => {
+                            panic!("Expected no entry but is error: {err:?}")
+                        }
+                    }
                 }
 
                 /// Asserts that this line parsing result is an error matching the expected error.
@@ -480,8 +497,11 @@ mod tests {
                 ///
                 /// Panics if the parsing result is valid or if the error doesn't match the expected error.
                 pub fn expect_invalid_with(self, expected_error: &ParseError) {
-                    let error = self.entry.expect_err("Expected error but was valid");
-                    assert_eq!(error, *expected_error);
+                    match self.outcome {
+                        ParseOutcome::Malformed(error) => assert_eq!(error, *expected_error),
+                        ParseOutcome::Entry(_) => panic!("Expected error but was valid entry"),
+                        ParseOutcome::NotAnEntry => panic!("Expected error but was not an entry"),
+                    }
                 }
             }
 

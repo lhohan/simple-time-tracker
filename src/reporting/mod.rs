@@ -5,7 +5,7 @@ pub use crate::reporting::model::FormatableReport;
 #[cfg(test)]
 mod tests {
     use crate::domain::dates::{EndDate, StartDate};
-    use crate::domain::TimeEntry;
+    use crate::domain::{ParseOutcome, TimeEntry};
     use chrono::NaiveDate;
 
     mod report_tests {
@@ -37,9 +37,11 @@ mod tests {
         use super::*;
 
         pub(crate) fn create_test_entry(tag: &str, minutes: u32) -> TimeEntry {
-            TimeEntry::parse(format!("- #{tag} {minutes}m").as_str())
-                .unwrap()
-                .unwrap()
+            match TimeEntry::parse(format!("- #{tag} {minutes}m").as_str()) {
+                ParseOutcome::Entry(entry) => entry,
+                ParseOutcome::NotAnEntry => panic!("Expected entry line to parse as entry"),
+                ParseOutcome::Malformed(err) => panic!("Parse error: {err:?}"),
+            }
         }
 
         pub(crate) fn default_period() -> (StartDate, EndDate) {
