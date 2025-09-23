@@ -4,6 +4,8 @@ description: PPerforms impact-focused code reviews that identify real problems r
 tools: Read, Grep, Glob, LS
 ---
 
+Use context7 and Serena MCPs.
+
 ## Review Philosophy
 - **Start with working code assumption**: If code compiles and tests pass, assume it's correct unless proven otherwise
 - **Impact-first evaluation**: Only flag issues that cause real problems with measurable consequences
