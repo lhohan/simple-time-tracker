@@ -1,5 +1,5 @@
 use super::header_parser::maybe_date_from_header;
-use crate::domain::{ParseError, ParseOutcome, TimeEntry};
+use crate::domain::{EntryLineParseResult, ParseError, TimeEntry};
 use chrono::NaiveDate;
 use std::collections::HashMap;
 
@@ -51,9 +51,9 @@ fn try_parse_to_header(line: &str) -> Result<LineType, ParseError> {
 
 fn try_parse_to_entry(line: &str) -> Result<LineType, ParseError> {
     match TimeEntry::parse(line) {
-        ParseOutcome::Entry(entry) => Ok(LineType::Entry(entry)),
-        ParseOutcome::NotAnEntry => Ok(other()),
-        ParseOutcome::Malformed(err) => Err(err),
+        EntryLineParseResult::Entry(entry) => Ok(LineType::Entry(entry)),
+        EntryLineParseResult::NotAnEntry => Ok(other()),
+        EntryLineParseResult::Malformed(err) => Err(err),
     }
 }
 
@@ -62,13 +62,13 @@ fn other() -> LineType {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct ParseResult {
+pub struct ContentParseResults {
     errors: Vec<ParseError>,
     days: u32,
     entries: Option<HashMap<NaiveDate, Vec<TimeEntry>>>,
 }
 
-impl ParseResult {
+impl ContentParseResults {
     #[must_use]
     pub fn new(entries: HashMap<NaiveDate, Vec<TimeEntry>>, errors: Vec<ParseError>) -> Self {
         Self {
@@ -103,7 +103,7 @@ impl ParseResult {
     }
 
     #[must_use]
-    pub fn merge(&self, other: &ParseResult) -> ParseResult {
+    pub fn merge(&self, other: &ContentParseResults) -> ContentParseResults {
         // Merge errors
         let mut merged_errors = self.errors.clone();
         merged_errors.extend(other.errors.clone());
@@ -126,8 +126,8 @@ impl ParseResult {
         };
 
         match merged_entries {
-            Some(entries) => ParseResult::new(entries, merged_errors),
-            None => ParseResult::errors_only(merged_errors),
+            Some(entries) => ContentParseResults::new(entries, merged_errors),
+            None => ContentParseResults::errors_only(merged_errors),
         }
     }
 }

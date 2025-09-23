@@ -1,5 +1,5 @@
 use crate::parsing::filter::Filter;
-use crate::parsing::model::ParseResult;
+use crate::parsing::model::ContentParseResults;
 
 use crate::domain::dates::EntryDate;
 use crate::domain::{Location, ParseError};
@@ -7,7 +7,7 @@ use crate::domain::{Location, ParseError};
 use super::{LineType, ParseState, ParsedLine};
 
 #[must_use]
-pub fn parse_content(content: &str, filter: Option<&Filter>, file_name: &str) -> ParseResult {
+pub fn parse_content(content: &str, filter: Option<&Filter>, file_name: &str) -> ContentParseResults {
     let final_state = content
         .lines()
         .enumerate()
@@ -20,9 +20,9 @@ pub fn parse_content(content: &str, filter: Option<&Filter>, file_name: &str) ->
         });
 
     if final_state.entries.is_empty() {
-        ParseResult::errors_only(final_state.errors)
+        ContentParseResults::errors_only(final_state.errors)
     } else {
-        ParseResult::new(final_state.entries, final_state.errors)
+        ContentParseResults::new(final_state.entries, final_state.errors)
     }
 }
 

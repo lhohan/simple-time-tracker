@@ -4,7 +4,7 @@ mod model;
 mod parser;
 mod processor;
 
-use model::ParseResult;
+use model::ContentParseResults;
 pub(crate) use model::{LineType, ParseState, ParsedLine};
 use processor::Processor;
 
@@ -32,8 +32,8 @@ fn parse_entries_from_path(
     path: &Path,
     filter: Option<&Filter>,
     processor: &Processor,
-) -> Result<ParseResult, ParseError> {
-    let mut parse_result = ParseResult::errors_only(vec![]);
+) -> Result<ContentParseResults, ParseError> {
+    let mut parse_result = ContentParseResults::errors_only(vec![]);
     processor.process(path, |input| {
         let result = parser::parse_content(input.content(), filter, input.file_name());
         parse_result = parse_result.merge(&result);
@@ -42,7 +42,7 @@ fn parse_entries_from_path(
     Ok(parse_result)
 }
 
-fn tracking_result(parse_result: &ParseResult) -> TimeTrackingResult {
+fn tracking_result(parse_result: &ContentParseResults) -> TimeTrackingResult {
     let time_entries = tracked_time(parse_result);
     let errors = errors(parse_result);
     TimeTrackingResult {
@@ -51,7 +51,7 @@ fn tracking_result(parse_result: &ParseResult) -> TimeTrackingResult {
     }
 }
 
-fn tracked_time(parse_result: &ParseResult) -> Option<TrackedTime> {
+fn tracked_time(parse_result: &ContentParseResults) -> Option<TrackedTime> {
     parse_result
         .entries_by_date()
         .filter(|entries| !entries.is_empty()) // no tracked time
@@ -64,6 +64,6 @@ fn tracked_time(parse_result: &ParseResult) -> Option<TrackedTime> {
         })
 }
 
-fn errors(parse_result: &ParseResult) -> Vec<ParseError> {
+fn errors(parse_result: &ContentParseResults) -> Vec<ParseError> {
     parse_result.errors()
 }
