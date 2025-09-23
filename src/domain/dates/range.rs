@@ -201,9 +201,12 @@ fn date_of_last_week(clock: &Clock) -> NaiveDate {
 fn last_month(clock: &Clock) -> NaiveDate {
     let today = today(clock);
     // Get first day of current month, then step back one day to land in previous month
-    let first_of_current_month = today.with_day(1).unwrap();
-    let last_day_of_previous_month = first_of_current_month.pred_opt().unwrap();
-    // Get first day of previous month
+    let first_of_current_month = today
+        .with_day(1)
+        .expect("Failed to set day to 1st of current month");
+    let last_day_of_previous_month = first_of_current_month
+        .pred_opt()
+        .expect("Failed to get previous day from first of month");
     set_to_1st_of_month(last_day_of_previous_month)
 }
 
@@ -213,16 +216,16 @@ fn this_month(clock: &Clock) -> NaiveDate {
 }
 
 fn set_to_1st_of_month(date: NaiveDate) -> NaiveDate {
-    date.with_day(1).unwrap()
+    date.with_day(1).expect("Failed to set day to 1st of month")
 }
 
 fn set_to_last_of_month(date: NaiveDate) -> NaiveDate {
     date.with_day(1)
-        .unwrap()
+        .expect("Failed to set day to 1st of month")
         .checked_add_months(chrono::Months::new(1))
-        .unwrap()
+        .expect("Failed to add one month for last day calculation")
         .checked_sub_days(chrono::Days::new(1))
-        .unwrap()
+        .expect("Failed to subtract one day for last day of month")
 }
 
 #[derive(Debug, Clone, PartialEq)]
