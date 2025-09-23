@@ -26,13 +26,12 @@ pub struct TimeEntry {
 impl TimeEntry {
     #[must_use]
     pub fn parse(line: &str) -> EntryLineParseResult {
-        match EntryLine::parse(line) {
-            Some(entry_line) => match parse_line(&entry_line) {
+        EntryLine::parse(line)
+            .map(|entry_line| parse_line(&entry_line))
+            .map_or(EntryLineParseResult::NotAnEntry, |result| match result {
                 Ok(entry) => EntryLineParseResult::Entry(entry),
                 Err(err) => EntryLineParseResult::Malformed(err),
-            },
-            None => EntryLineParseResult::NotAnEntry,
-        }
+            })
     }
 
     /// Returns the main context (first tag) of this time entry.
