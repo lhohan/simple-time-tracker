@@ -186,11 +186,8 @@ fn parse_part(part: &str) -> Result<LinePart, ParseError> {
         let tag = Tag::from_raw(raw_tag);
         Ok(LinePart::Tag(tag))
     } else {
-        match parse_time(part) {
-            Ok(Some(minutes)) => Ok(LinePart::Time(minutes)),
-            Ok(None) => Ok(LinePart::DescriptionPart(part)),
-            Err(err) => Err(err),
-        }
+        parse_time(part)
+            .map(|maybe_time| maybe_time.map_or(LinePart::DescriptionPart(part), LinePart::Time))
     }
 }
 use std::str::FromStr;
@@ -203,13 +200,12 @@ fn parse_time(time: &str) -> Result<Option<u32>, ParseError> {
         _ => return Ok(None),
     };
 
-    match u32::from_str(value) {
-        Ok(val) => Ok(Some(val * multiplier)),
-        Err(e) => match e.kind() {
-            std::num::IntErrorKind::InvalidDigit => Ok(None),
+    u32::from_str(value)
+        .map(|val| Some(val * multiplier))
+        .or_else(|e| match e.kind() {
+            std::num::IntErrorKind::InvalidDigit => Ok(None), // value is actual just a word ending in one of the time units
             _ => Err(ParseError::InvalidTime(time.to_string())),
-        },
-    }
+        })
 }
 
 #[derive(Debug, PartialEq, Clone)]
