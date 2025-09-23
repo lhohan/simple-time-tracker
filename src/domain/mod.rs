@@ -186,26 +186,34 @@ fn parse_part(part: &str) -> Result<LinePart, ParseError> {
         let tag = Tag::from_raw(raw_tag);
         Ok(LinePart::Tag(tag))
     } else {
-        parse_time(part)
-            .map(|maybe_time| maybe_time.map_or(LinePart::DescriptionPart(part), LinePart::Time))
+        match parse_time(part)? {
+            ParseTimeResult::Time(minutes) => Ok(LinePart::Time(minutes)),
+            ParseTimeResult::NotTime(text) => Ok(LinePart::DescriptionPart(text)),
+        }
     }
 }
-use std::str::FromStr;
 
-fn parse_time(time: &str) -> Result<Option<u32>, ParseError> {
-    let (value, multiplier) = match time.chars().last() {
-        Some('m') => (time.trim_end_matches('m'), 1),
-        Some('h') => (time.trim_end_matches('h'), 60),
-        Some('p') => (time.trim_end_matches('p'), 30),
-        _ => return Ok(None),
+#[derive(Debug, PartialEq)]
+enum ParseTimeResult<'a> {
+    Time(u32),
+    NotTime(&'a str),
+}
+
+fn parse_time(input: &str) -> Result<ParseTimeResult<'_>, ParseError> {
+    let (base, multiplier) = match input.chars().last() {
+        Some('m') => (input.strip_suffix('m').unwrap(), 1),
+        Some('h') => (input.strip_suffix('h').unwrap(), 60),
+        Some('p') => (input.strip_suffix('p').unwrap(), 30),
+        _ => return Ok(ParseTimeResult::NotTime(input)),
     };
 
-    u32::from_str(value)
-        .map(|val| Some(val * multiplier))
-        .or_else(|e| match e.kind() {
-            std::num::IntErrorKind::InvalidDigit => Ok(None), // value is actual just a word ending in one of the time units
-            _ => Err(ParseError::InvalidTime(time.to_string())),
-        })
+    match base.parse::<u32>() {
+        Ok(val) => Ok(ParseTimeResult::Time(val * multiplier)),
+        Err(e) => match e.kind() {
+            std::num::IntErrorKind::InvalidDigit => Ok(ParseTimeResult::NotTime(input)),
+            _ => Err(ParseError::InvalidTime(input.to_string())),
+        },
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -497,7 +505,7 @@ mod tests {
                 pub fn expect_invalid_with(self, expected_error: &ParseError) {
                     match self.outcome {
                         EntryLineParseResult::Malformed(error) => {
-                            assert_eq!(error, *expected_error)
+                            assert_eq!(error, *expected_error);
                         }
                         EntryLineParseResult::Entry(_) => {
                             panic!("Expected error but was valid entry")
