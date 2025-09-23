@@ -34,6 +34,14 @@ ci-test-coverage: test-coverage
 test-coverage-report:
     cargo llvm-cov nextest --open
 
+# Run performance benchmarks (CLI parsing with large dataset)
+bench:
+    cargo bench
+
+# Run benchmarks continuously on file changesqq
+bench-w:
+    cargo watch -c -x bench
+
 # Format code with rustfmt
 fmt:
     cargo fmt --all

@@ -12,68 +12,81 @@ pub fn parse_content(
     filter: Option<&Filter>,
     file_name: &str,
 ) -> ContentParseResults {
-    let final_state = content
-        .lines()
-        .enumerate()
-        .map(|(line_number, line)| ParsedLine {
+    let mut state = ParseState::default();
+
+    for (line_number, line) in content.lines().enumerate() {
+        let parsed_line = ParsedLine {
             content: line.trim(),
             line_number: line_number + 1,
-        })
-        .fold(ParseState::default(), |state, line| {
-            process_line(&line, &state, filter, file_name)
-        });
+        };
+        process_line_mut(&parsed_line, &mut state, filter, file_name);
+    }
 
-    if final_state.entries.is_empty() {
-        ContentParseResults::errors_only(final_state.errors)
+    if state.entries.is_empty() {
+        ContentParseResults::errors_only(state.errors)
     } else {
-        ContentParseResults::new(final_state.entries, final_state.errors)
+        ContentParseResults::new(state.entries, state.errors)
     }
 }
 
-fn process_line(
+fn process_line_mut(
     line: &ParsedLine,
-    state: &ParseState,
+    state: &mut ParseState,
     filter: Option<&Filter>,
     file_name: &str,
-) -> ParseState {
+) {
     match LineType::parse(line.content, state.in_time_tracking_section()) {
-        Ok(LineType::Header(maybe_date)) => ParseState {
-            current_date: maybe_date,
-            ..state.clone()
-        },
+        Ok(LineType::Header(maybe_date)) => {
+            state.current_date = maybe_date;
+        }
         Ok(LineType::Entry(entry)) if state.in_time_tracking_section() => {
-            let mut new_state = state.clone();
             if let Some(date) = state.current_date {
-                match filter {
-                    None => new_state.entries.entry(date).or_default().push(entry),
-                    Some(filter) if filter.matches(&entry, &EntryDate(date)) => {
-                        new_state.entries.entry(date).or_default().push(entry);
-                    }
-                    _ => {}
+                let entry_matches_filter =
+                    filter.map_or(true, |f| f.matches(&entry, &EntryDate(date)));
+                if entry_matches_filter {
+                    state.entries.entry(date).or_default().push(entry);
                 }
             }
-            new_state
         }
-        Err(error) => ParseState {
-            errors: {
-                let mut errors = state.errors.clone();
-                errors.push(ParseError::Located {
-                    error: Box::new(error),
-                    location: Location {
-                        file: file_name.to_string(),
-                        line: line.line_number,
-                    },
-                });
-                errors
-            },
-            ..state.clone()
-        },
-        _ => state.clone(),
+        Err(error) => {
+            state.errors.push(ParseError::Located {
+                error: Box::new(error),
+                location: Location {
+                    file: file_name.to_string(),
+                    line: line.line_number,
+                },
+            });
+        }
+        _ => {}
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    /// Test basic parser functionality
+    #[test]
+    fn parser_works_correctly() {
+        let test_content = r#"
+## TT 2024-01-01
+- #dev 30m implement feature A
+- #test 15m write tests
+
+## TT 2024-01-02
+- #dev 1h fix bug B
+"#;
+
+        let result = parse_content(test_content, None, "test.md");
+
+        assert_eq!(result.days(), 2);
+        assert_eq!(result.errors().len(), 0);
+
+        if let Some(entries) = result.entries_by_date() {
+            assert_eq!(entries.len(), 2);
+        }
+    }
+
     mod section_detection {
         use crate::parsing::LineType;
         use rstest::rstest;

@@ -35,6 +35,10 @@ This is a Rust-based time tracking CLI application that parses markdown files to
 - `just run-clippy` - Run extensive Clippy linter checks
 - `just clean` - Clean build artifacts
 
+### Performance Benchmarking
+- `just bench` - Run performance benchmarks
+- `just bench-w` - Run benchmarks continuously on file changes
+
 ### Linting
 Always run clippy after code changes: `just run-clippy`
 
@@ -212,6 +216,12 @@ Use `just run-clippy` to maintain code quality and functional programming standa
 - **Type grouping by relationship**: Group types by domain relationships (config types, content types, error hierarchy) rather than alphabetically
 - **Minimal public API surface**: Only expose types and functions necessary for external use
 
+### 13. Performance Optimization Methodology
+
+- **Measure first**: Establish baseline performance before optimizing
+- **Algorithmic over micro**: Focus on complexity (O(N²) → O(N)) before micro-optimizations
+- **Language-appropriate solutions**: Embrace Rust's ownership model with mutable accumulation
+
 ## Development Guidelines
 
 ### TDD Approach
@@ -250,6 +260,10 @@ Format: `[subject]_should_[expected_behavior]_[optional_when_condition]`
 - **Other format tests**: Focus on format-specific concerns only (syntax, structure, escaping) plus one sensible integration test
 
 This treats console/text as the canonical behavioral test suite, while other formats verify correct presentation of the same data in their specific syntax. Business logic is format-agnostic and should be tested once in the primary format.
+
+### Performance Benchmarking
+- **Use benchmark DSL**: `benches/benchmark_dsl.rs` provides reusable CLI performance testing patterns
+- **CLI-level testing**: Use `Command::cargo_bin()` for realistic end-to-end performance measurement
 
 ## Environment Variables
 - `TT_TODAY` - Override current date for testing (format: YYYY-MM-DD)
