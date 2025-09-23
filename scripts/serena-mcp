@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Run Serena MCP via uvx inside the nix devShell
+# Uses the latest Serena directly from the GitHub repository
+exec nix develop -c uvx --from git+https://github.com/oraios/serena serena start-mcp-server --transport stdio

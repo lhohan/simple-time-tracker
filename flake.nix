@@ -15,6 +15,8 @@
         cargo-nextest
         rustup
         just
+        python312  # dependency of Serena MCP
+        uv         # dependency of Serena MCP
       ];
     };
   });

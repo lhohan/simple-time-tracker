@@ -261,3 +261,45 @@ This treats console/text as the canonical behavioral test suite, while other for
 - `regex` - Text parsing
 - `rstest` - Table-driven testing
 - `assert_cmd` - CLI testing utilities
+
+# Claude Code configuration
+
+## Serena MCP Integration
+
+This project includes project-scoped Serena MCP integration for enhanced Claude Code capabilities.
+
+### Prerequisites
+- Nix (for isolated dependency management)
+- Claude Code CLI (installed globally)
+- direnv (optional but recommended for automatic environment loading)
+
+### Usage
+
+This project features a seamless, automatic integration with Serena MCP.
+
+```bash
+# Just enter the directory. direnv handles the rest.
+# Then, simply run the claude command.
+claude
+```
+
+Serena's tools will be automatically available within your Claude session.
+
+### Architecture
+
+- **Zero-Configuration**: `direnv` automatically configures your shell. Just run `claude`.
+
+- **No Global Installs**: All Python dependencies managed via Nix flake
+- **Project Scoped**: Serena MCP only active when using this repo's configuration
+- **Zero Pollution**: No changes to global Claude Code configuration
+- **Reproducible**: Same environment across machines via Nix
+
+### Files
+- `scripts/serena-mcp` - Serena MCP server launcher (uses `nix develop -c uvx`)
+- `.envrc` - Automatically configures the `claude` command with project-specific settings.
+- `flake.nix` - Updated with Python 3.12 and uv dependencies
+
+### Maintenance
+- Serena updates automatically via `uvx --from git+https://github.com/oraios/serena`
+- To pin a specific version, modify the git reference in `scripts/serena-mcp`
+- If Serena changes its invocation pattern, update `scripts/serena-mcp`

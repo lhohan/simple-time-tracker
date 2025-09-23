@@ -49,3 +49,7 @@ run-clippy:
 # Clean the build artifacts
 clean:
     cargo clean
+
+# Test Serena MCP server startup
+serena-mcp:
+    ./scripts/serena-mcp

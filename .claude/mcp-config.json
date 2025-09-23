@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "serena": {
+      "command": "./scripts/serena-mcp",
+      "args": [],
+      "env": {}
+    }
+  }
+}

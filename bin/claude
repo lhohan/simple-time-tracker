@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Project-scoped Claude wrapper that injects Serena MCP config
+exec /opt/homebrew/bin/claude --mcp-config "$PWD/.claude/mcp-config.json" "$@"
