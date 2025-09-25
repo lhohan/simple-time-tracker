@@ -42,6 +42,9 @@ This is a Rust-based time tracking CLI application that parses markdown files to
 ### Linting
 Always run clippy after code changes: `just run-clippy`
 
+## Architecture Decision Records
+Key architectural choices are documented in `/docs/adr/` - consult these for context on technical decisions.
+
 ## Code Architecture
 
 ### Domain-Driven Design Structure

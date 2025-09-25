@@ -4,7 +4,6 @@ use std::sync::LazyLock;
 
 use super::{EndDate, EntryDate, StartDate};
 use crate::domain::{self, time::Clock, PeriodDescription};
-use crate::ParseError;
 
 static MONTH_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(month|m)-(\d+)$").unwrap());
 
@@ -50,7 +49,7 @@ impl PeriodRequested {
         match from_date_requested {
             Some(date) => {
                 let parsed_date = NaiveDate::parse_from_str(date, "%Y-%m-%d")
-                    .map_err(|_| ParseError::InvalidDate(date.to_string()))?;
+                    .map_err(|_| domain::ParseError::InvalidDate(date.to_string()))?;
                 Ok(Some(PeriodRequested::FromDate(parsed_date)))
             }
             None => Ok(None),

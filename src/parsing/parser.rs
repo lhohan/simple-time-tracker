@@ -42,7 +42,7 @@ fn process_line_mut(
         Ok(LineType::Entry(entry)) if state.in_time_tracking_section() => {
             if let Some(date) = state.current_date {
                 let entry_matches_filter =
-                    filter.map_or(true, |f| f.matches(&entry, &EntryDate(date)));
+                    filter.is_none_or(|f| f.matches(&entry, &EntryDate(date)));
                 if entry_matches_filter {
                     state.entries.entry(date).or_default().push(entry);
                 }
@@ -68,14 +68,14 @@ mod tests {
     /// Test basic parser functionality
     #[test]
     fn parser_works_correctly() {
-        let test_content = r#"
+        let test_content = r"
 ## TT 2024-01-01
 - #dev 30m implement feature A
 - #test 15m write tests
 
 ## TT 2024-01-02
 - #dev 1h fix bug B
-"#;
+";
 
         let result = parse_content(test_content, None, "test.md");
 
