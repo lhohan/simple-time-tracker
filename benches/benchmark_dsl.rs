@@ -14,8 +14,8 @@ pub struct BenchmarkSpec {
     measurement_config: MeasurementConfig,
 }
 
-impl BenchmarkSpec {
-    pub fn new() -> Self {
+impl Default for BenchmarkSpec {
+    fn default() -> Self {
         Self {
             data_config: DataConfig {
                 days: 100,
@@ -23,6 +23,12 @@ impl BenchmarkSpec {
             },
             measurement_config: MeasurementConfig::default(),
         }
+    }
+}
+
+impl BenchmarkSpec {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn with_data_size(mut self, days: usize, entries_per_day: usize) -> Self {
@@ -50,18 +56,17 @@ impl BenchmarkSpec {
             bencher.iter_batched(
                 || self.generate_content(),
                 |content| {
-                    let output = self.execute_cli(&content);
-                    if !output.status.success() {
-                        panic!(
-                            "CLI command failed with status {:?}\nstderr: {}\nstdout: {}",
-                            output.status,
-                            String::from_utf8_lossy(&output.stderr),
-                            String::from_utf8_lossy(&output.stdout)
-                        );
-                    }
+                    let output = Self::execute_cli(&content);
+                    assert!(
+                        output.status.success(),
+                        "CLI command failed with status {:?}\nstderr: {}\nstdout: {}",
+                        output.status,
+                        String::from_utf8_lossy(&output.stderr),
+                        String::from_utf8_lossy(&output.stdout)
+                    );
                 },
                 BatchSize::SmallInput,
-            )
+            );
         }
     }
 }
@@ -99,12 +104,13 @@ impl Default for MeasurementConfig {
 
 impl BenchmarkSpec {
     fn generate_content(&self) -> String {
+        use std::fmt::Write;
         let mut content =
             String::with_capacity(self.data_config.days * self.data_config.entries_per_day * 40);
 
         for day_offset in 0..self.data_config.days {
             let day = 1 + (day_offset % 28);
-            content.push_str(&format!("## TT 2024-01-{day:02}\n"));
+            let _ = writeln!(&mut content, "## TT 2024-01-{day:02}");
 
             for _ in 0..self.data_config.entries_per_day {
                 content.push_str("- #dev 1m some task text\n");
@@ -114,7 +120,7 @@ impl BenchmarkSpec {
         content
     }
 
-    fn execute_cli(&self, content: &str) -> std::process::Output {
+    fn execute_cli(content: &str) -> std::process::Output {
         let temp_dir = assert_fs::TempDir::new().expect("Failed to create temporary directory");
         let input_file = temp_dir.child("bench_input.md");
         input_file
