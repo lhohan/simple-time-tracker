@@ -42,7 +42,7 @@ Your notes file MUST include these standardized sections for session continuity:
 
 1. Load the task described in $ARGUMENTS.
 2. Summarize the task requirements and constraints in your own words
-3. Challenge requirements early. Always question whether the requested approach is correct and necessary
+3. Challenge requirements early. Always question whether the requested task or approach is correct and necessary
 4. Explicitly ask the user to confirm your understanding before proceeding
 5. Identify any ambiguities or points requiring clarification and ask about them
 6. Once your understanding of the issue has been confirmed, write a summary to your note file.

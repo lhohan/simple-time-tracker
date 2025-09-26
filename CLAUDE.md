@@ -39,6 +39,27 @@ This is a Rust-based time tracking CLI application that parses markdown files to
 - `just bench` - Run performance benchmarks
 - `just bench-w` - Run benchmarks continuously on file changes
 
+### Fuzzing
+- `just fuzz` - Run fuzz testing on CLI parser (5-minute session)
+- `just fuzz-long` - Run fuzz testing for longer session (30 minutes)
+- `just fuzz-custom <seconds>` - Run fuzz testing with custom time limit
+
+**Requirements**: Fuzzing requires nightly Rust toolchain
+**Purpose**: Discover panic-inducing edge cases in time entry parsing logic
+**Infrastructure**: Separate from regular tests, located in `fuzz/` directory
+
+#### Fuzzing Strategy
+- **CLI-level fuzzing**: Tests through `Command::cargo_bin("tt")` like acceptance tests
+- **Focused scope**: Only time entry parsing logic (not file I/O or CLI arguments)
+- **Crash collection**: Panics saved to `fuzz/artifacts/cli_parser_fuzz/` for analysis
+- **Usage pattern**: Run manually during parser changes, not in CI/CD
+
+#### Analyzing Results
+1. Check `fuzz/artifacts/cli_parser_fuzz/` for crash files after fuzzing
+2. Reproduce crashes with `cargo +nightly fuzz run cli_parser_fuzz <crash_file>`
+3. Categorize panics by root cause before implementing fixes
+4. Create minimal test cases from crash inputs for regression testing
+
 ### Linting
 Always run clippy after code changes: `just run-clippy`
 

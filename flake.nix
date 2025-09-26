@@ -13,6 +13,7 @@
       buildInputs = with pkgs; [
         # cargo-llvm-cov   # currently broken on nix packages... for now install manually
         cargo-nextest
+        cargo-fuzz
         rustup
         just
         python312  # dependency of Serena MCP

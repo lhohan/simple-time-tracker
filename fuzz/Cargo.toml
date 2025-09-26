@@ -1,0 +1,44 @@
+[package]
+name = "time-tracker-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+assert_cmd = "2.0"
+assert_fs = "1.0"
+
+[dependencies.time-tracker]
+path = ".."
+
+[[bin]]
+name = "tag_fuzz"
+path = "fuzz_targets/tag_fuzz.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "time_fuzz"
+path = "fuzz_targets/time_fuzz.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "description_fuzz"
+path = "fuzz_targets/description_fuzz.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "multiline_fuzz"
+path = "fuzz_targets/multiline_fuzz.rs"
+test = false
+doc = false
+bench = false

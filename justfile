@@ -61,3 +61,24 @@ clean:
 # Test Serena MCP server startup
 serena-mcp:
     ./scripts/serena-mcp
+
+# Run all fuzz testing targets (10 seconds each, 40 seconds total)
+fuzz:
+    cargo +nightly fuzz run tag_fuzz -- -max_total_time=10
+    cargo +nightly fuzz run time_fuzz -- -max_total_time=10
+    cargo +nightly fuzz run description_fuzz -- -max_total_time=10
+    cargo +nightly fuzz run multiline_fuzz -- -max_total_time=10
+
+# Run all fuzz testing targets for longer sessions (2 minutes each)
+fuzz-long:
+    cargo +nightly fuzz run tag_fuzz -- -max_total_time=120
+    cargo +nightly fuzz run time_fuzz -- -max_total_time=120
+    cargo +nightly fuzz run description_fuzz -- -max_total_time=120
+    cargo +nightly fuzz run multiline_fuzz -- -max_total_time=120
+
+# Run all fuzz testing targets with custom time limit per target (in seconds)
+fuzz-custom time:
+    cargo +nightly fuzz run tag_fuzz -- -max_total_time={{time}}
+    cargo +nightly fuzz run time_fuzz -- -max_total_time={{time}}
+    cargo +nightly fuzz run description_fuzz -- -max_total_time={{time}}
+    cargo +nightly fuzz run multiline_fuzz -- -max_total_time={{time}}
