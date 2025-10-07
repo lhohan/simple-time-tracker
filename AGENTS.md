@@ -3,8 +3,8 @@
 ## Essential Commands
 - **Build**: `just build` (release), `cargo build` (debug), `just install` (local install)
 - **Test**: `just test` (all), `cargo nextest run test_name` (single), `just test-w` (watch), `just test-coverage` (with llvm-cov)
-- **Lint**: `just run-clippy` (always run after changes), `just fmt`
-- **Run**: `just run path period`
+- **Lint**: `just run-clippy` (always run after changes), `cargo fmt --all -- --check`
+- **Run**: `just run path period` or `cargo run -- -i "path" --period "period"`
 - **Performance**: `just bench` (benchmarks), `just bench-w` (continuous benchmarks)
 - **Fuzzing**: `just fuzz` (5-min), `just fuzz-long` (30-min), `just fuzz-custom <seconds>` (custom time)
 - **Development**: `just check-w` (continuous check), `just clean` (clean artifacts)
@@ -17,7 +17,8 @@
 - **File organization**: Public API first, logical sectioning, minimal public surface
 
 ## Testing Standards
-- **Prefer acceptance tests** over unit tests for CLI functionality
+- **Prefer acceptance tests** over unit tests for functionality
+- **Unit tests** only when complex business logic helps with isolated testing
 - **Test naming**: `[subject]_should_[expected_behavior]_[optional_when_condition]`
 - **Use assert_fs::TempDir** for file-based testing
 - **CLI testing**: Use assert_cmd with Command::cargo_bin("tt")
@@ -35,6 +36,32 @@
 - **No comments**: Add comments only if explicitly requested
 - **Clippy-driven**: Fix functional/performance warnings, use justfile configuration
 - **Domain modeling**: Create distinct types for domain concepts, express rules through relationships
+
+## Development Methodology
+
+### Evolution Strategy
+- **Begin with smallest end-to-end solution that works**
+- **Start with hardcoded values; generalize once validated**
+- **Separate feature additions from refactoring**
+
+### TDD Approach
+- **Start with failing tests, implement minimal code to pass**
+- **Focus on observable behaviors over implementation details**
+- **Follow Red-Green-Refactor cycle religiously**
+- **TDD with primitive whole**: Start with simplest end-to-end working test
+
+### Incremental Development Pattern
+For multi-step tasks:
+1. Make smallest possible change within a category
+2. Run tests immediately
+3. Commit if tests pass, debug if they fail
+4. Only move to next category after current category is complete and committed
+5. This prevents accumulation of breaking changes and provides safe rollback points
+
+### Functional Refactoring Patterns
+- **Function composition over conditionals**: Replace `if` statements with `Result` chaining and `and_then`
+- **Separate pure validation from side effects**: Keep domain validation side-effect free and testable
+- **Clippy-guided improvements**: Use clippy warnings as functional programming guidance
 
 ## Environment Variables
 - `TT_TODAY` - Override current date for testing (format: YYYY-MM-DD)
