@@ -19,6 +19,7 @@ impl Formatter for TextFormatter {
         match report {
             FormatableReport::TasksReport(report) => Self::format_tasks_report(report),
             FormatableReport::OverviewReport(report) => Self::format_overview_report(report),
+            FormatableReport::BreakdownReport(report) => Self::format_breakdown_report(report),
         }
     }
 }
@@ -89,6 +90,43 @@ impl TextFormatter {
         }
 
         result
+    }
+
+    fn format_breakdown_report(report: &reporting::BreakdownReport) -> String {
+        let mut result = String::new();
+        result.push_str(&format_interval(&report.period));
+        result.push('\n');
+        result.push_str(&format!(
+            "Total: {}\n",
+            format_duration(report.total_minutes)
+        ));
+        result.push('\n');
+
+        for group in &report.groups {
+            Self::format_breakdown_group(&mut result, group, 0);
+        }
+
+        result
+    }
+
+    fn format_breakdown_group(
+        result: &mut String,
+        group: &reporting::BreakdownGroup,
+        depth: usize,
+    ) {
+        let indent = "  ".repeat(depth);
+        writeln!(
+            result,
+            "{}{}..{}",
+            indent,
+            group.label,
+            format_duration(group.minutes)
+        )
+        .expect("Writing to String should never fail");
+
+        for child in &group.children {
+            Self::format_breakdown_group(result, child, depth + 1);
+        }
     }
 
     fn format_tasks_report(report: &DetailReport) -> String {

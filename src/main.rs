@@ -25,6 +25,7 @@ fn main() -> Result<()> {
     let exclude_tags = args.exclude_tags();
     let period = args.period(&clock)?;
     let formatter = args.formatter();
+    let breakdown_unit = args.breakdown_unit();
 
     time_tracker::run(
         &args.input,
@@ -34,6 +35,7 @@ fn main() -> Result<()> {
         period.as_ref(),
         args.limit().as_ref(),
         &*formatter,
+        breakdown_unit,
     )
     .map_err(anyhow::Error::from)?;
     Ok(())

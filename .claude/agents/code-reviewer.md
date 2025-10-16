@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-description: PPerforms impact-focused code reviews that identify real problems requiring action. Use this agent after implementing features or making changes to assess whether the code has actual issues that need fixing.
+description: Performs impact-focused code reviews that identify real problems requiring action. Use this agent after implementing features or making changes to assess whether the code has actual issues that need fixing.
 tools: Read, Grep, Glob, LS
 ---
 

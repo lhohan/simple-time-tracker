@@ -19,6 +19,7 @@ pub struct TrackedTime {
     pub entries: Vec<TimeEntry>,
     pub period: TrackingPeriod,
     pub total_minutes: u32,
+    pub entries_by_date: std::collections::HashMap<NaiveDate, Vec<TimeEntry>>,
 }
 
 impl TrackedTime {
@@ -29,6 +30,24 @@ impl TrackedTime {
             entries,
             period: TrackingPeriod::new(start, end, days),
             total_minutes,
+            entries_by_date: std::collections::HashMap::new(),
+        }
+    }
+
+    #[must_use]
+    pub fn with_entries_by_date(
+        entries: Vec<TimeEntry>,
+        entries_by_date: std::collections::HashMap<NaiveDate, Vec<TimeEntry>>,
+        start: StartDate,
+        end: EndDate,
+        days: u32,
+    ) -> Self {
+        let total_minutes = entries.iter().map(|e| e.minutes).sum();
+        Self {
+            entries,
+            period: TrackingPeriod::new(start, end, days),
+            total_minutes,
+            entries_by_date,
         }
     }
 
@@ -405,4 +424,133 @@ impl TrackingPeriod {
 
 pub enum OutputLimit {
     CumulativePercentageThreshold(f64),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BreakdownUnit {
+    Day,
+    Week,
+    Month,
+    Year,
+}
+
+#[derive(Debug, Clone)]
+pub struct BreakdownGroup {
+    pub label: String,
+    pub minutes: u32,
+    pub children: Vec<BreakdownGroup>,
+}
+
+#[derive(Debug)]
+pub struct BreakdownReport {
+    pub groups: Vec<BreakdownGroup>,
+    pub total_minutes: u32,
+    pub period: TrackingPeriod,
+}
+
+impl BreakdownReport {
+    #[must_use]
+    pub fn from_entries(
+        entries: &[TimeEntry],
+        unit: BreakdownUnit,
+        period: TrackingPeriod,
+    ) -> Self {
+        let total_minutes: u32 = entries.iter().map(|e| e.minutes).sum();
+        let groups = match unit {
+            BreakdownUnit::Day => break_down_by_day(entries),
+            BreakdownUnit::Week => break_down_by_week(entries),
+            BreakdownUnit::Month => break_down_by_month(entries),
+            BreakdownUnit::Year => break_down_by_year(entries),
+        };
+
+        Self {
+            groups,
+            total_minutes,
+            period,
+        }
+    }
+
+    #[must_use]
+    pub fn from_tracked_time(time_report: &TrackedTime, unit: BreakdownUnit) -> Self {
+        let groups = match unit {
+            BreakdownUnit::Day => break_down_by_day_with_dates(&time_report.entries_by_date),
+            BreakdownUnit::Week => break_down_by_week_with_entries(&time_report.entries),
+            BreakdownUnit::Month => break_down_by_month_with_entries(&time_report.entries),
+            BreakdownUnit::Year => break_down_by_year_with_entries(&time_report.entries),
+        };
+
+        Self {
+            groups,
+            total_minutes: time_report.total_minutes,
+            period: time_report.period,
+        }
+    }
+}
+
+fn break_down_by_day(_entries: &[TimeEntry]) -> Vec<BreakdownGroup> {
+    // Placeholder - will use entries_by_date from TrackedTime in caller
+    let by_day: std::collections::BTreeMap<NaiveDate, u32> = std::collections::BTreeMap::new();
+    by_day
+        .into_iter()
+        .map(|(date, minutes)| BreakdownGroup {
+            label: label_day(date),
+            minutes,
+            children: vec![],
+        })
+        .collect()
+}
+
+fn break_down_by_day_with_dates(
+    entries_by_date: &std::collections::HashMap<NaiveDate, Vec<TimeEntry>>,
+) -> Vec<BreakdownGroup> {
+    let mut sorted_dates: Vec<_> = entries_by_date.keys().collect();
+    sorted_dates.sort();
+
+    sorted_dates
+        .into_iter()
+        .filter_map(|date| {
+            let total_minutes: u32 = entries_by_date
+                .get(date)
+                .map(|entries| entries.iter().map(|e| e.minutes).sum::<u32>())
+                .unwrap_or(0);
+            if total_minutes > 0 {
+                Some(BreakdownGroup {
+                    label: label_day(*date),
+                    minutes: total_minutes,
+                    children: vec![],
+                })
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
+fn break_down_by_week_with_entries(_entries: &[TimeEntry]) -> Vec<BreakdownGroup> {
+    vec![]
+}
+
+fn break_down_by_month_with_entries(_entries: &[TimeEntry]) -> Vec<BreakdownGroup> {
+    vec![]
+}
+
+fn break_down_by_year_with_entries(_entries: &[TimeEntry]) -> Vec<BreakdownGroup> {
+    vec![]
+}
+
+fn break_down_by_week(_entries: &[TimeEntry]) -> Vec<BreakdownGroup> {
+    vec![]
+}
+
+fn break_down_by_month(_entries: &[TimeEntry]) -> Vec<BreakdownGroup> {
+    vec![]
+}
+
+fn break_down_by_year(_entries: &[TimeEntry]) -> Vec<BreakdownGroup> {
+    vec![]
+}
+
+fn label_day(date: NaiveDate) -> String {
+    let weekday = date.format("%a").to_string();
+    date.format(&format!("%Y-%m-%d ({})", weekday)).to_string()
 }

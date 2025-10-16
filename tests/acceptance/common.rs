@@ -170,6 +170,11 @@ impl CommandSpec {
         self
     }
 
+    pub fn breakdown_flag(mut self, unit: &str) -> Self {
+        self.args.add_option("breakdown", unit);
+        self
+    }
+
     pub fn a_directory_containing_files(mut self, files: &[(&str, &str)]) -> Self {
         let files = files
             .iter()

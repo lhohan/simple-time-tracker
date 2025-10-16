@@ -4,8 +4,8 @@ mod reporting;
 
 pub mod domain;
 
-use domain::reporting::OutputLimit;
 use domain::reporting::OverviewReport;
+use domain::reporting::{BreakdownUnit, OutputLimit};
 use domain::tags::Tag;
 use domain::tags::TagFilter;
 use reporting::FormatableReport;
@@ -26,6 +26,7 @@ use std::path::Path;
 /// - The input contains invalid time formats
 /// - The input contains invalid line formats
 /// - The requested period is invalid
+#[allow(clippy::too_many_arguments)]
 pub fn run(
     input_path: &Path,
     include_details: bool,
@@ -34,6 +35,7 @@ pub fn run(
     period: Option<&PeriodRequested>,
     limit: Option<&OutputLimit>,
     formatter: &dyn Formatter,
+    breakdown_unit: Option<BreakdownUnit>,
 ) -> Result<(), ParseError> {
     let tracking_result = process_inputs(input_path, tag_filter, exclude_tags, period)?;
 
@@ -47,6 +49,7 @@ pub fn run(
         &contexts_requested,
         &tracking_result,
         formatter,
+        breakdown_unit,
     );
     print_warnings(&tracking_result.errors);
 
@@ -71,9 +74,14 @@ fn print_result(
     project: &[Tag],
     tracking_result: &domain::TimeTrackingResult,
     formatter: &dyn Formatter,
+    breakdown_unit: Option<BreakdownUnit>,
 ) {
     if let Some(ref time_report) = tracking_result.time_entries {
-        if include_details {
+        if let Some(unit) = breakdown_unit {
+            let report = domain::reporting::BreakdownReport::from_tracked_time(time_report, unit);
+            let report = FormatableReport::BreakdownReport(&report);
+            println!("{}", formatter.format(&report));
+        } else if include_details {
             let report = time_report.tasks_tracked_for(project);
             let report = FormatableReport::TasksReport(&report);
             println!("{}", formatter.format(&report));

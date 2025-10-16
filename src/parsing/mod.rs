@@ -59,8 +59,14 @@ fn tracked_time(parse_result: &ContentParseResults) -> Option<TrackedTime> {
             let start = entries.keys().min().map(|&date| StartDate(date))?;
             let end = entries.keys().max().map(|&date| EndDate(date))?;
             let days = parse_result.days();
-            let entries = entries.values().flat_map(|v| v.iter().cloned()).collect();
-            Some(TrackedTime::new(entries, start, end, days))
+            let flat_entries = entries.values().flat_map(|v| v.iter().cloned()).collect();
+            Some(TrackedTime::with_entries_by_date(
+                flat_entries,
+                entries.clone(),
+                start,
+                end,
+                days,
+            ))
         })
 }
 

@@ -1,7 +1,7 @@
 use clap::Parser;
 use std::path::PathBuf;
 
-use crate::domain::reporting::OutputLimit;
+use crate::domain::reporting::{BreakdownUnit, OutputLimit};
 use crate::domain::tags::TagFilter;
 use crate::domain::time::Clock;
 use crate::domain::ParseError;
@@ -49,9 +49,11 @@ pub struct Args {
     )]
     period: Option<String>,
 
-    /// Format of the output
     #[arg(long, value_name = "text, markdown", default_value = "text")]
     pub format: Option<String>,
+
+    #[arg(long, value_name = "day, week, month, year, auto")]
+    pub breakdown: Option<String>,
 }
 
 impl Args {
@@ -73,7 +75,12 @@ impl Args {
             return Err("--details flag requires --tags to be specified".to_string());
         }
 
-        // Add any other validations here
+        // Check if breakdown is specified without tags or project
+        if self.breakdown.is_some() && self.tags.is_none() && self.project.is_none() {
+            return Err(
+                "--breakdown flag requires --tags or --project to be specified".to_string(),
+            );
+        }
 
         Ok(())
     }
@@ -156,5 +163,19 @@ impl Args {
     #[must_use]
     pub fn formatter(&self) -> Box<dyn Formatter> {
         <dyn Formatter>::from_str(self.format.as_ref())
+    }
+
+    #[must_use]
+    pub fn breakdown_unit(&self) -> Option<BreakdownUnit> {
+        self.breakdown
+            .as_ref()
+            .and_then(|b| match b.to_lowercase().as_str() {
+                "day" => Some(BreakdownUnit::Day),
+                "week" => Some(BreakdownUnit::Week),
+                "month" => Some(BreakdownUnit::Month),
+                "year" => Some(BreakdownUnit::Year),
+                "auto" => Some(BreakdownUnit::Day), // Default to day for now
+                _ => None,
+            })
     }
 }

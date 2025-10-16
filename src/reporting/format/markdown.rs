@@ -15,6 +15,7 @@ impl Formatter for MarkdownFormatter {
                 report.total_minutes(),
             ),
             FormatableReport::TasksReport(report) => Self::format_tasks_report(report),
+            FormatableReport::BreakdownReport(report) => Self::format_breakdown_report(report),
         }
     }
 }
@@ -52,6 +53,52 @@ impl MarkdownFormatter {
         }
 
         result
+    }
+
+    fn format_breakdown_report(report: &crate::domain::reporting::BreakdownReport) -> String {
+        let mut result = String::new();
+        writeln!(
+            &mut result,
+            "# Time Breakdown Report\n\n- **Period**: {} -> {}\n- **Total**: {}\n",
+            report.period.start.0.format("%Y-%m-%d"),
+            report.period.end.0.format("%Y-%m-%d"),
+            format_duration(report.total_minutes)
+        )
+        .expect("Writing to String should never fail");
+
+        for group in &report.groups {
+            Self::format_breakdown_group(&mut result, group, 2);
+        }
+
+        result
+    }
+
+    fn format_breakdown_group(
+        result: &mut String,
+        group: &crate::domain::reporting::BreakdownGroup,
+        heading_level: usize,
+    ) {
+        let heading = "#".repeat(heading_level);
+        writeln!(result, "\n{} {}\n", heading, group.label)
+            .expect("Writing to String should never fail");
+
+        if group.children.is_empty() {
+            writeln!(result, "- **Time**: {}\n", format_duration(group.minutes))
+                .expect("Writing to String should never fail");
+        } else {
+            for child in &group.children {
+                writeln!(
+                    result,
+                    "- {}: {}",
+                    child.label,
+                    format_duration(child.minutes)
+                )
+                .expect("Writing to String should never fail");
+                for grandchild in &child.children {
+                    Self::format_breakdown_group(result, grandchild, heading_level + 2);
+                }
+            }
+        }
     }
 
     fn format_tasks_report(report: &DetailReport) -> String {
