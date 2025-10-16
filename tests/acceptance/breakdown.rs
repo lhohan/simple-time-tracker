@@ -1,7 +1,7 @@
 use crate::common::*;
 
 #[test]
-fn breakdown_requires_tags_or_project() {
+fn breakdown_should_require_tags_or_project() {
     let some_content = r"## TT 2020-01-01
 - #tag-1 1h Task A";
 
@@ -27,6 +27,19 @@ fn breakdown_day_should_succeed_with_tags() {
 }
 
 #[test]
+fn breakdown_day_should_succeed_with_project() {
+    let some_content = r"## TT 2020-01-01
+- #tag-1 1h Task A";
+
+    Cmd::given()
+        .breakdown_flag("day")
+        .project_filter("tag-1")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed();
+}
+
+#[test]
 fn breakdown_day_should_show_day_entries() {
     let some_content = r"## TT 2020-01-01
 - #tag-1 1h Task A
@@ -44,7 +57,7 @@ fn breakdown_day_should_show_day_entries() {
 }
 
 #[test]
-fn breakdown_day_markdown_format() {
+fn breakdown_with_markdown_format_should_show_markdown_output() {
     let some_content = r"## TT 2020-01-01
 - #tag-1 1h Task A";
 
@@ -62,7 +75,7 @@ fn breakdown_day_markdown_format() {
 }
 
 #[test]
-fn breakdown_day_chronological_ordering() {
+fn breakdown_day_should_order_chronologically() {
     let some_content = r"## TT 2020-01-03
 - #tag-1 1h Task C
 
@@ -84,7 +97,7 @@ fn breakdown_day_chronological_ordering() {
 }
 
 #[test]
-fn breakdown_day_human_friendly_labels() {
+fn breakdown_by_day_should_show_human_friendly_labels() {
     let some_content = r"## TT 2020-01-01
 - #tag-1 1h Task A";
 
@@ -99,7 +112,7 @@ fn breakdown_day_human_friendly_labels() {
 }
 
 #[test]
-fn breakdown_day_omits_zero_entry_dates() {
+fn breakdown_by_day_should_omit_zero_entry_dates() {
     let some_content = r"## TT 2020-01-01
 - #tag-1 1h Task A
 
@@ -119,7 +132,7 @@ fn breakdown_day_omits_zero_entry_dates() {
 }
 
 #[test]
-fn breakdown_week_shows_week_with_day_children() {
+fn breakdown_by_week_should_show_hierarchical_weeks_days() {
     let some_content = r"## TT 2020-01-01
 - #tag-1 1h Task A
 
@@ -144,7 +157,7 @@ fn breakdown_week_shows_week_with_day_children() {
 }
 
 #[test]
-fn breakdown_month_shows_hierarchical_month_weeks_days() {
+fn breakdown_by_month_should_show_hierarchical_months_weeks() {
     let some_content = r"## TT 2020-01-01
 - #tag-1 1h Task A
 
@@ -159,13 +172,32 @@ fn breakdown_month_shows_hierarchical_month_weeks_days() {
         .when_run()
         .should_succeed()
         .expect_output("2020-01..") // shows month
+        .expect_output("3h 00m") // shows month total time
         .expect_output("2020-W01") // shows week 1
-        .expect_output("2020-W02") // shows week 2
-        .expect_output("3h 00m"); // shows month total time
+        .expect_output("2020-W02"); // shows week 2
 }
 
 #[test]
-fn breakdown_year_shows_hierarchical_year_months() {
+fn breakdown_by_month_should_not_show_days() {
+    let some_content = r"## TT 2020-01-01
+- #tag-1 1h Task A
+
+## TT 2020-01-15
+- #tag-1 1h Task B";
+
+    Cmd::given()
+        .breakdown_flag("month")
+        .tags_filter(&["tag-1"])
+        .at_date("2020-01-15")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_no_text("2020-01-01 (")
+        .expect_no_text("2020-01-15 (");
+}
+
+#[test]
+fn breakdown_by_year_should_show_hierarchical_years_months() {
     let some_content = r"## TT 2020-01-15
 - #tag-1 1h Task A
 
@@ -183,4 +215,24 @@ fn breakdown_year_shows_hierarchical_year_months() {
         .expect_output("2020-01")
         .expect_output("2020-02")
         .expect_output("3h 00m");
+}
+
+#[test]
+fn breakdown_by_year_should_not_show_weeks() {
+    let some_content = r"## TT 2020-01-01
+- #tag-1 1h Task A
+
+## TT 2020-01-08
+- #tag-1 2h Task B";
+
+    Cmd::given()
+        .breakdown_flag("year")
+        .tags_filter(&["tag-1"])
+        .at_date("2020-01-08")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2020") // show year
+        .expect_output("2020-01") // show month
+        .expect_no_text("2020-W01"); // don't show weeks
 }

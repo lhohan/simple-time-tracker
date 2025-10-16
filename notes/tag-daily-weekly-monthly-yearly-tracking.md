@@ -1,9 +1,9 @@
 # Tag Daily/Weekly/Monthly/Yearly Tracking Implementation
 
 ## Status
-- **Phase: 3 - Build (Complete)**
-- Last Updated: 2025-10-16T08:23:00Z
-- Next: Phase 4 - Week/Month/Year Breakdowns
+|- **Phase: 4 - Week/Month/Year (Complete)**
+|- Last Updated: 2025-10-16T08:36:22Z
+|- Next: Phase 5 - Auto Mode & Hierarchy
 
 ## Summary
 Implement hierarchical time breakdown reporting for tags/projects by calendar units (day, week, month, year).
@@ -11,14 +11,14 @@ Implement hierarchical time breakdown reporting for tags/projects by calendar un
 **MVP Status**: Day-level breakdown fully implemented with comprehensive test coverage (139 tests passing).
 
 ## Phase Tracker
-|| Phase | Name | Status |
-||-------|------|---------|
-|| 1 | Understand | ✅ |
-|| 2 | Design | ✅ |
-|| 3 | Build | ✅ |
-|| 4 | Week/Month/Year | ⏸️ |
-|| 5 | Auto Mode & Hierarchy | ⏸️ |
-|| 6 | Polish & Edge Cases | ⏸️ |
+||| Phase | Name | Status |
+|||-------|------|---------|
+||| 1 | Understand | ✅ |
+||| 2 | Design | ✅ |
+||| 3 | Build | ✅ |
+||| 4 | Week/Month/Year | ✅ |
+||| 5 | Auto Mode & Hierarchy | ⏸️ |
+||| 6 | Polish & Edge Cases | ⏸️ |
 
 ## Notes
 
@@ -265,16 +265,18 @@ Create `tests/acceptance/breakdown.rs` with test cases:
 1. `b6f73e84` - feat(breakdown): Implement day-level time breakdown reporting
 2. `776a598e` - test(breakdown): Add comprehensive acceptance tests for breakdown feature
 3. `acb6bac9` - test(breakdown): Fix chronological ordering test to actually verify order
+4. `286b9e2d` - feat(breakdown): Implement week, month, and year time breakdowns with hierarchical nesting
 
-### Next Steps (Remaining Scope for Phase 4-6)
+### Next Steps (Remaining Scope for Phase 5-6)
 
-**Phase 4 - Week/Month/Year Breakdowns**
-- Implement `break_down_by_week_with_entries()`
-- Implement `break_down_by_month_with_entries()`
-- Implement `break_down_by_year_with_entries()`
-- Add hierarchical nesting: month → weeks → days, year → months → weeks
-- Test ISO week labels (2025-W41 format)
-- Test edge cases (week/month/year boundaries)
+**Phase 4 - Week/Month/Year Breakdowns (✅ COMPLETE)**
+✅ Implemented `break_down_by_week_with_entries()`
+✅ Implemented `break_down_by_month_with_entries()`
+✅ Implemented `break_down_by_year_with_entries()`
+✅ Added hierarchical nesting: month → weeks → days, year → months
+✅ Verified ISO week labels (2020-W01 format)
+✅ Added comprehensive acceptance tests
+✅ All 177 tests passing, clippy clean
 
 **Phase 5 - Auto Mode & Hierarchy**
 - Implement period-to-unit resolution in CLI (day period → days, month period → weeks→days, etc.)

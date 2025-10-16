@@ -561,15 +561,13 @@ fn break_down_by_week_with_entries(
         .collect()
 }
 
-type MonthWeekDayMap = std::collections::BTreeMap<
-    (i32, u32),
-    std::collections::BTreeMap<(i32, u32), std::collections::BTreeMap<NaiveDate, u32>>,
->;
-
 fn break_down_by_month_with_entries(
     entries_by_date: &std::collections::HashMap<NaiveDate, Vec<TimeEntry>>,
 ) -> Vec<BreakdownGroup> {
-    let mut months_map: MonthWeekDayMap = std::collections::BTreeMap::new();
+    let mut months_map: std::collections::BTreeMap<
+        (i32, u32),
+        std::collections::BTreeMap<(i32, u32), u32>,
+    > = std::collections::BTreeMap::new();
 
     for (&date, entries) in entries_by_date {
         let year = date.year();
@@ -582,8 +580,8 @@ fn break_down_by_month_with_entries(
             .entry((year, month))
             .or_default()
             .entry(week_key)
-            .or_default()
-            .insert(date, minutes);
+            .and_modify(|m| *m += minutes)
+            .or_insert(minutes);
     }
 
     months_map
@@ -591,21 +589,10 @@ fn break_down_by_month_with_entries(
         .map(|((year, month), weeks_in_month)| {
             let children: Vec<BreakdownGroup> = weeks_in_month
                 .into_iter()
-                .map(|((week_year, week), days_in_week)| {
-                    let day_children: Vec<BreakdownGroup> = days_in_week
-                        .into_iter()
-                        .map(|(date, minutes)| BreakdownGroup {
-                            label: label_day(date),
-                            minutes,
-                            children: vec![],
-                        })
-                        .collect();
-                    let minutes: u32 = day_children.iter().map(|c| c.minutes).sum();
-                    BreakdownGroup {
-                        label: label_week(week_year, week),
-                        minutes,
-                        children: day_children,
-                    }
+                .map(|((week_year, week), minutes)| BreakdownGroup {
+                    label: label_week(week_year, week),
+                    minutes,
+                    children: vec![],
                 })
                 .collect();
             let minutes: u32 = children.iter().map(|c| c.minutes).sum();
