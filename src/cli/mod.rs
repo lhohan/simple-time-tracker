@@ -172,9 +172,9 @@ impl Args {
             match breakdown_str.as_str() {
                 "auto" => Self::auto_breakdown_unit(period),
                 "day" | "d" => Some(BreakdownUnit::Day),
-                "week" => Some(BreakdownUnit::Week),
-                "month" => Some(BreakdownUnit::Month),
-                "year" => Some(BreakdownUnit::Year),
+                "week" | "w" => Some(BreakdownUnit::Week),
+                "month" | "m" => Some(BreakdownUnit::Month),
+                "year" | "y" => Some(BreakdownUnit::Year),
                 _ => None,
             }
         })

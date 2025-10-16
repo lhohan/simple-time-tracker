@@ -58,6 +58,66 @@ fn breakdown_day_should_show_day_entries(#[values("day", "d")] flag: &str) {
         .expect_output("1h 30m");
 }
 
+#[rstest]
+fn breakdown_week_should_show_week_entries(#[values("week", "w")] flag: &str) {
+    let some_content = r"## TT 2020-01-01
+- #tag-1 1h Task A
+
+## TT 2020-01-02
+- #tag-1 30m Task B
+
+## TT 2020-01-03
+- #tag-1 30m Task C";
+
+    Cmd::given()
+        .breakdown_flag(flag)
+        .tags_filter(&["tag-1"])
+        .at_date("2020-01-03")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2020-W01")
+        .expect_output("2h 00m");
+}
+
+#[rstest]
+fn breakdown_month_should_show_month_entries(#[values("month", "m")] flag: &str) {
+    let some_content = r"## TT 2020-01-01
+- #tag-1 1h Task A
+
+## TT 2020-01-08
+- #tag-1 2h Task B";
+
+    Cmd::given()
+        .breakdown_flag(flag)
+        .tags_filter(&["tag-1"])
+        .at_date("2020-01-08")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2020-01..")
+        .expect_output("3h 00m");
+}
+
+#[rstest]
+fn breakdown_year_should_show_year_entries(#[values("year", "y")] flag: &str) {
+    let some_content = r"## TT 2020-01-15
+- #tag-1 1h Task A
+
+## TT 2020-02-20
+- #tag-1 2h Task B";
+
+    Cmd::given()
+        .breakdown_flag(flag)
+        .tags_filter(&["tag-1"])
+        .at_date("2020-02-20")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2020")
+        .expect_output("3h 00m");
+}
+
 #[test]
 fn breakdown_with_markdown_format_should_show_markdown_output() {
     let some_content = r"## TT 2020-01-01
