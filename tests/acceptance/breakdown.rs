@@ -1,3 +1,5 @@
+use rstest::rstest;
+
 use crate::common::*;
 
 #[test]
@@ -39,20 +41,20 @@ fn breakdown_day_should_succeed_with_project() {
         .should_succeed();
 }
 
-#[test]
-fn breakdown_day_should_show_day_entries() {
+#[rstest]
+fn breakdown_day_should_show_day_entries(#[values("day", "d")] flag: &str) {
     let some_content = r"## TT 2020-01-01
 - #tag-1 1h Task A
 - #tag-1 30m Task B";
 
     Cmd::given()
-        .breakdown_flag("day")
+        .breakdown_flag(flag)
         .tags_filter(&["tag-1"])
         .at_date("2020-01-01")
         .a_file_with_content(some_content)
         .when_run()
         .should_succeed()
-        .expect_output("2020-01-01")
+        .expect_output("2020-01-01 (")
         .expect_output("1h 30m");
 }
 
@@ -93,7 +95,7 @@ fn breakdown_day_should_order_chronologically() {
         .when_run()
         .should_succeed()
         // Verify dates appear in strict chronological order using regex pattern with multiline
-        .expect_output_pattern(r"2020-01-01(?s).*2020-01-02(?s).*2020-01-03");
+        .expect_output_pattern(r"2020-01-01 \((?s).*2020-01-02 \((?s).*2020-01-03 \(");
 }
 
 #[test]
@@ -128,7 +130,7 @@ fn breakdown_by_day_should_omit_zero_entry_dates() {
         .a_file_with_content(some_content)
         .when_run()
         .should_succeed()
-        .expect_no_text("2020-01-02");
+        .expect_no_text("2020-01-02 (");
 }
 
 #[test]
@@ -150,9 +152,9 @@ fn breakdown_by_week_should_show_hierarchical_weeks_days() {
         .when_run()
         .should_succeed()
         .expect_output("2020-W01") // show week number
-        .expect_output("2020-01-01") // show day
-        .expect_output("2020-01-02") // show day
-        .expect_output("2020-01-03") // show day
+        .expect_output("2020-01-01 (") // show day
+        .expect_output("2020-01-02 (") // show day
+        .expect_output("2020-01-03 (") // show day
         .expect_output("2h 00m"); // show total time
 }
 
@@ -251,7 +253,7 @@ fn breakdown_auto_with_day_period_should_show_weeks() {
         .when_run()
         .should_succeed()
         .expect_output("2020-W01") // show week (one level above day period)
-        .expect_output("2020-01-01"); // show days
+        .expect_output("2020-01-01 ("); // show days
 }
 
 #[test]
@@ -339,9 +341,9 @@ fn breakdown_by_week_should_handle_iso_week_boundary_year_transition() {
         .when_run()
         .should_succeed()
         .expect_output("2020-W53") // ISO week 53 spans years
-        .expect_output("2020-12-28")
-        .expect_output("2020-12-31")
-        .expect_output("2021-01-01")
+        .expect_output("2020-12-28 (")
+        .expect_output("2020-12-31 (")
+        .expect_output("2021-01-01 (")
         .expect_output("3h 00m");
 }
 

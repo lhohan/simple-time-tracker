@@ -52,7 +52,7 @@ pub struct Args {
     #[arg(long, value_name = "text, markdown", default_value = "text")]
     pub format: Option<String>,
 
-    #[arg(long, value_name = "day, week, month, year, auto")]
+    #[arg(long, value_name = "day, d, week, month, year, auto")]
     pub breakdown: Option<String>,
 }
 
@@ -171,7 +171,7 @@ impl Args {
             let breakdown_str = b.to_lowercase();
             match breakdown_str.as_str() {
                 "auto" => Self::auto_breakdown_unit(period),
-                "day" => Some(BreakdownUnit::Day),
+                "day" | "d" => Some(BreakdownUnit::Day),
                 "week" => Some(BreakdownUnit::Week),
                 "month" => Some(BreakdownUnit::Month),
                 "year" => Some(BreakdownUnit::Year),
