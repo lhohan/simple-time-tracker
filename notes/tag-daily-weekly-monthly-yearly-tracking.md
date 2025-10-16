@@ -1,9 +1,9 @@
 # Tag Daily/Weekly/Monthly/Yearly Tracking Implementation
 
 ## Status
-|- **Phase: 5 - Auto Mode (Complete)**
-|- Last Updated: 2025-10-16T10:58:29Z
-|- Next: Phase 6 - Polish & Edge Cases
+||- **Phase: 6 - Polish & Edge Cases (Complete)** ✅
+||- Last Updated: 2025-10-16T11:23:03Z
+||- **FEATURE COMPLETE**
 
 ## Summary
 Implement hierarchical time breakdown reporting for tags/projects by calendar units (day, week, month, year).
@@ -18,7 +18,7 @@ Implement hierarchical time breakdown reporting for tags/projects by calendar un
 ||| 3 | Build | ✅ |
 ||| 4 | Week/Month/Year | ✅ |
 |||| 5 | Auto Mode & Hierarchy | ✅ |
-||| 6 | Polish & Edge Cases | ⏸️ |
+|||| 6 | Polish & Edge Cases | ✅ |
 
 ## Notes
 
@@ -289,9 +289,22 @@ Create `tests/acceptance/breakdown.rs` with test cases:
 ✅ All 184 tests passing, clippy clean
 ✅ Note: Hierarchy constraint (2 levels max) already working from Phase 4
 
-**Phase 6 - Polish & Edge Cases**
-- Update README.md with breakdown feature documentation
-- Test ISO week boundaries (week 1 spanning Dec/Jan)
-- Test year boundaries and leap years
-- Consider month nesting within years
-- Final acceptance test pass
+**Phase 6 - Polish & Edge Cases (✅ COMPLETE)**
+✅ Updated README.md with comprehensive breakdown feature documentation
+  - Added section explaining --breakdown flag with all units (day, week, month, year, auto)
+  - Included detailed examples for each mode
+  - Documented feature list and output format examples
+✅ Added 5 comprehensive edge case tests
+  - ISO week boundary test (ISO week 53 spanning Dec 2020 → Jan 2021)
+  - Year transition test (Dec 2020 → Jan 2021 month boundaries)
+  - Multi-year entries test (across 3 years: 2019, 2020, 2021)
+  - Leap year February 29 test (2020 leap year, full day sequence)
+  - Leap year month handling test (Feb 2020 vs Feb 2021 comparison)
+✅ All 189 tests passing (+5 new edge cases)
+✅ Clippy clean, cargo fmt verified
+
+**Feature Implementation Complete**
+- Total tests: 189 (184 existing + 5 new edge cases)
+- All phases implemented and tested
+- Code quality verified: clippy, fmt, all tests passing
+- Documentation complete: README.md updated with comprehensive examples

@@ -318,3 +318,77 @@ fn breakdown_auto_with_year_period_should_show_years_and_months() {
         .expect_output("2020-02..")
         .expect_no_text("2020-W01"); // don't show weeks
 }
+
+#[test]
+fn breakdown_by_week_should_handle_iso_week_boundary_year_transition() {
+    // ISO week 53 in 2020 includes Dec 28-31, 2020 (and Jan 1, 2021)
+    let some_content = r"## TT 2020-12-28
+- #tag-1 1h Task A
+
+## TT 2020-12-31
+- #tag-1 1h Task B
+
+## TT 2021-01-01
+- #tag-1 1h Task C";
+
+    Cmd::given()
+        .breakdown_flag("week")
+        .tags_filter(&["tag-1"])
+        .at_date("2021-01-01")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2020-W53") // ISO week 53 spans years
+        .expect_output("2020-12-28")
+        .expect_output("2020-12-31")
+        .expect_output("2021-01-01")
+        .expect_output("3h 00m");
+}
+
+#[test]
+fn breakdown_by_month_should_handle_year_transition() {
+    let some_content = r"## TT 2020-12-15
+- #tag-1 1h Task A
+
+## TT 2021-01-15
+- #tag-1 2h Task B
+
+## TT 2021-02-15
+- #tag-1 4h Task C";
+
+    Cmd::given()
+        .breakdown_flag("month")
+        .tags_filter(&["tag-1"])
+        .at_date("2021-02-15")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2020-12..")
+        .expect_output("2021-01..")
+        .expect_output("2021-02..")
+        .expect_output("7h 00m");
+}
+
+#[test]
+fn breakdown_by_year_should_handle_multi_year_entries() {
+    let some_content = r"## TT 2019-06-15
+- #tag-1 1h Task A
+
+## TT 2020-03-20
+- #tag-1 2h Task B
+
+## TT 2021-11-10
+- #tag-1 3h Task C";
+
+    Cmd::given()
+        .breakdown_flag("year")
+        .tags_filter(&["tag-1"])
+        .at_date("2021-11-10")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2019..") // show all three years
+        .expect_output("2020..")
+        .expect_output("2021..")
+        .expect_output("6h 00m"); // total time across years
+}
