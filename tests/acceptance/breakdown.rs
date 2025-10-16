@@ -236,3 +236,85 @@ fn breakdown_by_year_should_not_show_weeks() {
         .expect_output("2020-01") // show month
         .expect_no_text("2020-W01"); // don't show weeks
 }
+
+#[test]
+fn breakdown_auto_with_day_period_should_show_weeks() {
+    let some_content = r"## TT 2020-01-01
+- #tag-1 1h Task A
+- #tag-1 30m Task B";
+
+    Cmd::given()
+        .breakdown_flag("auto")
+        .period_filter("2020-01-01")
+        .tags_filter(&["tag-1"])
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2020-W01") // show week (one level above day period)
+        .expect_output("2020-01-01"); // show days
+}
+
+#[test]
+fn breakdown_auto_with_week_period_should_show_months() {
+    let some_content = r"## TT 2020-01-06
+- #tag-1 1h Task A
+
+## TT 2020-01-07
+- #tag-1 2h Task B";
+
+    Cmd::given()
+        .breakdown_flag("auto")
+        .period_filter("this-week")
+        .tags_filter(&["tag-1"])
+        .at_date("2020-01-07")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2020-01..") // show month (one level above week period)
+        .expect_output("2020-W02") // show weeks
+        .expect_no_text("2020-01-06 (") // don't show days
+        .expect_output("3h 00m");
+}
+
+#[test]
+fn breakdown_auto_with_month_period_should_show_years() {
+    let some_content = r"## TT 2020-02-01
+- #tag-1 1h Task A
+
+## TT 2020-02-15
+- #tag-1 2h Task B";
+
+    Cmd::given()
+        .breakdown_flag("auto")
+        .period_filter("this-month")
+        .tags_filter(&["tag-1"])
+        .at_date("2020-02-15")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2020..") // show year (one level above month period)
+        .expect_output("2020-02..") // show months
+        .expect_no_text("2020-W01") // don't show weeks
+        .expect_output("3h 00m");
+}
+
+#[test]
+fn breakdown_auto_with_year_period_should_show_years_and_months() {
+    let some_content = r"## TT 2020-01-01
+- #tag-1 1h Task A
+
+## TT 2020-02-01
+- #tag-1 2h Task B";
+
+    Cmd::given()
+        .breakdown_flag("auto")
+        .period_filter("2020")
+        .tags_filter(&["tag-1"])
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2020..") // show year (stays at year for year period)
+        .expect_output("2020-01..") // show months
+        .expect_output("2020-02..")
+        .expect_no_text("2020-W01"); // don't show weeks
+}

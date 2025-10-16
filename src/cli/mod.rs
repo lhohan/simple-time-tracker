@@ -166,15 +166,28 @@ impl Args {
     }
 
     #[must_use]
-    pub fn breakdown_unit(&self) -> Option<BreakdownUnit> {
-        self.breakdown
-            .as_ref()
-            .and_then(|b| match b.to_lowercase().as_str() {
-                "day" | "auto" => Some(BreakdownUnit::Day), // Default to day for now
+    pub fn breakdown_unit(&self, period: Option<&PeriodRequested>) -> Option<BreakdownUnit> {
+        self.breakdown.as_ref().and_then(|b| {
+            let breakdown_str = b.to_lowercase();
+            match breakdown_str.as_str() {
+                "auto" => Self::auto_breakdown_unit(period),
+                "day" => Some(BreakdownUnit::Day),
                 "week" => Some(BreakdownUnit::Week),
                 "month" => Some(BreakdownUnit::Month),
                 "year" => Some(BreakdownUnit::Year),
                 _ => None,
-            })
+            }
+        })
+    }
+
+    #[must_use]
+    fn auto_breakdown_unit(period: Option<&PeriodRequested>) -> Option<BreakdownUnit> {
+        // Resolve to one level above the period:
+        // day -> week, week -> month, month -> year, year -> year
+        period.map(|p| match p {
+            PeriodRequested::Day(_) | PeriodRequested::FromDate(_) => BreakdownUnit::Week,
+            PeriodRequested::WeekOf(_) => BreakdownUnit::Month,
+            PeriodRequested::MonthOf(_) | PeriodRequested::YearOf(_) => BreakdownUnit::Year,
+        })
     }
 }
