@@ -170,11 +170,10 @@ impl Args {
         self.breakdown
             .as_ref()
             .and_then(|b| match b.to_lowercase().as_str() {
-                "day" => Some(BreakdownUnit::Day),
+                "day" | "auto" => Some(BreakdownUnit::Day), // Default to day for now
                 "week" => Some(BreakdownUnit::Week),
                 "month" => Some(BreakdownUnit::Month),
                 "year" => Some(BreakdownUnit::Year),
-                "auto" => Some(BreakdownUnit::Day), // Default to day for now
                 _ => None,
             })
     }

@@ -96,10 +96,12 @@ impl TextFormatter {
         let mut result = String::new();
         result.push_str(&format_interval(&report.period));
         result.push('\n');
-        result.push_str(&format!(
-            "Total: {}\n",
+        writeln!(
+            &mut result,
+            "Total: {}",
             format_duration(report.total_minutes)
-        ));
+        )
+        .expect("Writing to String should never fail");
         result.push('\n');
 
         for group in &report.groups {
