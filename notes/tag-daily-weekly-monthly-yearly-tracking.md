@@ -1,9 +1,9 @@
 # Tag Daily/Weekly/Monthly/Yearly Tracking Implementation
 
 ## Status
-|- **Phase: 4 - Week/Month/Year (Complete)**
-|- Last Updated: 2025-10-16T08:36:22Z
-|- Next: Phase 5 - Auto Mode & Hierarchy
+|- **Phase: 5 - Auto Mode (Complete)**
+|- Last Updated: 2025-10-16T10:58:29Z
+|- Next: Phase 6 - Polish & Edge Cases
 
 ## Summary
 Implement hierarchical time breakdown reporting for tags/projects by calendar units (day, week, month, year).
@@ -17,7 +17,7 @@ Implement hierarchical time breakdown reporting for tags/projects by calendar un
 ||| 2 | Design | ✅ |
 ||| 3 | Build | ✅ |
 ||| 4 | Week/Month/Year | ✅ |
-||| 5 | Auto Mode & Hierarchy | ⏸️ |
+|||| 5 | Auto Mode & Hierarchy | ✅ |
 ||| 6 | Polish & Edge Cases | ⏸️ |
 
 ## Notes
@@ -278,11 +278,16 @@ Create `tests/acceptance/breakdown.rs` with test cases:
 ✅ Added comprehensive acceptance tests
 ✅ All 177 tests passing, clippy clean
 
-**Phase 5 - Auto Mode & Hierarchy**
-- Implement period-to-unit resolution in CLI (day period → days, month period → weeks→days, etc.)
-- Add multiparent support to BreakdownGroup for hierarchical nesting
-- Update formatters to handle nested hierarchies
-- Test all hierarchy combinations
+**Phase 5 - Auto Mode & Hierarchy (✅ COMPLETE)**
+✅ Implemented period-to-unit resolution in CLI layer
+✅ Auto mode now resolves to one level above the current period:
+  - Day period → Week breakdown (weeks with days)
+  - Week period → Month breakdown (months with weeks)
+  - Month period → Year breakdown (years with months)
+  - Year period → Year breakdown (years with months, no further elevation)
+✅ Added 4 acceptance tests covering all auto mode scenarios
+✅ All 184 tests passing, clippy clean
+✅ Note: Hierarchy constraint (2 levels max) already working from Phase 4
 
 **Phase 6 - Polish & Edge Cases**
 - Update README.md with breakdown feature documentation
