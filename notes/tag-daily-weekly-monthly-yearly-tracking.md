@@ -1,23 +1,24 @@
 # Tag Daily/Weekly/Monthly/Yearly Tracking Implementation
 
 ## Status
-- Phase: 3 - Build (MVP Complete)
-- Last Updated: 2025-10-16T07:50:00Z
+- **Phase: 3 - Build (Complete)**
+- Last Updated: 2025-10-16T08:23:00Z
+- Next: Phase 4 - Week/Month/Year Breakdowns
 
 ## Summary
-Implement hierarchical time breakdown reporting for tags/projects by calendar units (day, week, month, year)
+Implement hierarchical time breakdown reporting for tags/projects by calendar units (day, week, month, year).
+
+**MVP Status**: Day-level breakdown fully implemented with comprehensive test coverage (139 tests passing).
 
 ## Phase Tracker
-| Phase | Name | Status |
-|-------|------|---------|
-| 1 | Understand | ✅ |
-| 2 | Design | 🔄 |
-| 3 | Build | ✅ |
-| 4 | Review | ⏸️ |
-| 5 | Deliver | ⏸️ |
-| 6 | Iterate | ⏸️ |
-| 7 | Reflect | ⏸️ |
-| 8 | Clean Up | ⏸️ |
+|| Phase | Name | Status |
+||-------|------|---------|
+|| 1 | Understand | ✅ |
+|| 2 | Design | ✅ |
+|| 3 | Build | ✅ |
+|| 4 | Week/Month/Year | ⏸️ |
+|| 5 | Auto Mode & Hierarchy | ⏸️ |
+|| 6 | Polish & Edge Cases | ⏸️ |
 
 ## Notes
 
@@ -210,7 +211,7 @@ Create `tests/acceptance/breakdown.rs` with test cases:
 
 ---
 
-## Phase 3 - Build (MVP Complete)
+## Phase 3 - Build (MVP + Comprehensive Tests Complete)
 
 ### Incremental Implementation (TDD)
 
@@ -241,20 +242,49 @@ Create `tests/acceptance/breakdown.rs` with test cases:
 - Ran `cargo fmt` - formatted all source files
 - All 135 tests pass (3 new breakdown + 132 existing)
 
+**Step 8**: Added comprehensive acceptance tests
+- `breakdown_day_markdown_format` - verifies markdown output with headers
+- `breakdown_day_chronological_ordering` - uses multiline regex to verify strict date ordering
+- `breakdown_day_human_friendly_labels` - checks for weekday abbreviations ("Wed", etc.)
+- `breakdown_day_omits_zero_entry_dates` - confirms empty-date exclusion
+- Added `expect_output_pattern()` helper to test DSL for regex-based assertions
+- All 139 tests passing (7 breakdown + 132 existing)
+
 ### MVP Scope Completed
 ✅ `--breakdown day` works with tag filtering
 ✅ Validation matches `--details` pattern
-✅ Text and markdown formats implemented
-✅ Zero-entry dates omitted (filtering in grouping)
-✅ Chronological ordering (BTreeMap natural sort)
-✅ Human-friendly labels (dates with weekday names)
-✅ All tests passing
-✅ Clippy clean
-✅ Code formatted
+✅ **Text format tested** - indented hierarchical output
+✅ **Markdown format tested** - heading-based hierarchical output
+✅ **Chronological ordering tested** - strict date sequence verification
+✅ **Human-friendly labels tested** - weekday abbreviations present
+✅ **Zero-entry dates tested** - confirmed omission of empty dates
+✅ All 139 tests passing
+✅ Clippy clean, formatted
 
-### Next Steps (Remaining Scope)
-- Implement week/month/year breakdown functions
-- Add auto mode logic to CLI (resolve period → unit)
-- Extend hierarchical nesting (month → weeks → days, etc.)
-- Add more acceptance tests for other calendar units
-- Consider edge cases (ISO week boundaries, year boundaries)
+### Commits Made
+1. `b6f73e84` - feat(breakdown): Implement day-level time breakdown reporting
+2. `776a598e` - test(breakdown): Add comprehensive acceptance tests for breakdown feature
+3. `acb6bac9` - test(breakdown): Fix chronological ordering test to actually verify order
+
+### Next Steps (Remaining Scope for Phase 4-6)
+
+**Phase 4 - Week/Month/Year Breakdowns**
+- Implement `break_down_by_week_with_entries()`
+- Implement `break_down_by_month_with_entries()`
+- Implement `break_down_by_year_with_entries()`
+- Add hierarchical nesting: month → weeks → days, year → months → weeks
+- Test ISO week labels (2025-W41 format)
+- Test edge cases (week/month/year boundaries)
+
+**Phase 5 - Auto Mode & Hierarchy**
+- Implement period-to-unit resolution in CLI (day period → days, month period → weeks→days, etc.)
+- Add multiparent support to BreakdownGroup for hierarchical nesting
+- Update formatters to handle nested hierarchies
+- Test all hierarchy combinations
+
+**Phase 6 - Polish & Edge Cases**
+- Update README.md with breakdown feature documentation
+- Test ISO week boundaries (week 1 spanning Dec/Jan)
+- Test year boundaries and leap years
+- Consider month nesting within years
+- Final acceptance test pass
