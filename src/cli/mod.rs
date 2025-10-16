@@ -52,7 +52,7 @@ pub struct Args {
     #[arg(long, value_name = "text, markdown", default_value = "text")]
     pub format: Option<String>,
 
-    #[arg(long, value_name = "day, d, week, month, year, auto")]
+    #[arg(short, long, value_name = "day, d, week, month, year, auto")]
     pub breakdown: Option<String>,
 }
 
