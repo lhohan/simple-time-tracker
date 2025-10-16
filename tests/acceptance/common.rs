@@ -326,6 +326,13 @@ impl CommandResult {
         Self { output: new_output }
     }
 
+    pub fn expect_output_pattern(self, pattern: &str) -> Self {
+        let new_output = self
+            .output
+            .stdout(predicate::str::is_match(pattern).unwrap());
+        Self { output: new_output }
+    }
+
     pub fn expect_task(self, task_description: &str) -> Self {
         let escaped_description = regex::escape(task_description);
         let pattern = format!(r"\.*-\s+{escaped_description}\.*");
