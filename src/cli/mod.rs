@@ -32,7 +32,7 @@ pub struct Args {
     project: Option<String>,
 
     // Tags filter
-    #[arg(long)]
+    #[arg(short, long)]
     pub tags: Option<String>,
 
     // Tags exclude filter
