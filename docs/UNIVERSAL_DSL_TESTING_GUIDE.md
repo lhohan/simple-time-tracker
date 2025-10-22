@@ -7,7 +7,7 @@ This guide demonstrates how to build fluent, behavior-driven test DSLs that make
 All effective test DSLs follow a three-phase structure:
 
 1. **Setup Phase**: Configure the system under test
-2. **Action Phase**: Execute the operation being tested  
+2. **Action Phase**: Execute the operation being tested
 3. **Assertion Phase**: Verify the results
 
 The key insight is using fluent method chaining to make this read naturally while maintaining type safety and resource management.
@@ -60,15 +60,15 @@ impl CommandSpec {
     // Feature flags
     pub fn verbose_flag(mut self) -> Self { /* add --verbose */ }
     pub fn debug_mode(mut self) -> Self { /* add --debug */ }
-    
+
     // Configuration
     pub fn with_config_file(mut self, content: &str) -> Self { /* setup config */ }
     pub fn with_timeout(mut self, seconds: u64) -> Self { /* add --timeout */ }
-    
+
     // Test data
     pub fn with_input_file(mut self, content: &str) -> Self { /* create temp file */ }
     pub fn with_directory(mut self, files: &[(&str, &str)]) -> Self { /* create file tree */ }
-    
+
     // Environment
     pub fn with_env_var(mut self, key: &str, value: &str) -> Self { /* set env */ }
     pub fn at_time(mut self, timestamp: &str) -> Self { /* mock time */ }
@@ -76,7 +76,7 @@ impl CommandSpec {
 ```
 </example>
 
-### Server Specification Builder  
+### Server Specification Builder
 Focus on application state and request configuration:
 
 <example>
@@ -91,11 +91,11 @@ impl ServerSpec {
     // Data setup
     pub fn with_file(path: &str, content: &str) -> Self { /* add file */ }
     pub fn add_file(mut self, path: &str, content: &str) -> Self { /* chain files */ }
-    
+
     // Configuration
     pub fn with_config(mut self, yaml: &str) -> Self { /* app config */ }
     pub fn with_database(mut self, schema: &str) -> Self { /* db setup */ }
-    
+
     // Request specification
     pub fn get(self, path: &str) -> RequestBuilder { /* HTTP GET */ }
     pub fn post(self, path: &str) -> RequestBuilder { /* HTTP POST */ }
@@ -142,7 +142,7 @@ struct ExecutionContext {
 
 enum TempResource {
     Directory(Arc<TempDir>),      // Temporary filesystem
-    Server(Arc<TestServer>),      // Running server instance  
+    Server(Arc<TestServer>),      // Running server instance
     Database(Arc<TestDatabase>),  // Test database connection
 }
 
@@ -150,10 +150,10 @@ impl ExecutionContext {
     fn execute(self) -> TestResult {
         // Setup environment
         self.apply_environment();
-        
+
         // Execute action
         let output = self.run_action();
-        
+
         // Cleanup (automatic via Drop traits)
         TestResult::new(output, self._temp_resources)
     }
@@ -172,23 +172,23 @@ impl CommandSpec {
     pub fn when_run(self) -> CommandResult {
         // Create temporary files from InputSource
         let (temp_dir, input_path) = self.setup_filesystem();
-        
+
         // Build command
         let mut command = Command::cargo_bin("my-app").unwrap();
         command.arg("--input").arg(input_path);
         command.args(self.args);
-        
+
         // Set environment
         for (key, value) in self.environment {
             command.env(key, value);
         }
-        
+
         // Execute and capture output
         let output = command.assert();
-        
-        CommandResult { 
-            output, 
-            _temp_dir: Some(temp_dir) 
+
+        CommandResult {
+            output,
+            _temp_dir: Some(temp_dir)
         }
     }
 }
@@ -215,7 +215,7 @@ impl RequestBuilder {
     pub async fn execute(self) -> TestResult {
         // Start server with test data
         let server = self.server_spec.start_test_server().await;
-        
+
         // Make HTTP request
         let url = format!("http://{}{}", server.addr(), self.path);
         let response = reqwest::Client::new()
@@ -223,13 +223,13 @@ impl RequestBuilder {
             .send()
             .await
             .unwrap();
-        
+
         // Apply assertions
         let test_response = TestResponse::from(response).await;
         for assertion in self.assertions {
             assertion(&test_response);
         }
-        
+
         // Server cleanup handled by Drop
     }
 }
@@ -248,12 +248,12 @@ impl TestResult {
     pub fn should_succeed(self) -> Self { /* exit code 0 or HTTP 2xx */ }
     pub fn should_fail(self) -> Self { /* non-zero exit or HTTP error */ }
     pub fn should_timeout(self) -> Self { /* operation timeout */ }
-    
+
     // Output validation
     pub fn expect_output(self, text: &str) -> Self { /* stdout/response contains */ }
     pub fn expect_error(self, text: &str) -> Self { /* stderr contains */ }
     pub fn expect_no_output(self) -> Self { /* empty output */ }
-    
+
     // Pattern matching
     pub fn expect_output_matches(self, pattern: &str) -> Self { /* regex match */ }
     pub fn expect_json_field(self, path: &str, value: &str) -> Self { /* JSON validation */ }
@@ -360,7 +360,7 @@ impl YourApp {
 // Your specification builder
 pub struct AppSpec { /* fields for your domain */ }
 
-// Your result type  
+// Your result type
 pub struct AppResult { /* output and resources */ }
 ```
 </example>
@@ -373,10 +373,10 @@ Implement setup methods for your domain:
 impl AppSpec {
     // Configuration
     pub fn with_config(mut self, config: &str) -> Self { /* setup */ }
-    
+
     // Input data
     pub fn with_test_data(mut self, data: &str) -> Self { /* test input */ }
-    
+
     // Execution
     pub fn when_executed(self) -> AppResult { /* run and capture */ }
 }
@@ -449,4 +449,4 @@ fn dsl_should_chain_multiple_assertions() {
 ```
 </example>
 
-This universal pattern adapts to any domain while maintaining readability, type safety, and proper resource management. The key is identifying your application's core concepts and building fluent APIs around them.
+This universal pattern adapts to any domain while maintaining readability, type safety, and proper resource management. The key is identifying your application's core concepts and domain, and building fluent APIs around them.
