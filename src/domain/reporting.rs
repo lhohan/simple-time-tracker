@@ -1,3 +1,141 @@
+//! Time tracking reporting and breakdown functionality.
+//!
+//! This module provides data structures and functions for aggregating and reporting
+//! time tracking data across different time periods and hierarchies.
+//!
+//! # Overview
+//!
+//! The reporting module supports three types of reports:
+//!
+//! - **Overview Report**: Summary of time by tags and outcomes
+//! - **Detail Report**: Task-level breakdown for specific tags
+//! - **Breakdown Report**: Hierarchical time aggregation by calendar units
+//!
+//! # Breakdown Feature
+//!
+//! The breakdown feature provides hierarchical time aggregation across calendar units:
+//!
+//! ## Aggregation Hierarchy
+//!
+//! - **Day**: Flat list of days with entries (no children)
+//! - **Week**: ISO weeks containing days as children
+//! - **Month**: Calendar months containing ISO weeks as children (not days)
+//! - **Year**: Calendar years containing months as children
+//!
+//! ## Design Decisions
+//!
+//! ### Month → Week Aggregation
+//!
+//! Months aggregate to **weeks** rather than days to keep output concise for long
+//! periods. This prevents overwhelming output when viewing multi-month ranges.
+//! Users can use week breakdown for day-level detail.
+//!
+//! Example output for month breakdown:
+//! ```text
+//! 2024-01
+//!   2024-W01  10h 30m
+//!   2024-W02  15h 45m
+//!   2024-W03  12h 15m
+//! ```
+//!
+//! ### ISO Week Standard
+//!
+//! All week calculations use **ISO 8601 week dates**:
+//!
+//! - Weeks start on Monday and end on Sunday
+//! - Week 1 is the week with the year's first Thursday
+//! - Weeks are numbered 01 to 52 (or 53)
+//! - Format: `YYYY-W##` (e.g., `2024-W01`)
+//!
+//! #### Important ISO Week Edge Cases
+//!
+//! **Week 53 spanning into next year:**
+//! ```text
+//! 2020-12-28 (Mon) → 2020-W53
+//! 2020-12-31 (Thu) → 2020-W53
+//! 2021-01-01 (Fri) → 2020-W53  // Calendar year 2021, but ISO week from 2020
+//! 2021-01-04 (Mon) → 2021-W01  // First day of 2021's Week 1
+//! ```
+//!
+//! **Week 1 starting in previous year:**
+//! ```text
+//! 2020-12-28 (Mon) → 2020-W53
+//! 2021-01-01 (Fri) → 2020-W53  // Jan 1 belongs to previous year's week
+//! 2021-01-04 (Mon) → 2021-W01  // Week 1 of 2021 starts here
+//! ```
+//!
+//! **Weeks spanning month boundaries (~20% of weeks):**
+//! ```text
+//! 2023-W05:
+//!   2023-01-30 (Mon)  // Last day of January
+//!   2023-01-31 (Tue)
+//!   2023-02-01 (Wed)  // First day of February
+//!   ...
+//!   2023-02-05 (Sun)
+//! ```
+//!
+//! In month breakdowns, weeks spanning months appear in **both** months with
+//! appropriate time attribution.
+//!
+//! ### Leap Year Handling
+//!
+//! February 29 is handled correctly in all breakdown levels:
+//! - Day breakdowns include `2024-02-29 (Thu)`
+//! - Week breakdowns include Feb 29 within the appropriate week
+//! - Month/year aggregations include leap day time in totals
+//!
+//! ### Sparse Data
+//!
+//! Empty periods are automatically omitted from output:
+//! - Days with zero entries don't appear in day breakdowns
+//! - Weeks with zero entries don't appear in week/month breakdowns
+//! - Months with zero entries don't appear in year breakdowns
+//!
+//! This keeps output focused on periods with actual tracked time.
+//!
+//! # Examples
+//!
+//! ## Creating a Breakdown Report
+//!
+//! ```ignore
+//! use time_tracker::domain::reporting::{BreakdownReport, BreakdownUnit};
+//!
+//! // From parsed time entries
+//! let report = BreakdownReport::from_tracked_time(&tracked_time, BreakdownUnit::Week);
+//!
+//! // Iterate over top-level groups (weeks)
+//! for week in &report.groups {
+//!     println!("{}: {}h {}m", week.label, week.minutes / 60, week.minutes % 60);
+//!
+//!     // Iterate over children (days within week)
+//!     for day in &week.children {
+//!         println!("  {}: {}h {}m", day.label, day.minutes / 60, day.minutes % 60);
+//!     }
+//! }
+//! ```
+//!
+//! ## Output Formats
+//!
+//! ```text
+//! # Week Breakdown (week → days)
+//! 2024-W09                    6h 00m
+//!   2024-02-26 (Mon)          1h 00m
+//!   2024-02-29 (Thu)          3h 00m  # Leap day
+//!   2024-03-01 (Fri)          2h 00m
+//!
+//! # Month Breakdown (month → weeks)
+//! 2024-01                    38h 15m
+//!   2024-W01                 10h 30m
+//!   2024-W03                 12h 15m  # W02 omitted (no entries)
+//!   2024-W04                 15h 30m
+//!
+//! # Year Breakdown (year → months)
+//! 2024                      245h 30m
+//!   2024-01                  38h 15m
+//!   2024-02                  42h 00m
+//!   2024-03                  35h 45m
+//! ```
+
 use std::collections::HashMap;
 use std::hash::Hash;
 
@@ -426,29 +564,221 @@ pub enum OutputLimit {
     CumulativePercentageThreshold(f64),
 }
 
+/// Calendar unit for hierarchical time breakdown aggregation.
+///
+/// Determines how time entries are grouped in breakdown reports. Each unit
+/// creates a different level of aggregation with specific parent-child relationships.
+///
+/// # Aggregation Hierarchy
+///
+/// - `Day`: Flat list, no children
+/// - `Week`: ISO weeks → days
+/// - `Month`: Calendar months → ISO weeks (not days)
+/// - `Year`: Calendar years → months
+///
+/// # ISO Week Standard
+///
+/// Week calculations follow ISO 8601:
+/// - Weeks start Monday, end Sunday
+/// - Week 1 contains the year's first Thursday
+/// - Weeks numbered 01-52 (or 53 in long years)
+/// - Format: `YYYY-W##`
+///
+/// # Examples
+///
+/// ```ignore
+/// use time_tracker::domain::reporting::BreakdownUnit;
+///
+/// let unit = BreakdownUnit::Week;  // Group by ISO weeks, show days within weeks
+/// let unit = BreakdownUnit::Month; // Group by months, show weeks within months
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BreakdownUnit {
+    /// Day-level breakdown: flat list of days with time entries.
+    ///
+    /// No hierarchical structure (children always empty).
+    ///
+    /// Output format: `2024-02-29 (Thu)`
     Day,
+
+    /// Week-level breakdown: ISO weeks containing days as children.
+    ///
+    /// Groups time entries by ISO week, with individual days shown within each week.
+    /// Handles year boundaries correctly (e.g., 2021-01-01 may be in 2020-W53).
+    ///
+    /// Output format:
+    /// ```text
+    /// 2024-W09
+    ///   2024-02-26 (Mon)
+    ///   2024-02-29 (Thu)
+    /// ```
     Week,
+
+    /// Month-level breakdown: calendar months containing ISO weeks as children.
+    ///
+    /// **Design decision:** Aggregates to weeks, not days, for concise output.
+    /// Use `Week` breakdown if day-level detail is needed.
+    ///
+    /// Output format:
+    /// ```text
+    /// 2024-01
+    ///   2024-W01
+    ///   2024-W03
+    /// ```
     Month,
+
+    /// Year-level breakdown: calendar years containing months as children.
+    ///
+    /// Groups by calendar year with month-level children. Does not show weeks or days.
+    ///
+    /// Output format:
+    /// ```text
+    /// 2024
+    ///   2024-01
+    ///   2024-02
+    /// ```
     Year,
 }
 
+/// A group of time entries aggregated by a calendar unit.
+///
+/// Forms a hierarchical tree structure for breakdown reports. Each group has:
+/// - A human-readable label (e.g., "2024-W09", "2024-01-15 (Mon)")
+/// - Total minutes for this group (sum of all time entries)
+/// - Optional child groups for hierarchical breakdowns
+///
+/// # Hierarchy Depth
+///
+/// - **Day breakdown**: 1 level (days only, no children)
+/// - **Week breakdown**: 2 levels (weeks → days)
+/// - **Month breakdown**: 2 levels (months → weeks)
+/// - **Year breakdown**: 2 levels (years → months)
+///
+/// # Invariants
+///
+/// - `minutes` equals sum of children's minutes (if children exist)
+/// - Empty groups (minutes = 0) are filtered out
+/// - Groups are sorted chronologically
+/// - Labels follow consistent format per breakdown unit
+///
+/// # Examples
+///
+/// ```ignore
+/// // Week group with day children
+/// BreakdownGroup {
+///     label: "2024-W09".to_string(),
+///     minutes: 360,  // 6 hours total
+///     children: vec![
+///         BreakdownGroup {
+///             label: "2024-02-26 (Mon)".to_string(),
+///             minutes: 60,
+///             children: vec![],
+///         },
+///         BreakdownGroup {
+///             label: "2024-02-29 (Thu)".to_string(),
+///             minutes: 180,
+///             children: vec![],
+///         },
+///     ],
+/// }
+/// ```
 #[derive(Debug, Clone)]
 pub struct BreakdownGroup {
+    /// Human-readable label for this time period.
+    ///
+    /// Format depends on breakdown unit:
+    /// - Day: `YYYY-MM-DD (DDD)` e.g., `2024-02-29 (Thu)`
+    /// - Week: `YYYY-W##` e.g., `2024-W09`
+    /// - Month: `YYYY-MM` e.g., `2024-02`
+    /// - Year: `YYYY` e.g., `2024`
     pub label: String,
+
+    /// Total minutes tracked in this time period.
+    ///
+    /// If children exist, this equals the sum of children's minutes.
     pub minutes: u32,
+
+    /// Child groups for hierarchical breakdowns.
+    ///
+    /// Empty for leaf nodes (e.g., days in a week breakdown).
+    /// Contains next level down in hierarchy (e.g., days within a week).
     pub children: Vec<BreakdownGroup>,
 }
 
+/// Hierarchical time breakdown report.
+///
+/// Aggregates time entries into a tree structure organized by calendar units
+/// (day, week, month, or year). The structure depth depends on the breakdown unit:
+///
+/// - Day: 1 level (flat list)
+/// - Week: 2 levels (weeks → days)
+/// - Month: 2 levels (months → weeks)
+/// - Year: 2 levels (years → months)
+///
+/// # Edge Cases Handled
+///
+/// - **ISO week boundaries**: Weeks spanning year boundaries correctly attributed
+/// - **Leap years**: February 29 included in all breakdown levels
+/// - **Sparse data**: Empty periods automatically omitted
+/// - **Month-week overlaps**: Weeks spanning months appear in both months
+///
+/// # Examples
+///
+/// ```ignore
+/// use time_tracker::domain::reporting::{BreakdownReport, BreakdownUnit};
+///
+/// // Create report from tracked time
+/// let report = BreakdownReport::from_tracked_time(&tracked_time, BreakdownUnit::Week);
+///
+/// // Access total time
+/// println!("Total: {}h {}m", report.total_minutes / 60, report.total_minutes % 60);
+///
+/// // Iterate through groups
+/// for week in &report.groups {
+///     println!("{}: {}m", week.label, week.minutes);
+///     for day in &week.children {
+///         println!("  {}: {}m", day.label, day.minutes);
+///     }
+/// }
+/// ```
 #[derive(Debug)]
 pub struct BreakdownReport {
+    /// Top-level groups in the breakdown hierarchy.
+    ///
+    /// Sorted chronologically. Empty groups (minutes = 0) are omitted.
+    /// Content depends on breakdown unit (days, weeks, months, or years).
     pub groups: Vec<BreakdownGroup>,
+
+    /// Total minutes across all time entries in this report.
+    ///
+    /// Equals sum of all top-level groups' minutes.
     pub total_minutes: u32,
+
+    /// Time period covered by this report.
     pub period: TrackingPeriod,
 }
 
 impl BreakdownReport {
+    /// Creates a breakdown report from a flat list of time entries.
+    ///
+    /// **Note:** This constructor uses placeholder implementations. For production use,
+    /// prefer [`from_tracked_time`](Self::from_tracked_time) which handles date grouping correctly.
+    ///
+    /// # Arguments
+    ///
+    /// * `entries` - Time entries to aggregate
+    /// * `unit` - Calendar unit for aggregation (Day, Week, Month, Year)
+    /// * `period` - Time period covered by this report
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let report = BreakdownReport::from_entries(
+    ///     &time_entries,
+    ///     BreakdownUnit::Week,
+    ///     period,
+    /// );
+    /// ```
     #[must_use]
     pub fn from_entries(
         entries: &[TimeEntry],
@@ -470,6 +800,37 @@ impl BreakdownReport {
         }
     }
 
+    /// Creates a breakdown report from tracked time with pre-grouped entries by date.
+    ///
+    /// This is the primary constructor for breakdown reports. It properly handles:
+    /// - ISO week year boundaries (e.g., 2021-01-01 in 2020-W53)
+    /// - Leap years (February 29)
+    /// - Empty period filtering
+    /// - Week-month boundary overlaps
+    ///
+    /// # Arguments
+    ///
+    /// * `time_report` - Tracked time with entries grouped by date
+    /// * `unit` - Calendar unit for aggregation (Day, Week, Month, Year)
+    ///
+    /// # Returns
+    ///
+    /// A hierarchical breakdown report with:
+    /// - Groups sorted chronologically
+    /// - Empty periods omitted
+    /// - Correct ISO week attribution
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use time_tracker::domain::reporting::{BreakdownReport, BreakdownUnit};
+    ///
+    /// let report = BreakdownReport::from_tracked_time(&tracked_time, BreakdownUnit::Week);
+    ///
+    /// for week in &report.groups {
+    ///     println!("{}: {}h {}m", week.label, week.minutes / 60, week.minutes % 60);
+    /// }
+    /// ```
     #[must_use]
     pub fn from_tracked_time(time_report: &TrackedTime, unit: BreakdownUnit) -> Self {
         let groups = match unit {
