@@ -454,3 +454,154 @@ fn breakdown_by_year_should_handle_multi_year_entries() {
         .expect_output("2021..")
         .expect_output("6h 00m"); // total time across years
 }
+
+#[test]
+fn breakdown_by_week_should_handle_week_1_starting_in_previous_year() {
+    // ISO week 1 of 2024 starts on 2024-01-01 (Monday)
+    // but ISO week 1 of 2021 starts on 2021-01-04 (Monday)
+    // meaning 2021-01-01 through 2021-01-03 belong to 2020-W53
+    let some_content = r"## TT 2021-01-01
+- #tag-1 1h Task A
+
+## TT 2021-01-04
+- #tag-1 2h Task B
+
+## TT 2021-01-05
+- #tag-1 1h Task C";
+
+    Cmd::given()
+        .breakdown_flag("week")
+        .tags_filter(&["tag-1"])
+        .at_date("2021-01-05")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2020-W53") // Jan 1-3, 2021 are in week 53 of 2020
+        .expect_output("2021-W01") // Jan 4-5, 2021 are in week 1 of 2021
+        .expect_output("2021-01-01 (")
+        .expect_output("2021-01-04 (")
+        .expect_output("2021-01-05 (")
+        .expect_output("4h 00m");
+}
+
+#[test]
+fn breakdown_by_day_should_handle_leap_year_february_29() {
+    let some_content = r"## TT 2024-02-28
+- #tag-1 1h Task A
+
+## TT 2024-02-29
+- #tag-1 2h Task B
+
+## TT 2024-03-01
+- #tag-1 1h Task C";
+
+    Cmd::given()
+        .breakdown_flag("day")
+        .tags_filter(&["tag-1"])
+        .at_date("2024-03-01")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2024-02-28 (")
+        .expect_output("2024-02-29 (") // Leap day should appear
+        .expect_output("2024-03-01 (")
+        .expect_output("4h 00m");
+}
+
+#[test]
+fn breakdown_by_week_should_handle_leap_year_february_29() {
+    // 2024-02-29 falls in week 9 of 2024
+    let some_content = r"## TT 2024-02-26
+- #tag-1 1h Task A
+
+## TT 2024-02-29
+- #tag-1 3h Task B
+
+## TT 2024-03-01
+- #tag-1 2h Task C";
+
+    Cmd::given()
+        .breakdown_flag("week")
+        .tags_filter(&["tag-1"])
+        .at_date("2024-03-01")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2024-W09")
+        .expect_output("2024-02-26 (")
+        .expect_output("2024-02-29 (") // Leap day in week breakdown
+        .expect_output("2024-03-01 (")
+        .expect_output("6h 00m");
+}
+
+#[test]
+fn breakdown_by_month_should_omit_empty_weeks() {
+    // Month with entries in week 1 and week 3, but not week 2
+    let some_content = r"## TT 2020-01-01
+- #tag-1 1h Task A
+
+## TT 2020-01-15
+- #tag-1 2h Task B";
+
+    Cmd::given()
+        .breakdown_flag("month")
+        .tags_filter(&["tag-1"])
+        .at_date("2020-01-15")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2020-01..")
+        .expect_output("2020-W01") // Week with entries should appear
+        .expect_output("2020-W03") // Week with entries should appear
+        .expect_no_text("2020-W02"); // Empty week should not appear
+}
+
+#[test]
+fn breakdown_by_week_should_handle_week_spanning_month_boundary() {
+    // Week 1 of 2023 spans from 2023-01-02 to 2023-01-08
+    // but entries might be on different sides of month boundary
+    let some_content = r"## TT 2023-01-30
+- #tag-1 1h Task A
+
+## TT 2023-02-01
+- #tag-1 2h Task B
+
+## TT 2023-02-05
+- #tag-1 1h Task C";
+
+    Cmd::given()
+        .breakdown_flag("week")
+        .tags_filter(&["tag-1"])
+        .at_date("2023-02-05")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2023-W05") // Week 5 contains Jan 30 and Feb 1-5
+        .expect_output("2023-01-30 (")
+        .expect_output("2023-02-01 (")
+        .expect_output("2023-02-05 (")
+        .expect_output("4h 00m");
+}
+
+#[test]
+fn breakdown_by_month_should_handle_weeks_spanning_months() {
+    // Week that spans from one month into the next
+    // Week 5 of 2023 has days in both January and February
+    let some_content = r"## TT 2023-01-30
+- #tag-1 1h Task A
+
+## TT 2023-02-01
+- #tag-1 2h Task B";
+
+    Cmd::given()
+        .breakdown_flag("month")
+        .tags_filter(&["tag-1"])
+        .at_date("2023-02-01")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2023-01..")
+        .expect_output("2023-02..")
+        .expect_output("2023-W05") // Week appears in both months
+        .expect_output("3h 00m");
+}
