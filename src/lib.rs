@@ -1,8 +1,9 @@
 pub mod cli;
-mod parsing;
+pub mod parsing;
 mod reporting;
 
 pub mod domain;
+pub mod web;
 
 use domain::reporting::OverviewReport;
 use domain::reporting::{BreakdownUnit, OutputLimit};

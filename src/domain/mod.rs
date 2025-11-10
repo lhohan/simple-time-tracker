@@ -6,6 +6,7 @@ use std::collections::VecDeque;
 
 pub use dates::range::{DateRange, PeriodRequested};
 pub use reporting::{PeriodDescription, TimeTrackingResult, TrackedTime, TrackingPeriod};
+use serde::Serialize;
 use tags::Tag;
 
 #[derive(Debug, PartialEq)]
@@ -15,7 +16,7 @@ pub enum EntryLineParseResult {
     Malformed(ParseError),
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize)]
 pub struct TimeEntry {
     tags: Vec<Tag>,
     pub minutes: u32,
@@ -60,7 +61,7 @@ impl TimeEntry {
 
 /// Desired overall outcome this project or task is part of.
 /// There only should be a few of these at a single point in time.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize)]
 pub struct Outcome(String);
 impl Outcome {
     #[must_use]
@@ -77,7 +78,7 @@ impl Outcome {
 struct EntryLine<'a>(pub(crate) &'a str);
 
 impl EntryLine<'_> {
-    pub(crate) fn parse(line: &str) -> Option<EntryLine> {
+    pub(crate) fn parse(line: &str) -> Option<EntryLine<'_>> {
         if EntryLine::is_line_entry(line) {
             Some(EntryLine(line))
         } else {
@@ -173,7 +174,7 @@ enum LinePart<'a> {
     DescriptionPart(&'a str),
 }
 
-fn parse_part(part: &str) -> Result<LinePart, ParseError> {
+fn parse_part(part: &str) -> Result<LinePart<'_>, ParseError> {
     if part.starts_with("##") {
         let outcome = part
             .strip_prefix("##")

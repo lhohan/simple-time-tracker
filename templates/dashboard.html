@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Time Tracker Dashboard</h1>
+
+<div id="summary">
+    <h2>Total Time Tracked</h2>
+    <p><strong>{{ total_time }}</strong></p>
+</div>
+
+{% if projects.len() > 0 %}
+<div id="projects">
+    <h2>Time by Project</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Project</th>
+                <th>Duration</th>
+                <th>Percentage</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for project in projects %}
+            <tr>
+                <td>{{ project.description }}</td>
+                <td>{{ project.minutes }} min</td>
+                <td>{{ project.percentage }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

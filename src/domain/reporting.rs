@@ -7,6 +7,7 @@ use super::{ParseError, PeriodRequested, TimeEntry};
 use chrono::NaiveDate;
 use chrono::{Datelike, IsoWeek};
 use itertools::Itertools;
+use serde::Serialize;
 
 #[derive(Debug)]
 pub struct TimeTrackingResult {
@@ -229,7 +230,7 @@ fn sum_outcomes(time_report: &TrackedTime) -> Vec<TimeTotal> {
     .collect()
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct TimeTotal {
     pub(crate) description: String,
     pub(crate) minutes: u32,
