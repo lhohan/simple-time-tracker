@@ -1,10 +1,11 @@
 # Agent Guidelines for Time Tracker Rust Project
 
 ## Essential Commands
-- **Build**: `just build` (release), `cargo build` (debug), `just install` (local install)
-- **Test**: `just test` (all), `cargo nextest run test_name` (single), `just test-w` (watch), `just test-coverage` (with llvm-cov)
+- **Build**: `just build` (CLI release), `just build-web` (web release), `cargo build` (debug), `just install` (local install)
+- **Test**: `just test` (all), `just test-web` (web only), `cargo nextest run test_name` (single), `just test-w` (watch), `just test-coverage` (with llvm-cov)
 - **Lint**: `just run-clippy` (always run after changes), `cargo fmt --all -- --check`
-- **Run**: `just run path period` or `cargo run -- -i "path" --period "period"`
+- **Run CLI**: `just run path period` or `cargo run -- -i "path" --period "period"`
+- **Run Web**: `just web -i path` (run web server), `just web-w -i path` (with auto-reload)
 - **Performance**: `just bench` (benchmarks), `just bench-w` (continuous benchmarks)
 - **Fuzzing**: `just fuzz` (5-min), `just fuzz-long` (30-min), `just fuzz-custom <seconds>` (custom time)
 - **Development**: `just check-w` (continuous check), `just clean` (clean artifacts)
@@ -22,6 +23,7 @@
 - **Test naming**: `[subject]_should_[expected_behavior]_[optional_when_condition]`
 - **Use assert_fs::TempDir** for file-based testing
 - **CLI testing**: Use assert_cmd with Command::cargo_bin("tt")
+- **Web testing**: Use WebApp test DSL (tests/web/common.rs) following same Given-When-Then pattern as CLI
 - **Coverage**: Analyze across layers before adding tests
 
 ## Version Control (Jujutsu)
@@ -67,12 +69,20 @@ For multi-step tasks:
 - `TT_TODAY` - Override current date for testing (format: YYYY-MM-DD)
 
 ## Key Dependencies Context
+### CLI & Core
 - `clap` - CLI argument parsing with derive macros
 - `chrono` - Date/time handling
 - `anyhow` - Error handling
 - `regex` - Text parsing
 - `rstest` - Table-driven testing
 - `assert_cmd` - CLI testing utilities
+
+### Web
+- `axum` - Async web framework (v0.7)
+- `tokio` - Async runtime with spawn_blocking for I/O
+- `askama` - Compile-time type-safe templating (v0.12)
+- `tower` - Service middleware (with util feature for testing)
+- `serde` - Serialization for template data binding
 
 ## Fuzzing Requirements
 - **Requires**: Nightly Rust toolchain

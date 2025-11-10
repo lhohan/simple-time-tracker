@@ -8,16 +8,21 @@ The Time Tracker web dashboard provides an interactive browser-based interface f
 
 ```bash
 # Using just (recommended)
-just web
+just web -i ./data/time-entries.md
 
 # Using cargo directly
-cargo run --bin tt-web
+cargo run --bin tt-web -- -i ./data/time-entries.md
 
 # With auto-reload during development
-just web-w
+just web-w -i ./data/time-entries.md
+
+# Without data (shows example data only)
+just web
 ```
 
 The server will start at **http://127.0.0.1:3000**
+
+**Note:** The `-i` / `--input` flag specifies the path to your time tracking data file. If you omit it, the server automatically checks for `data/time-entries.md` in the current directory, or shows example data if no file is found.
 
 ### Building for Production
 
@@ -33,37 +38,39 @@ just build-web
 
 ### Data File Path
 
-By default, the web dashboard looks for time tracking data in the same location as the CLI. Currently, the server starts with no default data path (displays hardcoded example data).
+The web dashboard uses the same markdown files as the CLI tool. You can specify the data file using the `-i` / `--input` flag:
 
-To configure a data file path, you'll need to modify `src/bin/tt-web.rs` to pass an `AppState` with your data path:
+```bash
+# Specify data file explicitly
+just web -i ./data/time-entries.md
+cargo run --bin tt-web -- -i ./data/time-entries.md
 
-```rust
-use time_tracker::web::{self, AppState};
-use std::sync::Arc;
-use std::path::PathBuf;
+# Auto-detect data/time-entries.md in current directory
+just web
 
-#[tokio::main]
-async fn main() {
-    let state = Arc::new(AppState {
-        data_path: Some(PathBuf::from("./data/time-entries.md")),
-    });
-
-    let app = web::server::create_router_with_state(state);
-
-    // ... rest of server setup
-}
+# Use --help to see all options
+cargo run --bin tt-web -- --help
 ```
+
+**Auto-detection behavior:**
+1. If `-i` flag is provided, uses that path
+2. Otherwise, checks if `data/time-entries.md` exists in current directory
+3. If no file found, shows example hardcoded data with a warning message
 
 ### Server Configuration
 
 **Port and Address:**
-Default: `127.0.0.1:3000`
+Default: `127.0.0.1:3000` (hardcoded)
 
-To change the port, modify `src/bin/tt-web.rs`:
+To change the port, modify the bind address in `src/bin/tt-web.rs`:
 
 ```rust
-web::run_server("127.0.0.1:8080").await; // Custom port
+let listener = tokio::net::TcpListener::bind("127.0.0.1:8080")
+    .await
+    .expect("Failed to bind to port 8080");
 ```
+
+**Future enhancement:** Port configuration via CLI flag is planned but not yet implemented.
 
 **Environment Variables:**
 - `TT_TODAY` - Override current date for testing (format: YYYY-MM-DD)
@@ -331,10 +338,21 @@ just test
 ```
 Error: Address already in use (os error 48)
 ```
-Solution: Change port in `src/bin/tt-web.rs` or kill process on port 3000
+Solution: Change port in `src/bin/tt-web.rs` or kill process on port 3000:
+```bash
+# Find process using port 3000
+lsof -i :3000
+# Kill it
+kill -9 <PID>
+```
 
 **Data File Not Found:**
-The server will show hardcoded example data if no data path is configured. Configure `AppState` with your data file path.
+If you see "⚠️ No data file configured - showing example data", the server couldn't find your data file.
+
+Solutions:
+- Use `-i` flag: `just web -i ./path/to/your/data.md`
+- Place your data at `data/time-entries.md` in current directory
+- Check file path is correct and file exists
 
 ### Tests Failing
 

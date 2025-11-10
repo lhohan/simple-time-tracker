@@ -28,18 +28,27 @@ just build-web
 Run the interactive web dashboard:
 
 ```bash
-# Start web server at http://127.0.0.1:3000
+# Start web server with your data
+just web -i ./data/time-entries.md
+
+# Auto-detect data/time-entries.md in current directory
 just web
 
 # With auto-reload during development
-just web-w
+just web-w -i ./data/time-entries.md
+
+# View available options
+cargo run --bin tt-web -- --help
 ```
+
+Server runs at **http://127.0.0.1:3000**
 
 **Features:**
 - Interactive dashboard with project time summaries
 - Filter by period (Today, This Week, This Month)
 - Drill-down to individual entries per tag
 - HTMX-powered updates without page reload
+- Robust error handling for production use
 
 See [Web Dashboard Documentation](./docs/web-dashboard.md) for configuration, architecture, and development guide.
 
