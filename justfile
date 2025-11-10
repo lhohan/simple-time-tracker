@@ -18,13 +18,13 @@ check-w:
 run path period:
     cargo run -- -i "{{path}}" --period {{period}}
 
-# Run the 'tt-web' server
-web:
-    cargo run --bin tt-web
+# Run the 'tt-web' server with optional data file path
+web *args="":
+    cargo run --bin tt-web -- {{args}}
 
 # Run the 'tt-web' server with auto-reload on file changes
-web-w:
-    cargo watch -c -x "run --bin tt-web"
+web-w *args="":
+    cargo watch -c -x "run --bin tt-web -- {{args}}"
 
 # Test the 'tt' app
 test:
