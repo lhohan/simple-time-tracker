@@ -1,6 +1,6 @@
 # Time Tracker (`tt`)
 
-A Rust-based CLI time tracking application that parses markdown files to generate time reports. Process time tracking data with filtering, reporting, and multiple output formats.
+A Rust-based time tracking application with both CLI and web interfaces. Parse markdown files to generate time reports with filtering, interactive visualizations, and multiple output formats.
 
 [![Tests](https://github.com/lhohan/simple-time-tracker/actions/workflows/rust.yml/badge.svg)](https://github.com/lhohan/simple-time-tracker/actions/workflows/rust.yml)
 [![Coverage Status](https://coveralls.io/repos/github/lhohan/simple-time-tracker/badge.svg?branch=main)](https://coveralls.io/repos/github/lhohan/simple-time-tracker?branch=main)
@@ -14,10 +14,36 @@ just install
 
 ### Build from Source
 ```bash
+# Build CLI
 just build
+
+# Build web server
+just build-web
 ```
 
 ## Usage
+
+### Web Dashboard
+
+Run the interactive web dashboard:
+
+```bash
+# Start web server at http://127.0.0.1:3000
+just web
+
+# With auto-reload during development
+just web-w
+```
+
+**Features:**
+- Interactive dashboard with project time summaries
+- Filter by period (Today, This Week, This Month)
+- Drill-down to individual entries per tag
+- HTMX-powered updates without page reload
+
+See [Web Dashboard Documentation](./docs/web-dashboard.md) for configuration, architecture, and development guide.
+
+### CLI
 
 ### Basic Usage
 ```bash
@@ -29,12 +55,14 @@ cargo run -- -i "./data.md" --period "this-week"
 ```
 
 ### Features
+- **Web Dashboard** - Interactive browser-based interface with filtering and drill-down
 - Parse markdown files for time entries
 - Filter by time periods (this-week, last-week, etc.)
 - Generate reports in multiple formats (text, markdown)
 - Tag-based categorization and filtering
 - Hierarchical time breakdown by calendar units (day, week, month, year)
 - CLI-based interface with comprehensive options
+- **Hexagonal Architecture** - Domain logic shared between CLI and web adapters
 
 ### Time Breakdown Reports
 
