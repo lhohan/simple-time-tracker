@@ -2,6 +2,10 @@
 build:
     cargo build --release --bin tt
 
+# Build the 'tt-web' server with release flag
+build-web:
+    cargo build --release --bin tt-web
+
 # Install 'tt' app locally
 install:
     cargo install --path .
@@ -14,9 +18,21 @@ check-w:
 run path period:
     cargo run -- -i "{{path}}" --period {{period}}
 
+# Run the 'tt-web' server
+web:
+    cargo run --bin tt-web
+
+# Run the 'tt-web' server with auto-reload on file changes
+web-w:
+    cargo watch -c -x "run --bin tt-web"
+
 # Test the 'tt' app
 test:
     cargo nextest run
+
+# Test only the web dashboard
+test-web:
+    cargo nextest run --test web
 
 # Run tests on change continuously
 test-w:
