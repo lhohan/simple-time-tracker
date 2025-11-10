@@ -344,3 +344,7 @@ pub async fn chart_projects_pie(
         .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
     Ok(Html(html))
 }
+
+pub async fn health_check() -> &'static str {
+    "OK"
+}
