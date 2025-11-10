@@ -88,8 +88,7 @@ impl RequestBuilder {
             match input {
                 InputSource::File { content } => {
                     let file = temp.child("test.md");
-                    file.write_str(&content)
-                        .expect("Failed to write test file");
+                    file.write_str(&content).expect("Failed to write test file");
                     (Some(temp.clone()), Some(file.path().to_path_buf()))
                 }
             }

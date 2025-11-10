@@ -27,16 +27,14 @@ async fn main() {
     let data_path = if let Some(path) = args.input {
         Some(path)
     } else {
-        env::current_dir()
-            .ok()
-            .and_then(|dir| {
-                let default_path = dir.join("data/time-entries.md");
-                if default_path.exists() {
-                    Some(default_path)
-                } else {
-                    None
-                }
-            })
+        env::current_dir().ok().and_then(|dir| {
+            let default_path = dir.join("data/time-entries.md");
+            if default_path.exists() {
+                Some(default_path)
+            } else {
+                None
+            }
+        })
     };
 
     let addr = format!("{}:{}", args.host, args.port);

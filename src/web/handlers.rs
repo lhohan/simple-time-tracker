@@ -1,7 +1,7 @@
 use askama::Template;
 use axum::extract::{Query, State};
-use axum::response::{Html, IntoResponse, Response};
 use axum::http::StatusCode;
+use axum::response::{Html, IntoResponse, Response};
 use chrono::NaiveDate;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -25,11 +25,17 @@ impl IntoResponse for WebError {
         let (status, message) = match self {
             WebError::DataProcessingFailed(msg) => {
                 eprintln!("Data processing error: {}", msg);
-                (StatusCode::INTERNAL_SERVER_ERROR, "Error loading data".to_string())
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Error loading data".to_string(),
+                )
             }
             WebError::TemplateRenderFailed(msg) => {
                 eprintln!("Template render error: {}", msg);
-                (StatusCode::INTERNAL_SERVER_ERROR, "Error rendering page".to_string())
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Error rendering page".to_string(),
+                )
             }
             WebError::InvalidTag(tag) => {
                 eprintln!("Invalid tag requested: {}", tag);
@@ -70,17 +76,18 @@ fn format_minutes(minutes: u32) -> String {
 fn is_valid_tag(tag: &str) -> bool {
     !tag.is_empty()
         && tag.len() < 256
-        && tag.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_')
+        && tag
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '-' || c == '_')
 }
 
 pub async fn dashboard(State(state): State<Arc<AppState>>) -> Result<Html<String>, WebError> {
     let template = if let Some(data_path) = state.data_path.clone() {
-        let tracking_result = tokio::task::spawn_blocking(move || {
-            parsing::process_input(&data_path, None)
-        })
-        .await
-        .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
-        .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
+        let tracking_result =
+            tokio::task::spawn_blocking(move || parsing::process_input(&data_path, None))
+                .await
+                .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
+                .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
 
         if let Some(time_entries) = tracking_result.time_entries {
             let overview = OverviewReport::overview(&time_entries, None, None);
@@ -149,14 +156,10 @@ pub async fn dashboard_partial(
                 projects: overview.entries_time_totals().clone(),
             }
         } else {
-            ProjectsPartialTemplate {
-                projects: vec![],
-            }
+            ProjectsPartialTemplate { projects: vec![] }
         }
     } else {
-        ProjectsPartialTemplate {
-            projects: vec![],
-        }
+        ProjectsPartialTemplate { projects: vec![] }
     };
 
     let html = template
@@ -190,12 +193,11 @@ pub async fn tag_detail(
 
     let template = if let Some(data_path) = state.data_path.clone() {
         let tag_name_clone = tag_name.clone();
-        let tracking_result = tokio::task::spawn_blocking(move || {
-            parsing::process_input(&data_path, None)
-        })
-        .await
-        .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
-        .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
+        let tracking_result =
+            tokio::task::spawn_blocking(move || parsing::process_input(&data_path, None))
+                .await
+                .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
+                .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
 
         if let Some(time_entries) = tracking_result.time_entries {
             let tag = Tag::from_raw(&tag_name_clone);
@@ -278,14 +280,10 @@ pub async fn chart_projects_bar(
                 projects: overview.entries_time_totals().clone(),
             }
         } else {
-            ChartProjectsBarTemplate {
-                projects: vec![],
-            }
+            ChartProjectsBarTemplate { projects: vec![] }
         }
     } else {
-        ChartProjectsBarTemplate {
-            projects: vec![],
-        }
+        ChartProjectsBarTemplate { projects: vec![] }
     };
 
     let html = template
@@ -293,7 +291,6 @@ pub async fn chart_projects_bar(
         .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
     Ok(Html(html))
 }
-
 
 #[derive(Template)]
 #[template(path = "chart_projects_pie.html")]
@@ -333,14 +330,10 @@ pub async fn chart_projects_pie(
                 projects: overview.entries_time_totals().clone(),
             }
         } else {
-            ChartProjectsPieTemplate {
-                projects: vec![],
-            }
+            ChartProjectsPieTemplate { projects: vec![] }
         }
     } else {
-        ChartProjectsPieTemplate {
-            projects: vec![],
-        }
+        ChartProjectsPieTemplate { projects: vec![] }
     };
 
     let html = template

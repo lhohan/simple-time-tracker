@@ -1,5 +1,5 @@
-use std::fmt;
 use serde::Serialize;
+use std::fmt;
 
 #[derive(Debug, PartialEq, Clone, Serialize)]
 pub enum Tag {
