@@ -1,11 +1,17 @@
 use askama::Template;
-use axum::extract::State;
+use axum::extract::{Query, State};
 use axum::response::Html;
+use chrono::NaiveDate;
 use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::domain::reporting::{OverviewReport, TimeTotal};
+use crate::domain::time::Clock;
+use crate::domain::PeriodRequested;
 use crate::parsing;
+use crate::parsing::filter::Filter;
+
+use super::models::DashboardParams;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -55,6 +61,116 @@ pub async fn dashboard(State(state): State<Arc<AppState>>) -> Html<String> {
         DashboardTemplate {
             total_time: "8h 30m".to_string(),
             projects: vec![],
+        }
+    };
+
+    Html(template.render().expect("Failed to render template"))
+}
+
+#[derive(Template)]
+#[template(path = "projects_partial.html")]
+pub struct ProjectsPartialTemplate {
+    pub projects: Vec<TimeTotal>,
+}
+
+pub async fn dashboard_partial(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<DashboardParams>,
+) -> Html<String> {
+    let template = if let Some(ref data_path) = state.data_path {
+        let clock = std::env::var("TT_TODAY")
+            .ok()
+            .and_then(|today_str| NaiveDate::parse_from_str(&today_str, "%Y-%m-%d").ok())
+            .map(Clock::with_today)
+            .unwrap_or_else(Clock::system);
+
+        let period = params
+            .period
+            .as_ref()
+            .and_then(|p| PeriodRequested::from_str(p, &clock).ok());
+
+        let filter = period.as_ref().map(|p| Filter::DateRange(p.date_range()));
+
+        let tracking_result = parsing::process_input(data_path, filter.as_ref())
+            .expect("Failed to process input");
+
+        if let Some(time_entries) = tracking_result.time_entries {
+            let overview = OverviewReport::overview(&time_entries, None, period.as_ref());
+
+            ProjectsPartialTemplate {
+                projects: overview.entries_time_totals().clone(),
+            }
+        } else {
+            ProjectsPartialTemplate {
+                projects: vec![],
+            }
+        }
+    } else {
+        ProjectsPartialTemplate {
+            projects: vec![],
+        }
+    };
+
+    Html(template.render().expect("Failed to render template"))
+}
+
+#[derive(Template)]
+#[template(path = "tag_detail.html")]
+pub struct TagDetailTemplate {
+    pub tag_name: String,
+    pub entries: Vec<EntryDisplay>,
+    pub total_minutes: u32,
+}
+
+pub struct EntryDisplay {
+    pub description: String,
+    pub duration: u32,
+}
+
+pub async fn tag_detail(
+    State(state): State<Arc<AppState>>,
+    axum::extract::Path(tag_name): axum::extract::Path<String>,
+) -> Html<String> {
+    use crate::domain::tags::Tag;
+
+    let template = if let Some(ref data_path) = state.data_path {
+        let tracking_result = parsing::process_input(data_path, None)
+            .expect("Failed to process input");
+
+        if let Some(time_entries) = tracking_result.time_entries {
+            let tag = Tag::from_raw(&tag_name);
+            let detail_report = time_entries.tasks_tracked_for(&[tag]);
+
+            let entries: Vec<EntryDisplay> = if !detail_report.summaries().is_empty() {
+                detail_report.summaries()[0]
+                    .task_summaries()
+                    .iter()
+                    .map(|summary| EntryDisplay {
+                        description: summary.description.clone(),
+                        duration: summary.minutes,
+                    })
+                    .collect()
+            } else {
+                vec![]
+            };
+
+            TagDetailTemplate {
+                tag_name: tag_name.clone(),
+                entries,
+                total_minutes: detail_report.total_minutes(),
+            }
+        } else {
+            TagDetailTemplate {
+                tag_name: tag_name.clone(),
+                entries: vec![],
+                total_minutes: 0,
+            }
+        }
+    } else {
+        TagDetailTemplate {
+            tag_name: tag_name.clone(),
+            entries: vec![],
+            total_minutes: 0,
         }
     };
 

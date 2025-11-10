@@ -27,3 +27,41 @@ async fn dashboard_should_show_real_time_tracking_data() {
         .expect_contains("project-beta")
         .expect_contains("3h 45m");
 }
+
+#[tokio::test]
+async fn dashboard_should_filter_by_this_week() {
+    WebApp::given()
+        .a_file_with_content(
+            "## TT 2025-01-13\n\
+             - #project-alpha 2h Old entry\n\
+             ## TT 2025-01-15\n\
+             - #project-beta 3h Recent entry\n",
+        )
+        .at_date("2025-01-15")
+        .when_get("/api/dashboard")
+        .with_query("period=this-week")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("project-beta")
+        .expect_contains("180 min");
+}
+
+#[tokio::test]
+async fn dashboard_should_filter_by_today() {
+    WebApp::given()
+        .a_file_with_content(
+            "## TT 2025-01-14\n\
+             - #project-alpha 2h Yesterday\n\
+             ## TT 2025-01-15\n\
+             - #project-beta 3h Today\n",
+        )
+        .at_date("2025-01-15")
+        .when_get("/api/dashboard")
+        .with_query("period=today")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("project-beta")
+        .expect_not_contains("project-alpha");
+}

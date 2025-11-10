@@ -4,12 +4,19 @@
 <h1>Time Tracker Dashboard</h1>
 
 <div id="summary">
-    <h2>Total Time Tracked</h2>
-    <p><strong>{{ total_time }}</strong></p>
+    <h2>Total Time Tracked: <strong>{{ total_time }}</strong></h2>
 </div>
 
-{% if projects.len() > 0 %}
+<div id="filters">
+    <h3>Filter by Period</h3>
+    <button hx-get="/api/dashboard?period=today" hx-target="#projects">Today</button>
+    <button hx-get="/api/dashboard?period=this-week" hx-target="#projects">This Week</button>
+    <button hx-get="/api/dashboard?period=this-month" hx-target="#projects">This Month</button>
+    <button hx-get="/api/dashboard" hx-target="#projects">All Time</button>
+</div>
+
 <div id="projects">
+    {% if projects.len() > 0 %}
     <h2>Time by Project</h2>
     <table>
         <thead>
@@ -22,13 +29,19 @@
         <tbody>
             {% for project in projects %}
             <tr>
-                <td>{{ project.description }}</td>
+                <td>
+                    <a href="#" hx-get="/api/tag/{{ project.description }}" hx-target="#detail">
+                        {{ project.description }}
+                    </a>
+                </td>
                 <td>{{ project.minutes }} min</td>
                 <td>{{ project.percentage }}%</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+    {% endif %}
 </div>
-{% endif %}
+
+<div id="detail"></div>
 {% endblock %}

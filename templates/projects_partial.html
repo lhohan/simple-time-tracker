@@ -1,0 +1,28 @@
+{% if projects.len() > 0 %}
+<table>
+    <thead>
+        <tr>
+            <th>Project</th>
+            <th>Duration</th>
+            <th>Percentage</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for project in projects %}
+        <tr>
+            <td>
+                <a href="#" hx-get="/api/tag/{{ project.description }}" hx-target="#detail">
+                    {{ project.description }}
+                </a>
+            </td>
+            <td>{{ project.minutes }} min</td>
+            <td>{{ project.percentage }}%</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No data for this period.</p>
+{% endif %}
+
+<div id="detail"></div>
