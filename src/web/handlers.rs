@@ -235,3 +235,112 @@ pub async fn tag_detail(
         .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
     Ok(Html(html))
 }
+
+#[derive(Template)]
+#[template(path = "chart_projects_bar.html")]
+pub struct ChartProjectsBarTemplate {
+    pub projects: Vec<TimeTotal>,
+}
+
+pub async fn chart_projects_bar(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<DashboardParams>,
+) -> Result<Html<String>, WebError> {
+    let template = if let Some(data_path) = state.data_path.clone() {
+        let clock = std::env::var("TT_TODAY")
+            .ok()
+            .and_then(|today_str| NaiveDate::parse_from_str(&today_str, "%Y-%m-%d").ok())
+            .map(Clock::with_today)
+            .unwrap_or_else(Clock::system);
+
+        let period = params
+            .period
+            .as_ref()
+            .and_then(|p| PeriodRequested::from_str(p, &clock).ok());
+
+        let filter = period.as_ref().map(|p| Filter::DateRange(p.date_range()));
+
+        let tracking_result = tokio::task::spawn_blocking(move || {
+            parsing::process_input(&data_path, filter.as_ref())
+        })
+        .await
+        .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
+        .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
+
+        if let Some(time_entries) = tracking_result.time_entries {
+            let overview = OverviewReport::overview(&time_entries, None, period.as_ref());
+
+            ChartProjectsBarTemplate {
+                projects: overview.entries_time_totals().clone(),
+            }
+        } else {
+            ChartProjectsBarTemplate {
+                projects: vec![],
+            }
+        }
+    } else {
+        ChartProjectsBarTemplate {
+            projects: vec![],
+        }
+    };
+
+    let html = template
+        .render()
+        .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
+    Ok(Html(html))
+}
+
+
+#[derive(Template)]
+#[template(path = "chart_projects_pie.html")]
+pub struct ChartProjectsPieTemplate {
+    pub projects: Vec<TimeTotal>,
+}
+
+pub async fn chart_projects_pie(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<DashboardParams>,
+) -> Result<Html<String>, WebError> {
+    let template = if let Some(data_path) = state.data_path.clone() {
+        let clock = std::env::var("TT_TODAY")
+            .ok()
+            .and_then(|today_str| NaiveDate::parse_from_str(&today_str, "%Y-%m-%d").ok())
+            .map(Clock::with_today)
+            .unwrap_or_else(Clock::system);
+
+        let period = params
+            .period
+            .as_ref()
+            .and_then(|p| PeriodRequested::from_str(p, &clock).ok());
+
+        let filter = period.as_ref().map(|p| Filter::DateRange(p.date_range()));
+
+        let tracking_result = tokio::task::spawn_blocking(move || {
+            parsing::process_input(&data_path, filter.as_ref())
+        })
+        .await
+        .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
+        .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
+
+        if let Some(time_entries) = tracking_result.time_entries {
+            let overview = OverviewReport::overview(&time_entries, None, period.as_ref());
+
+            ChartProjectsPieTemplate {
+                projects: overview.entries_time_totals().clone(),
+            }
+        } else {
+            ChartProjectsPieTemplate {
+                projects: vec![],
+            }
+        }
+    } else {
+        ChartProjectsPieTemplate {
+            projects: vec![],
+        }
+    };
+
+    let html = template
+        .render()
+        .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
+    Ok(Html(html))
+}
