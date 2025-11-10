@@ -1,6 +1,7 @@
 use askama::Template;
 use axum::extract::{Query, State};
-use axum::response::Html;
+use axum::response::{Html, IntoResponse, Response};
+use axum::http::StatusCode;
 use chrono::NaiveDate;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -12,6 +13,32 @@ use crate::parsing;
 use crate::parsing::filter::Filter;
 
 use super::models::DashboardParams;
+
+pub enum WebError {
+    DataProcessingFailed(String),
+    TemplateRenderFailed(String),
+    InvalidTag(String),
+}
+
+impl IntoResponse for WebError {
+    fn into_response(self) -> Response {
+        let (status, message) = match self {
+            WebError::DataProcessingFailed(msg) => {
+                eprintln!("Data processing error: {}", msg);
+                (StatusCode::INTERNAL_SERVER_ERROR, "Error loading data".to_string())
+            }
+            WebError::TemplateRenderFailed(msg) => {
+                eprintln!("Template render error: {}", msg);
+                (StatusCode::INTERNAL_SERVER_ERROR, "Error rendering page".to_string())
+            }
+            WebError::InvalidTag(tag) => {
+                eprintln!("Invalid tag requested: {}", tag);
+                (StatusCode::BAD_REQUEST, format!("Invalid tag: {}", tag))
+            }
+        };
+        (status, Html(format!("<p>{}</p>", message))).into_response()
+    }
+}
 
 #[derive(Clone)]
 pub struct AppState {
@@ -39,10 +66,20 @@ fn format_minutes(minutes: u32) -> String {
     }
 }
 
-pub async fn dashboard(State(state): State<Arc<AppState>>) -> Html<String> {
-    let template = if let Some(ref data_path) = state.data_path {
-        let tracking_result = parsing::process_input(data_path, None)
-            .expect("Failed to process input");
+fn is_valid_tag(tag: &str) -> bool {
+    !tag.is_empty()
+        && tag.len() < 256
+        && tag.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_')
+}
+
+pub async fn dashboard(State(state): State<Arc<AppState>>) -> Result<Html<String>, WebError> {
+    let template = if let Some(data_path) = state.data_path.clone() {
+        let tracking_result = tokio::task::spawn_blocking(move || {
+            parsing::process_input(&data_path, None)
+        })
+        .await
+        .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
+        .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
 
         if let Some(time_entries) = tracking_result.time_entries {
             let overview = OverviewReport::overview(&time_entries, None, None);
@@ -64,7 +101,10 @@ pub async fn dashboard(State(state): State<Arc<AppState>>) -> Html<String> {
         }
     };
 
-    Html(template.render().expect("Failed to render template"))
+    let html = template
+        .render()
+        .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
+    Ok(Html(html))
 }
 
 #[derive(Template)]
@@ -76,8 +116,8 @@ pub struct ProjectsPartialTemplate {
 pub async fn dashboard_partial(
     State(state): State<Arc<AppState>>,
     Query(params): Query<DashboardParams>,
-) -> Html<String> {
-    let template = if let Some(ref data_path) = state.data_path {
+) -> Result<Html<String>, WebError> {
+    let template = if let Some(data_path) = state.data_path.clone() {
         let clock = std::env::var("TT_TODAY")
             .ok()
             .and_then(|today_str| NaiveDate::parse_from_str(&today_str, "%Y-%m-%d").ok())
@@ -91,8 +131,12 @@ pub async fn dashboard_partial(
 
         let filter = period.as_ref().map(|p| Filter::DateRange(p.date_range()));
 
-        let tracking_result = parsing::process_input(data_path, filter.as_ref())
-            .expect("Failed to process input");
+        let tracking_result = tokio::task::spawn_blocking(move || {
+            parsing::process_input(&data_path, filter.as_ref())
+        })
+        .await
+        .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
+        .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
 
         if let Some(time_entries) = tracking_result.time_entries {
             let overview = OverviewReport::overview(&time_entries, None, period.as_ref());
@@ -111,7 +155,10 @@ pub async fn dashboard_partial(
         }
     };
 
-    Html(template.render().expect("Failed to render template"))
+    let html = template
+        .render()
+        .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
+    Ok(Html(html))
 }
 
 #[derive(Template)]
@@ -130,15 +177,24 @@ pub struct EntryDisplay {
 pub async fn tag_detail(
     State(state): State<Arc<AppState>>,
     axum::extract::Path(tag_name): axum::extract::Path<String>,
-) -> Html<String> {
+) -> Result<Html<String>, WebError> {
     use crate::domain::tags::Tag;
 
-    let template = if let Some(ref data_path) = state.data_path {
-        let tracking_result = parsing::process_input(data_path, None)
-            .expect("Failed to process input");
+    if !is_valid_tag(&tag_name) {
+        return Err(WebError::InvalidTag(tag_name));
+    }
+
+    let template = if let Some(data_path) = state.data_path.clone() {
+        let tag_name_clone = tag_name.clone();
+        let tracking_result = tokio::task::spawn_blocking(move || {
+            parsing::process_input(&data_path, None)
+        })
+        .await
+        .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
+        .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
 
         if let Some(time_entries) = tracking_result.time_entries {
-            let tag = Tag::from_raw(&tag_name);
+            let tag = Tag::from_raw(&tag_name_clone);
             let detail_report = time_entries.tasks_tracked_for(&[tag]);
 
             let entries: Vec<EntryDisplay> = if !detail_report.summaries().is_empty() {
@@ -174,5 +230,8 @@ pub async fn tag_detail(
         }
     };
 
-    Html(template.render().expect("Failed to render template"))
+    let html = template
+        .render()
+        .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
+    Ok(Html(html))
 }

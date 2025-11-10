@@ -3,4 +3,3 @@ pub mod models;
 pub mod server;
 
 pub use handlers::AppState;
-pub use server::run_server;
