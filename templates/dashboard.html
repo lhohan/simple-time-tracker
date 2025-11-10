@@ -65,5 +65,29 @@ function updateCharts(period) {
     {% endif %}
 </div>
 
+{% if outcomes.len() > 0 %}
+<div id="outcomes">
+    <h2>Outcomes</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Outcome</th>
+                <th>Duration</th>
+                <th>Percentage</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for outcome in outcomes %}
+            <tr>
+                <td>{{ outcome.description }}</td>
+                <td>{{ outcome.minutes }} min</td>
+                <td>{{ outcome.percentage }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
 <div id="detail"></div>
 {% endblock %}

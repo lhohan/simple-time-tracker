@@ -50,6 +50,7 @@ pub struct AppState {
 pub struct DashboardTemplate {
     pub total_time: String,
     pub projects: Vec<TimeTotal>,
+    pub outcomes: Vec<TimeTotal>,
 }
 
 fn format_minutes(minutes: u32) -> String {
@@ -87,17 +88,20 @@ pub async fn dashboard(State(state): State<Arc<AppState>>) -> Result<Html<String
             DashboardTemplate {
                 total_time: format_minutes(overview.total_minutes()),
                 projects: overview.entries_time_totals().clone(),
+                outcomes: overview.outcome_time_totals().clone(),
             }
         } else {
             DashboardTemplate {
                 total_time: "0m".to_string(),
                 projects: vec![],
+                outcomes: vec![],
             }
         }
     } else {
         DashboardTemplate {
             total_time: "8h 30m".to_string(),
             projects: vec![],
+            outcomes: vec![],
         }
     };
 
