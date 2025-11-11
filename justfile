@@ -18,6 +18,10 @@ check-w:
 run path period:
     cargo run -- -i "{{path}}" --period {{period}}
 
+# Run the web server with a data file
+run-web path:
+    cargo run --features web -- --web -i "{{path}}"
+
 # Run the web server with optional data file path
 web *args="":
     cargo run --features web -- --web {{args}}
