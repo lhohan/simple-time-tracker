@@ -6,6 +6,8 @@ use chrono::NaiveDate;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use crate::domain::dates::range::DateRange;
+use crate::domain::dates::{EndDate, StartDate};
 use crate::domain::reporting::{OutputLimit, OverviewReport, TimeTotal};
 use crate::domain::time::Clock;
 use crate::domain::PeriodRequested;
@@ -80,6 +82,27 @@ fn is_valid_tag(tag: &str) -> bool {
             .all(|c| c.is_alphanumeric() || c == '-' || c == '_')
 }
 
+fn extract_filter_from_params(
+    params: &DashboardParams,
+    clock: &Clock,
+) -> Result<Option<Filter>, WebError> {
+    if let (Some(from_str), Some(to_str)) = (&params.from, &params.to) {
+        let from_date = NaiveDate::parse_from_str(from_str, "%Y-%m-%d")
+            .map_err(|_| WebError::DataProcessingFailed(format!("Invalid from date: {}", from_str)))?;
+        let to_date = NaiveDate::parse_from_str(to_str, "%Y-%m-%d")
+            .map_err(|_| WebError::DataProcessingFailed(format!("Invalid to date: {}", to_str)))?;
+
+        let date_range = DateRange(StartDate(from_date), EndDate(to_date));
+        Ok(Some(Filter::DateRange(date_range)))
+    } else {
+        let period = params
+            .period
+            .as_ref()
+            .and_then(|p| PeriodRequested::from_str(p, clock).ok());
+        Ok(period.as_ref().map(|p| Filter::DateRange(p.date_range())))
+    }
+}
+
 pub async fn dashboard(State(state): State<Arc<AppState>>) -> Result<Html<String>, WebError> {
     let template = if let Some(data_path) = state.data_path.clone() {
         let tracking_result =
@@ -131,12 +154,12 @@ pub async fn dashboard_partial(
             .map(Clock::with_today)
             .unwrap_or_else(Clock::system);
 
+        let filter = extract_filter_from_params(&params, &clock)?;
+
         let period = params
             .period
             .as_ref()
             .and_then(|p| PeriodRequested::from_str(p, &clock).ok());
-
-        let filter = period.as_ref().map(|p| Filter::DateRange(p.date_range()));
 
         let tracking_result = tokio::task::spawn_blocking(move || {
             parsing::process_input(&data_path, filter.as_ref())
@@ -258,12 +281,12 @@ pub async fn chart_projects_bar(
             .map(Clock::with_today)
             .unwrap_or_else(Clock::system);
 
+        let filter = extract_filter_from_params(&params, &clock)?;
+
         let period = params
             .period
             .as_ref()
             .and_then(|p| PeriodRequested::from_str(p, &clock).ok());
-
-        let filter = period.as_ref().map(|p| Filter::DateRange(p.date_range()));
 
         let tracking_result = tokio::task::spawn_blocking(move || {
             parsing::process_input(&data_path, filter.as_ref())
@@ -311,12 +334,12 @@ pub async fn chart_projects_pie(
             .map(Clock::with_today)
             .unwrap_or_else(Clock::system);
 
+        let filter = extract_filter_from_params(&params, &clock)?;
+
         let period = params
             .period
             .as_ref()
             .and_then(|p| PeriodRequested::from_str(p, &clock).ok());
-
-        let filter = period.as_ref().map(|p| Filter::DateRange(p.date_range()));
 
         let tracking_result = tokio::task::spawn_blocking(move || {
             parsing::process_input(&data_path, filter.as_ref())
@@ -409,12 +432,12 @@ pub async fn outcomes_partial(
             .map(Clock::with_today)
             .unwrap_or_else(Clock::system);
 
+        let filter = extract_filter_from_params(&params, &clock)?;
+
         let period = params
             .period
             .as_ref()
             .and_then(|p| PeriodRequested::from_str(p, &clock).ok());
-
-        let filter = period.as_ref().map(|p| Filter::DateRange(p.date_range()));
 
         let tracking_result = tokio::task::spawn_blocking(move || {
             parsing::process_input(&data_path, filter.as_ref())
@@ -462,12 +485,12 @@ pub async fn chart_outcomes_pie(
             .map(Clock::with_today)
             .unwrap_or_else(Clock::system);
 
+        let filter = extract_filter_from_params(&params, &clock)?;
+
         let period = params
             .period
             .as_ref()
             .and_then(|p| PeriodRequested::from_str(p, &clock).ok());
-
-        let filter = period.as_ref().map(|p| Filter::DateRange(p.date_range()));
 
         let tracking_result = tokio::task::spawn_blocking(move || {
             parsing::process_input(&data_path, filter.as_ref())

@@ -58,6 +58,18 @@
                     onclick="updateFilters('')">All Time</button>
 
             <div style="margin-top: 1rem;">
+                <h4>Custom Date Range</h4>
+                <label>
+                    From:
+                    <input type="date" id="date-from" onchange="applyDateRange()">
+                </label>
+                <label style="margin-left: 1rem;">
+                    To:
+                    <input type="date" id="date-to" onchange="applyDateRange()">
+                </label>
+            </div>
+
+            <div style="margin-top: 1rem;">
                 <label>
                     <input type="checkbox" id="limit-checkbox" onchange="updateFilters()">
                     Limit to top 90%
@@ -109,11 +121,16 @@ let currentPeriod = '';
 function updateFilters(period) {
     if (period !== undefined) {
         currentPeriod = period;
-        // Reset checkbox when period changes
+        // Reset checkbox and date inputs when period changes
         const limitCheckbox = document.getElementById('limit-checkbox');
         if (limitCheckbox) {
             limitCheckbox.checked = false;
         }
+        // Clear date inputs when using period filters
+        const dateFrom = document.getElementById('date-from');
+        const dateTo = document.getElementById('date-to');
+        if (dateFrom) dateFrom.value = '';
+        if (dateTo) dateTo.value = '';
     }
 
     const limitCheckbox = document.getElementById('limit-checkbox');
@@ -124,6 +141,43 @@ function updateFilters(period) {
     if (currentPeriod) {
         params.append('period', currentPeriod);
     }
+    params.append('limit', limitParam);
+
+    const queryString = params.toString();
+
+    // Update projects table
+    const projectsUrl = `/api/dashboard?${queryString}`;
+    htmx.ajax('GET', projectsUrl, {target:'#projects', swap:'innerHTML'});
+
+    // Update chart
+    const pieUrl = `/api/chart/projects-pie?${queryString}`;
+    htmx.ajax('GET', pieUrl, {target:'#chart-pie', swap:'innerHTML'});
+}
+
+function applyDateRange() {
+    const dateFrom = document.getElementById('date-from');
+    const dateTo = document.getElementById('date-to');
+
+    // Only apply if both dates are filled
+    if (!dateFrom.value || !dateTo.value) {
+        return;
+    }
+
+    // Clear period when using date range
+    currentPeriod = '';
+
+    // Reset checkbox
+    const limitCheckbox = document.getElementById('limit-checkbox');
+    if (limitCheckbox) {
+        limitCheckbox.checked = false;
+    }
+
+    const limitParam = 'false';
+
+    // Build query string with date range
+    const params = new URLSearchParams();
+    params.append('from', dateFrom.value);
+    params.append('to', dateTo.value);
     params.append('limit', limitParam);
 
     const queryString = params.toString();

@@ -217,3 +217,68 @@ async fn dashboard_should_filter_by_this_month() {
         .expect_contains("new-project")
         .expect_not_contains("old-project");
 }
+
+#[tokio::test]
+async fn dashboard_should_filter_by_custom_date_range() {
+    WebApp::given()
+        .a_file_with_content(
+            "## TT 2025-01-10\n\
+             - #before-range 2h Before\n\
+             ## TT 2025-01-15\n\
+             - #in-range 5h Within range\n\
+             ## TT 2025-01-20\n\
+             - #after-range 3h After\n",
+        )
+        .when_get("/api/dashboard")
+        .with_query("from=2025-01-14&to=2025-01-16")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("in-range")
+        .expect_not_contains("before-range")
+        .expect_not_contains("after-range");
+}
+
+#[tokio::test]
+async fn dashboard_should_handle_date_range_with_limit() {
+    WebApp::given()
+        .a_file_with_content(
+            "## TT 2025-01-15\n\
+             - #project-alpha 10h Main\n\
+             - #project-beta 5h Secondary\n\
+             - #project-gamma 2h Minor\n\
+             - #project-delta 1h Tiny\n\
+             ## TT 2025-01-20\n\
+             - #project-zeta 10h Outside range\n",
+        )
+        .when_get("/api/dashboard")
+        .with_query("from=2025-01-14&to=2025-01-16&limit=true")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("project-alpha")
+        .expect_contains("project-beta")
+        .expect_not_contains("project-delta")
+        .expect_not_contains("project-zeta");
+}
+
+#[tokio::test]
+async fn dashboard_should_handle_single_day_date_range() {
+    WebApp::given()
+        .a_file_with_content(
+            "## TT 2025-01-14\n\
+             - #day-before 2h Before\n\
+             ## TT 2025-01-15\n\
+             - #target-day 5h Target\n\
+             ## TT 2025-01-16\n\
+             - #day-after 3h After\n",
+        )
+        .when_get("/api/dashboard")
+        .with_query("from=2025-01-15&to=2025-01-15")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("target-day")
+        .expect_not_contains("day-before")
+        .expect_not_contains("day-after");
+}
