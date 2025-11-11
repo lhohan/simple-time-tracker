@@ -56,7 +56,6 @@ pub struct AppState {
 pub struct DashboardTemplate {
     pub total_time: String,
     pub projects: Vec<TimeTotal>,
-    pub outcomes: Vec<TimeTotal>,
 }
 
 fn format_minutes(minutes: u32) -> String {
@@ -95,20 +94,17 @@ pub async fn dashboard(State(state): State<Arc<AppState>>) -> Result<Html<String
             DashboardTemplate {
                 total_time: format_minutes(overview.total_minutes()),
                 projects: overview.entries_time_totals().clone(),
-                outcomes: overview.outcome_time_totals().clone(),
             }
         } else {
             DashboardTemplate {
                 total_time: "0m".to_string(),
                 projects: vec![],
-                outcomes: vec![],
             }
         }
     } else {
         DashboardTemplate {
             total_time: "8h 30m".to_string(),
             projects: vec![],
-            outcomes: vec![],
         }
     };
 
@@ -344,4 +340,95 @@ pub async fn chart_projects_pie(
 
 pub async fn health_check() -> &'static str {
     "OK"
+}
+
+#[derive(Template)]
+#[template(path = "outcomes.html")]
+pub struct OutcomesTemplate {
+    pub total_time: String,
+    pub outcomes: Vec<TimeTotal>,
+}
+
+pub async fn outcomes_page(State(state): State<Arc<AppState>>) -> Result<Html<String>, WebError> {
+    let template = if let Some(data_path) = state.data_path.clone() {
+        let tracking_result =
+            tokio::task::spawn_blocking(move || parsing::process_input(&data_path, None))
+                .await
+                .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
+                .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
+
+        if let Some(time_entries) = tracking_result.time_entries {
+            let overview = OverviewReport::overview(&time_entries, None, None);
+
+            OutcomesTemplate {
+                total_time: format_minutes(overview.total_minutes()),
+                outcomes: overview.outcome_time_totals().clone(),
+            }
+        } else {
+            OutcomesTemplate {
+                total_time: "0m".to_string(),
+                outcomes: vec![],
+            }
+        }
+    } else {
+        OutcomesTemplate {
+            total_time: "0m".to_string(),
+            outcomes: vec![],
+        }
+    };
+
+    let html = template
+        .render()
+        .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
+    Ok(Html(html))
+}
+
+#[derive(Template)]
+#[template(path = "outcomes_partial.html")]
+pub struct OutcomesPartialTemplate {
+    pub outcomes: Vec<TimeTotal>,
+}
+
+pub async fn outcomes_partial(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<DashboardParams>,
+) -> Result<Html<String>, WebError> {
+    let template = if let Some(data_path) = state.data_path.clone() {
+        let clock = std::env::var("TT_TODAY")
+            .ok()
+            .and_then(|today_str| NaiveDate::parse_from_str(&today_str, "%Y-%m-%d").ok())
+            .map(Clock::with_today)
+            .unwrap_or_else(Clock::system);
+
+        let period = params
+            .period
+            .as_ref()
+            .and_then(|p| PeriodRequested::from_str(p, &clock).ok());
+
+        let filter = period.as_ref().map(|p| Filter::DateRange(p.date_range()));
+
+        let tracking_result = tokio::task::spawn_blocking(move || {
+            parsing::process_input(&data_path, filter.as_ref())
+        })
+        .await
+        .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
+        .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
+
+        if let Some(time_entries) = tracking_result.time_entries {
+            let overview = OverviewReport::overview(&time_entries, None, period.as_ref());
+
+            OutcomesPartialTemplate {
+                outcomes: overview.outcome_time_totals().clone(),
+            }
+        } else {
+            OutcomesPartialTemplate { outcomes: vec![] }
+        }
+    } else {
+        OutcomesPartialTemplate { outcomes: vec![] }
+    };
+
+    let html = template
+        .render()
+        .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
+    Ok(Html(html))
 }

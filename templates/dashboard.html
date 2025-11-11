@@ -3,6 +3,10 @@
 {% block content %}
 <h1>Time Tracker Dashboard</h1>
 
+<nav>
+    <a href="/outcomes">View Outcomes →</a>
+</nav>
+
 <div id="summary">
     <h2>Total Time Tracked: <strong>{{ total_time }}</strong></h2>
 </div>
@@ -10,29 +14,22 @@
 <div id="filters">
     <h3>Filter by Period</h3>
     <button hx-get="/api/dashboard?period=today" hx-target="#projects"
-            onclick="updateCharts('today')">Today</button>
+            onclick="updateChart('today')">Today</button>
     <button hx-get="/api/dashboard?period=this-week" hx-target="#projects"
-            onclick="updateCharts('this-week')">This Week</button>
+            onclick="updateChart('this-week')">This Week</button>
     <button hx-get="/api/dashboard?period=this-month" hx-target="#projects"
-            onclick="updateCharts('this-month')">This Month</button>
+            onclick="updateChart('this-month')">This Month</button>
     <button hx-get="/api/dashboard" hx-target="#projects"
-            onclick="updateCharts('')">All Time</button>
+            onclick="updateChart('')">All Time</button>
 </div>
 
-<div class="grid">
-    <div id="chart-bar" hx-get="/api/chart/projects-bar" hx-trigger="load" hx-swap="innerHTML">
-        <p>Loading bar chart...</p>
-    </div>
-    <div id="chart-pie" hx-get="/api/chart/projects-pie" hx-trigger="load" hx-swap="innerHTML">
-        <p>Loading pie chart...</p>
-    </div>
+<div id="chart-pie" hx-get="/api/chart/projects-pie" hx-trigger="load" hx-swap="innerHTML">
+    <p>Loading chart...</p>
 </div>
 
 <script>
-function updateCharts(period) {
-    const barUrl = period ? `/api/chart/projects-bar?period=${period}` : '/api/chart/projects-bar';
+function updateChart(period) {
     const pieUrl = period ? `/api/chart/projects-pie?period=${period}` : '/api/chart/projects-pie';
-    htmx.ajax('GET', barUrl, {target:'#chart-bar', swap:'innerHTML'});
     htmx.ajax('GET', pieUrl, {target:'#chart-pie', swap:'innerHTML'});
 }
 </script>
@@ -64,30 +61,6 @@ function updateCharts(period) {
     </table>
     {% endif %}
 </div>
-
-{% if outcomes.len() > 0 %}
-<div id="outcomes">
-    <h2>Outcomes</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Outcome</th>
-                <th>Duration</th>
-                <th>Percentage</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for outcome in outcomes %}
-            <tr>
-                <td>{{ outcome.description }}</td>
-                <td>{{ outcome.minutes }} min</td>
-                <td>{{ outcome.percentage }}%</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% endif %}
 
 <div id="detail"></div>
 {% endblock %}

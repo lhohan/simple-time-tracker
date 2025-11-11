@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Outcomes Analysis</h1>
+
+<nav>
+    <a href="/">← Back to Dashboard</a>
+</nav>
+
+<div id="summary">
+    <h2>Total Time Tracked: <strong>{{ total_time }}</strong></h2>
+</div>
+
+<div id="filters">
+    <h3>Filter by Period</h3>
+    <button hx-get="/api/outcomes?period=today" hx-target="#outcomes-list">Today</button>
+    <button hx-get="/api/outcomes?period=this-week" hx-target="#outcomes-list">This Week</button>
+    <button hx-get="/api/outcomes?period=this-month" hx-target="#outcomes-list">This Month</button>
+    <button hx-get="/api/outcomes" hx-target="#outcomes-list">All Time</button>
+</div>
+
+<div id="outcomes-list">
+    {% if outcomes.len() > 0 %}
+    <h2>Outcomes</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Outcome</th>
+                <th>Duration</th>
+                <th>Percentage</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for outcome in outcomes %}
+            <tr>
+                <td>{{ outcome.description }}</td>
+                <td>{{ outcome.minutes }} min</td>
+                <td>{{ outcome.percentage }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No outcomes data available for this period.</p>
+    {% endif %}
+</div>
+{% endblock %}
