@@ -6,7 +6,7 @@ use chrono::NaiveDate;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use crate::domain::reporting::{OverviewReport, TimeTotal};
+use crate::domain::reporting::{OutputLimit, OverviewReport, TimeTotal};
 use crate::domain::time::Clock;
 use crate::domain::PeriodRequested;
 use crate::parsing;
@@ -146,7 +146,10 @@ pub async fn dashboard_partial(
         .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
 
         if let Some(time_entries) = tracking_result.time_entries {
-            let overview = OverviewReport::overview(&time_entries, None, period.as_ref());
+            let limit = params
+                .limit
+                .and_then(|l| l.then_some(OutputLimit::CumulativePercentageThreshold(90.00)));
+            let overview = OverviewReport::overview(&time_entries, limit.as_ref(), period.as_ref());
 
             ProjectsPartialTemplate {
                 projects: overview.entries_time_totals().clone(),
@@ -320,7 +323,10 @@ pub async fn chart_projects_pie(
         .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
 
         if let Some(time_entries) = tracking_result.time_entries {
-            let overview = OverviewReport::overview(&time_entries, None, period.as_ref());
+            let limit = params
+                .limit
+                .and_then(|l| l.then_some(OutputLimit::CumulativePercentageThreshold(90.00)));
+            let overview = OverviewReport::overview(&time_entries, limit.as_ref(), period.as_ref());
 
             ChartProjectsPieTemplate {
                 projects: overview.entries_time_totals().clone(),
@@ -415,7 +421,10 @@ pub async fn outcomes_partial(
         .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
 
         if let Some(time_entries) = tracking_result.time_entries {
-            let overview = OverviewReport::overview(&time_entries, None, period.as_ref());
+            let limit = params
+                .limit
+                .and_then(|l| l.then_some(OutputLimit::CumulativePercentageThreshold(90.00)));
+            let overview = OverviewReport::overview(&time_entries, limit.as_ref(), period.as_ref());
 
             OutcomesPartialTemplate {
                 outcomes: overview.outcome_time_totals().clone(),
@@ -465,7 +474,10 @@ pub async fn chart_outcomes_pie(
         .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
 
         if let Some(time_entries) = tracking_result.time_entries {
-            let overview = OverviewReport::overview(&time_entries, None, period.as_ref());
+            let limit = params
+                .limit
+                .and_then(|l| l.then_some(OutputLimit::CumulativePercentageThreshold(90.00)));
+            let overview = OverviewReport::overview(&time_entries, limit.as_ref(), period.as_ref());
 
             ChartOutcomesPieTemplate {
                 outcomes: overview.outcome_time_totals().clone(),

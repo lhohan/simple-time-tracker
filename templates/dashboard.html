@@ -49,13 +49,20 @@
         <div id="filters">
             <h3>Filter by Period</h3>
             <button hx-get="/api/dashboard?period=today" hx-target="#projects"
-                    onclick="updateChart('today')">Today</button>
+                    onclick="updateFilters('today')">Today</button>
             <button hx-get="/api/dashboard?period=this-week" hx-target="#projects"
-                    onclick="updateChart('this-week')">This Week</button>
+                    onclick="updateFilters('this-week')">This Week</button>
             <button hx-get="/api/dashboard?period=this-month" hx-target="#projects"
-                    onclick="updateChart('this-month')">This Month</button>
+                    onclick="updateFilters('this-month')">This Month</button>
             <button hx-get="/api/dashboard" hx-target="#projects"
-                    onclick="updateChart('')">All Time</button>
+                    onclick="updateFilters('')">All Time</button>
+
+            <div style="margin-top: 1rem;">
+                <label>
+                    <input type="checkbox" id="limit-checkbox" onchange="updateFilters()">
+                    Limit to top 90%
+                </label>
+            </div>
         </div>
 
         <div id="projects">
@@ -97,8 +104,31 @@
 </div>
 
 <script>
-function updateChart(period) {
-    const pieUrl = period ? `/api/chart/projects-pie?period=${period}` : '/api/chart/projects-pie';
+let currentPeriod = '';
+
+function updateFilters(period) {
+    if (period !== undefined) {
+        currentPeriod = period;
+    }
+
+    const limitCheckbox = document.getElementById('limit-checkbox');
+    const limitParam = limitCheckbox && limitCheckbox.checked ? 'true' : 'false';
+
+    // Build query string
+    const params = new URLSearchParams();
+    if (currentPeriod) {
+        params.append('period', currentPeriod);
+    }
+    params.append('limit', limitParam);
+
+    const queryString = params.toString();
+
+    // Update projects table
+    const projectsUrl = `/api/dashboard?${queryString}`;
+    htmx.ajax('GET', projectsUrl, {target:'#projects', swap:'innerHTML'});
+
+    // Update chart
+    const pieUrl = `/api/chart/projects-pie?${queryString}`;
     htmx.ajax('GET', pieUrl, {target:'#chart-pie', swap:'innerHTML'});
 }
 </script>

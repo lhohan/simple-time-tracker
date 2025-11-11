@@ -49,13 +49,20 @@
         <div id="filters">
             <h3>Filter by Period</h3>
             <button hx-get="/api/outcomes?period=today" hx-target="#outcomes-list"
-                    onclick="updateOutcomesChart('today')">Today</button>
+                    onclick="updateOutcomesFilters('today')">Today</button>
             <button hx-get="/api/outcomes?period=this-week" hx-target="#outcomes-list"
-                    onclick="updateOutcomesChart('this-week')">This Week</button>
+                    onclick="updateOutcomesFilters('this-week')">This Week</button>
             <button hx-get="/api/outcomes?period=this-month" hx-target="#outcomes-list"
-                    onclick="updateOutcomesChart('this-month')">This Month</button>
+                    onclick="updateOutcomesFilters('this-month')">This Month</button>
             <button hx-get="/api/outcomes" hx-target="#outcomes-list"
-                    onclick="updateOutcomesChart('')">All Time</button>
+                    onclick="updateOutcomesFilters('')">All Time</button>
+
+            <div style="margin-top: 1rem;">
+                <label>
+                    <input type="checkbox" id="limit-checkbox-outcomes" onchange="updateOutcomesFilters()">
+                    Limit to top 90%
+                </label>
+            </div>
         </div>
 
         <div id="outcomes-list">
@@ -93,8 +100,31 @@
 </div>
 
 <script>
-function updateOutcomesChart(period) {
-    const pieUrl = period ? `/api/chart/outcomes-pie?period=${period}` : '/api/chart/outcomes-pie';
+let currentOutcomesPeriod = '';
+
+function updateOutcomesFilters(period) {
+    if (period !== undefined) {
+        currentOutcomesPeriod = period;
+    }
+
+    const limitCheckbox = document.getElementById('limit-checkbox-outcomes');
+    const limitParam = limitCheckbox && limitCheckbox.checked ? 'true' : 'false';
+
+    // Build query string
+    const params = new URLSearchParams();
+    if (currentOutcomesPeriod) {
+        params.append('period', currentOutcomesPeriod);
+    }
+    params.append('limit', limitParam);
+
+    const queryString = params.toString();
+
+    // Update outcomes table
+    const outcomesUrl = `/api/outcomes?${queryString}`;
+    htmx.ajax('GET', outcomesUrl, {target:'#outcomes-list', swap:'innerHTML'});
+
+    // Update chart
+    const pieUrl = `/api/chart/outcomes-pie?${queryString}`;
     htmx.ajax('GET', pieUrl, {target:'#chart-outcomes-pie', swap:'innerHTML'});
 }
 </script>
