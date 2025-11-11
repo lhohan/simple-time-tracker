@@ -152,3 +152,71 @@ async fn pie_chart_should_combine_period_and_limit_filters() {
         .expect_not_contains("old-project")
         .expect_not_contains("project-delta");
 }
+
+#[tokio::test]
+async fn bar_chart_should_show_empty_when_no_data() {
+    let input = "## TT 2025-01-15\n\n";
+
+    WebApp::given()
+        .a_file_with_content(input)
+        .when_get("/api/chart/projects-bar")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("canvas");
+}
+
+#[tokio::test]
+async fn pie_chart_should_show_empty_when_no_data() {
+    let input = "## TT 2025-01-15\n\n";
+
+    WebApp::given()
+        .a_file_with_content(input)
+        .when_get("/api/chart/projects-pie")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("canvas");
+}
+
+#[tokio::test]
+async fn bar_chart_should_filter_by_this_month() {
+    let input = r#"
+## TT 2024-12-15
+- #old-project 5h Last month
+## TT 2025-01-15
+- #new-project 3h This month
+"#;
+
+    WebApp::given()
+        .a_file_with_content(input)
+        .at_date("2025-01-15")
+        .when_get("/api/chart/projects-bar")
+        .with_query("period=this-month")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("new-project")
+        .expect_not_contains("old-project");
+}
+
+#[tokio::test]
+async fn pie_chart_should_filter_by_this_week() {
+    let input = r#"
+## TT 2025-01-10
+- #old-work 5h Last week
+## TT 2025-01-15
+- #this-week-work 3h This week
+"#;
+
+    WebApp::given()
+        .a_file_with_content(input)
+        .at_date("2025-01-15")
+        .when_get("/api/chart/projects-pie")
+        .with_query("period=this-week")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("this-week-work")
+        .expect_not_contains("old-work");
+}

@@ -149,3 +149,71 @@ async fn dashboard_should_combine_limit_and_period_filters() {
         .expect_not_contains("old-project")
         .expect_not_contains("project-delta");
 }
+
+#[tokio::test]
+async fn dashboard_should_display_formatted_time_with_only_hours() {
+    WebApp::given()
+        .a_file_with_content(
+            "## TT 2025-01-15\n\
+             - #project-alpha 3h Building\n",
+        )
+        .when_get("/")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("3h");
+}
+
+#[tokio::test]
+async fn dashboard_should_display_formatted_time_with_only_minutes() {
+    WebApp::given()
+        .a_file_with_content(
+            "## TT 2025-01-15\n\
+             - #project-alpha 45m Quick task\n",
+        )
+        .when_get("/")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("45m");
+}
+
+#[tokio::test]
+async fn dashboard_should_combine_period_this_week_and_limit() {
+    WebApp::given()
+        .a_file_with_content(
+            "## TT 2025-01-13\n\
+             - #project-alpha 10h Main work\n\
+             - #project-beta 5h Secondary\n\
+             - #project-gamma 2h Minor\n\
+             - #project-delta 1h Tiny\n",
+        )
+        .at_date("2025-01-15")
+        .when_get("/api/dashboard")
+        .with_query("period=this-week&limit=true")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("project-alpha")
+        .expect_contains("project-beta")
+        .expect_not_contains("project-delta");
+}
+
+#[tokio::test]
+async fn dashboard_should_filter_by_this_month() {
+    WebApp::given()
+        .a_file_with_content(
+            "## TT 2024-12-15\n\
+             - #old-project 5h Last month\n\
+             ## TT 2025-01-15\n\
+             - #new-project 3h This month\n",
+        )
+        .at_date("2025-01-15")
+        .when_get("/api/dashboard")
+        .with_query("period=this-month")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("new-project")
+        .expect_not_contains("old-project");
+}
