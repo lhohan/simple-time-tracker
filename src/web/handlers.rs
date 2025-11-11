@@ -273,7 +273,10 @@ pub async fn chart_projects_bar(
         .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
 
         if let Some(time_entries) = tracking_result.time_entries {
-            let overview = OverviewReport::overview(&time_entries, None, period.as_ref());
+            let limit = params
+                .limit
+                .and_then(|l| l.then_some(OutputLimit::CumulativePercentageThreshold(90.00)));
+            let overview = OverviewReport::overview(&time_entries, limit.as_ref(), period.as_ref());
 
             ChartProjectsBarTemplate {
                 projects: overview.entries_time_totals().clone(),

@@ -20,3 +20,32 @@ async fn tag_detail_should_show_individual_entries() {
         .expect_contains("75 min")
         .expect_not_contains("project-beta");
 }
+
+#[tokio::test]
+async fn tag_detail_should_show_no_entries_for_nonexistent_tag() {
+    WebApp::given()
+        .a_file_with_content(
+            "## TT 2025-01-15\n\
+             - #project-alpha 2h Work\n",
+        )
+        .when_get("/api/tag/nonexistent-tag")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("No entries found");
+}
+
+#[tokio::test]
+async fn tag_detail_should_accept_tags_with_dashes_and_underscores() {
+    WebApp::given()
+        .a_file_with_content(
+            "## TT 2025-01-15\n\
+             - #project_alpha-beta 2h Work with valid tag chars\n",
+        )
+        .when_get("/api/tag/project_alpha-beta")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("project_alpha-beta")
+        .expect_contains("Work with valid tag chars");
+}
