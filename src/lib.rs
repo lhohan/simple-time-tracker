@@ -3,6 +3,8 @@ pub mod parsing;
 mod reporting;
 
 pub mod domain;
+
+#[cfg(feature = "web")]
 pub mod web;
 
 use domain::reporting::OverviewReport;

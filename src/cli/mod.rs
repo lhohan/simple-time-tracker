@@ -13,7 +13,7 @@ use crate::reporting::format::Formatter;
 pub struct Args {
     /// Input file to process
     #[arg(short, long, value_name = "FILE")]
-    pub input: PathBuf,
+    pub input: Option<PathBuf>,
 
     /// Show verbose output
     #[arg(short, long)]
@@ -54,6 +54,18 @@ pub struct Args {
 
     #[arg(short, long, value_name = "day, d, week, month, year, auto")]
     pub breakdown: Option<String>,
+
+    /// Start web server mode
+    #[arg(long)]
+    pub web: bool,
+
+    /// Port to listen on (web mode only)
+    #[arg(short, long, default_value = "3000")]
+    pub port: u16,
+
+    /// Host address to bind to (web mode only)
+    #[arg(long, default_value = "127.0.0.1")]
+    pub host: String,
 }
 
 impl Args {
@@ -70,6 +82,18 @@ impl Args {
     }
 
     fn validate(&self) -> Result<(), String> {
+        // Skip CLI validations when in web mode
+        if self.web {
+            return Ok(());
+        }
+
+        // Require input file in CLI mode
+        if self.input.is_none() {
+            return Err(
+                "the following required arguments were not provided:\n  --input <FILE>".to_string(),
+            );
+        }
+
         // Check if details is specified without tags
         if self.details && self.tags.is_none() && self.project.is_none() {
             return Err("--details flag requires --tags to be specified".to_string());

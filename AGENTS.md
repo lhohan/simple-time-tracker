@@ -1,11 +1,11 @@
 # Agent Guidelines for Time Tracker Rust Project
 
 ## Essential Commands
-- **Build**: `just build` (CLI release), `just build-web` (web release), `cargo build` (debug), `just install` (local install)
+- **Build**: `just build` (CLI release), `just build-web` (web with features), `cargo build` (debug), `just install` (local install)
 - **Test**: `just test` (all), `just test-web` (web only), `cargo nextest run test_name` (single), `just test-w` (watch), `just test-coverage` (with llvm-cov)
 - **Lint**: `just run-clippy` (always run after changes), `cargo fmt --all -- --check`
 - **Run CLI**: `just run path period` or `cargo run -- -i "path" --period "period"`
-- **Run Web**: `just web -i path` (run web server), `just web-w -i path` (with auto-reload)
+- **Run Web**: `just web -i path` (run web server), `just web-w -i path` (with auto-reload), or `cargo run --features web -- --web -i path`
 - **Performance**: `just bench` (benchmarks), `just bench-w` (continuous benchmarks)
 - **Fuzzing**: `just fuzz` (5-min), `just fuzz-long` (30-min), `just fuzz-custom <seconds>` (custom time)
 - **Development**: `just check-w` (continuous check), `just clean` (clean artifacts)

@@ -2,9 +2,9 @@
 build:
     cargo build --release --bin tt
 
-# Build the 'tt-web' server with release flag
+# Build the 'tt' app with web feature enabled
 build-web:
-    cargo build --release --bin tt-web
+    cargo build --release --bin tt --features web
 
 # Install 'tt' app locally
 install:
@@ -18,13 +18,13 @@ check-w:
 run path period:
     cargo run -- -i "{{path}}" --period {{period}}
 
-# Run the 'tt-web' server with optional data file path
+# Run the web server with optional data file path
 web *args="":
-    cargo run --bin tt-web -- {{args}}
+    cargo run --features web -- --web {{args}}
 
-# Run the 'tt-web' server with auto-reload on file changes
+# Run the web server with auto-reload on file changes
 web-w *args="":
-    cargo watch -c -x "run --bin tt-web -- {{args}}"
+    cargo watch -c -x "run --features web -- --web {{args}}"
 
 # Test the 'tt' app
 test:
@@ -32,7 +32,7 @@ test:
 
 # Test only the web dashboard
 test-web:
-    cargo nextest run --test web
+    cargo nextest run --test web --features web
 
 # Run tests on change continuously
 test-w:

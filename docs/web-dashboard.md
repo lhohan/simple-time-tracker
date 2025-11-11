@@ -10,28 +10,31 @@ The Time Tracker web dashboard provides an interactive browser-based interface f
 # Using just (recommended)
 just web -i ./data/time-entries.md
 
-# Using cargo directly
-cargo run --bin tt-web -- -i ./data/time-entries.md
+# Using cargo directly with web feature
+cargo run --features web -- --web -i ./data/time-entries.md
 
 # With auto-reload during development
 just web-w -i ./data/time-entries.md
 
 # Without data (shows example data only)
 just web
+
+# Custom port and host
+cargo run --features web -- --web -i ./data/time-entries.md -p 8080 --host 0.0.0.0
 ```
 
-The server will start at **http://127.0.0.1:3000**
+The server will start at **http://127.0.0.1:3000** by default (or the specified host/port)
 
 **Note:** The `-i` / `--input` flag specifies the path to your time tracking data file. If you omit it, the server automatically checks for `data/time-entries.md` in the current directory, or shows example data if no file is found.
 
 ### Building for Production
 
 ```bash
-# Build optimized binary
+# Build optimized binary with web feature
 just build-web
 
 # Run the optimized binary
-./target/release/tt-web
+./target/release/tt --web -i ./data/time-entries.md
 ```
 
 ## Configuration
@@ -43,13 +46,13 @@ The web dashboard uses the same markdown files as the CLI tool. You can specify 
 ```bash
 # Specify data file explicitly
 just web -i ./data/time-entries.md
-cargo run --bin tt-web -- -i ./data/time-entries.md
+cargo run --features web -- --web -i ./data/time-entries.md
 
 # Auto-detect data/time-entries.md in current directory
 just web
 
 # Use --help to see all options
-cargo run --bin tt-web -- --help
+cargo run --features web -- --web --help
 ```
 
 **Auto-detection behavior:**
@@ -60,17 +63,20 @@ cargo run --bin tt-web -- --help
 ### Server Configuration
 
 **Port and Address:**
-Default: `127.0.0.1:3000` (hardcoded)
+Default: `127.0.0.1:3000`
 
-To change the port, modify the bind address in `src/bin/tt-web.rs`:
+You can customize the server configuration using command-line flags:
 
-```rust
-let listener = tokio::net::TcpListener::bind("127.0.0.1:8080")
-    .await
-    .expect("Failed to bind to port 8080");
+```bash
+# Custom port
+cargo run --features web -- --web -i ./data/time-entries.md -p 8080
+
+# Custom host and port (e.g., for network access)
+cargo run --features web -- --web -i ./data/time-entries.md --host 0.0.0.0 -p 8080
+
+# Using just with custom arguments
+just web "-i ./data/time-entries.md -p 8080"
 ```
-
-**Future enhancement:** Port configuration via CLI flag is planned but not yet implemented.
 
 **Environment Variables:**
 - `TT_TODAY` - Override current date for testing (format: YYYY-MM-DD)
