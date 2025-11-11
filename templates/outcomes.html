@@ -105,6 +105,11 @@ let currentOutcomesPeriod = '';
 function updateOutcomesFilters(period) {
     if (period !== undefined) {
         currentOutcomesPeriod = period;
+        // Reset checkbox when period changes
+        const limitCheckbox = document.getElementById('limit-checkbox-outcomes');
+        if (limitCheckbox) {
+            limitCheckbox.checked = false;
+        }
     }
 
     const limitCheckbox = document.getElementById('limit-checkbox-outcomes');
