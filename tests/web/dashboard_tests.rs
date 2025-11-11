@@ -65,3 +65,24 @@ async fn dashboard_should_filter_by_today() {
         .expect_contains("project-beta")
         .expect_not_contains("project-alpha");
 }
+
+#[tokio::test]
+async fn dashboard_should_limit_to_top_projects_when_limit_enabled() {
+    WebApp::given()
+        .a_file_with_content(
+            "## TT 2025-01-15\n\
+             - #project-alpha 10h Main project\n\
+             - #project-beta 5h Secondary project\n\
+             - #project-gamma 2h Minor project\n\
+             - #project-delta 1h Small task\n",
+        )
+        .when_get("/api/dashboard")
+        .with_query("limit=true")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("project-alpha")
+        .expect_contains("project-beta")
+        .expect_not_contains("project-delta");
+}
+
