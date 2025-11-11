@@ -1,47 +1,101 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Outcomes Analysis</h1>
+<style>
+.outcomes-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    align-items: start;
+}
 
-<nav>
-    <a href="/">← Back to Dashboard</a>
-</nav>
+.main-content {
+    min-width: 0;
+}
 
-<div id="summary">
-    <h2>Total Time Tracked: <strong>{{ total_time }}</strong></h2>
+.chart-sidebar {
+    position: sticky;
+    top: 1rem;
+}
+
+.chart-sidebar canvas {
+    max-width: 100%;
+    max-height: 300px;
+}
+
+@media (max-width: 768px) {
+    .outcomes-container {
+        grid-template-columns: 1fr;
+    }
+
+    .chart-sidebar {
+        position: static;
+    }
+}
+</style>
+
+<div class="outcomes-container">
+    <div class="main-content">
+        <h1>Outcomes Analysis</h1>
+
+        <nav>
+            <a href="/">← Back to Dashboard</a>
+        </nav>
+
+        <div id="summary">
+            <h2>Total Time Tracked: <strong>{{ total_time }}</strong></h2>
+        </div>
+
+        <div id="filters">
+            <h3>Filter by Period</h3>
+            <button hx-get="/api/outcomes?period=today" hx-target="#outcomes-list"
+                    onclick="updateOutcomesChart('today')">Today</button>
+            <button hx-get="/api/outcomes?period=this-week" hx-target="#outcomes-list"
+                    onclick="updateOutcomesChart('this-week')">This Week</button>
+            <button hx-get="/api/outcomes?period=this-month" hx-target="#outcomes-list"
+                    onclick="updateOutcomesChart('this-month')">This Month</button>
+            <button hx-get="/api/outcomes" hx-target="#outcomes-list"
+                    onclick="updateOutcomesChart('')">All Time</button>
+        </div>
+
+        <div id="outcomes-list">
+            {% if outcomes.len() > 0 %}
+            <h2>Outcomes</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Outcome</th>
+                        <th>Duration</th>
+                        <th>Percentage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for outcome in outcomes %}
+                    <tr>
+                        <td>{{ outcome.description }}</td>
+                        <td>{{ outcome.minutes }} min</td>
+                        <td>{{ outcome.percentage }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No outcomes data available for this period.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="chart-sidebar">
+        <div id="chart-outcomes-pie" hx-get="/api/chart/outcomes-pie" hx-trigger="load" hx-swap="innerHTML">
+            <p>Loading chart...</p>
+        </div>
+    </div>
 </div>
 
-<div id="filters">
-    <h3>Filter by Period</h3>
-    <button hx-get="/api/outcomes?period=today" hx-target="#outcomes-list">Today</button>
-    <button hx-get="/api/outcomes?period=this-week" hx-target="#outcomes-list">This Week</button>
-    <button hx-get="/api/outcomes?period=this-month" hx-target="#outcomes-list">This Month</button>
-    <button hx-get="/api/outcomes" hx-target="#outcomes-list">All Time</button>
-</div>
-
-<div id="outcomes-list">
-    {% if outcomes.len() > 0 %}
-    <h2>Outcomes</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Outcome</th>
-                <th>Duration</th>
-                <th>Percentage</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for outcome in outcomes %}
-            <tr>
-                <td>{{ outcome.description }}</td>
-                <td>{{ outcome.minutes }} min</td>
-                <td>{{ outcome.percentage }}%</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p>No outcomes data available for this period.</p>
-    {% endif %}
-</div>
+<script>
+function updateOutcomesChart(period) {
+    const pieUrl = period ? `/api/chart/outcomes-pie?period=${period}` : '/api/chart/outcomes-pie';
+    htmx.ajax('GET', pieUrl, {target:'#chart-outcomes-pie', swap:'innerHTML'});
+}
+</script>
 {% endblock %}

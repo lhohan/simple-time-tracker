@@ -1,30 +1,99 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Time Tracker Dashboard</h1>
+<style>
+.dashboard-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    align-items: start;
+}
 
-<nav>
-    <a href="/outcomes">View Outcomes →</a>
-</nav>
+.main-content {
+    min-width: 0;
+}
 
-<div id="summary">
-    <h2>Total Time Tracked: <strong>{{ total_time }}</strong></h2>
-</div>
+.chart-sidebar {
+    position: sticky;
+    top: 1rem;
+}
 
-<div id="filters">
-    <h3>Filter by Period</h3>
-    <button hx-get="/api/dashboard?period=today" hx-target="#projects"
-            onclick="updateChart('today')">Today</button>
-    <button hx-get="/api/dashboard?period=this-week" hx-target="#projects"
-            onclick="updateChart('this-week')">This Week</button>
-    <button hx-get="/api/dashboard?period=this-month" hx-target="#projects"
-            onclick="updateChart('this-month')">This Month</button>
-    <button hx-get="/api/dashboard" hx-target="#projects"
-            onclick="updateChart('')">All Time</button>
-</div>
+.chart-sidebar canvas {
+    max-width: 100%;
+    max-height: 300px;
+}
 
-<div id="chart-pie" hx-get="/api/chart/projects-pie" hx-trigger="load" hx-swap="innerHTML">
-    <p>Loading chart...</p>
+@media (max-width: 768px) {
+    .dashboard-container {
+        grid-template-columns: 1fr;
+    }
+
+    .chart-sidebar {
+        position: static;
+    }
+}
+</style>
+
+<div class="dashboard-container">
+    <div class="main-content">
+        <h1>Time Tracker Dashboard</h1>
+
+        <nav>
+            <a href="/outcomes">View Outcomes →</a>
+        </nav>
+
+        <div id="summary">
+            <h2>Total Time Tracked: <strong>{{ total_time }}</strong></h2>
+        </div>
+
+        <div id="filters">
+            <h3>Filter by Period</h3>
+            <button hx-get="/api/dashboard?period=today" hx-target="#projects"
+                    onclick="updateChart('today')">Today</button>
+            <button hx-get="/api/dashboard?period=this-week" hx-target="#projects"
+                    onclick="updateChart('this-week')">This Week</button>
+            <button hx-get="/api/dashboard?period=this-month" hx-target="#projects"
+                    onclick="updateChart('this-month')">This Month</button>
+            <button hx-get="/api/dashboard" hx-target="#projects"
+                    onclick="updateChart('')">All Time</button>
+        </div>
+
+        <div id="projects">
+            {% if projects.len() > 0 %}
+            <h2>Time by Project</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Project</th>
+                        <th>Duration</th>
+                        <th>Percentage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for project in projects %}
+                    <tr>
+                        <td>
+                            <a href="#" hx-get="/api/tag/{{ project.description }}" hx-target="#detail">
+                                {{ project.description }}
+                            </a>
+                        </td>
+                        <td>{{ project.minutes }} min</td>
+                        <td>{{ project.percentage }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+
+        <div id="detail"></div>
+    </div>
+
+    <div class="chart-sidebar">
+        <div id="chart-pie" hx-get="/api/chart/projects-pie" hx-trigger="load" hx-swap="innerHTML">
+            <p>Loading chart...</p>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -33,34 +102,4 @@ function updateChart(period) {
     htmx.ajax('GET', pieUrl, {target:'#chart-pie', swap:'innerHTML'});
 }
 </script>
-
-<div id="projects">
-    {% if projects.len() > 0 %}
-    <h2>Time by Project</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Project</th>
-                <th>Duration</th>
-                <th>Percentage</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for project in projects %}
-            <tr>
-                <td>
-                    <a href="#" hx-get="/api/tag/{{ project.description }}" hx-target="#detail">
-                        {{ project.description }}
-                    </a>
-                </td>
-                <td>{{ project.minutes }} min</td>
-                <td>{{ project.percentage }}%</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% endif %}
-</div>
-
-<div id="detail"></div>
 {% endblock %}

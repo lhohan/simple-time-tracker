@@ -13,5 +13,6 @@ pub fn create_router_with_state(state: Arc<AppState>) -> Router {
         .route("/api/tag/:tag_name", get(handlers::tag_detail))
         .route("/api/chart/projects-bar", get(handlers::chart_projects_bar))
         .route("/api/chart/projects-pie", get(handlers::chart_projects_pie))
+        .route("/api/chart/outcomes-pie", get(handlers::chart_outcomes_pie))
         .with_state(state)
 }
