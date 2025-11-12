@@ -282,3 +282,120 @@ async fn dashboard_should_handle_single_day_date_range() {
         .expect_not_contains("day-before")
         .expect_not_contains("day-after");
 }
+
+#[tokio::test]
+async fn dashboard_should_handle_completely_empty_file() {
+    WebApp::given()
+        .a_file_with_content("")
+        .when_get("/api/dashboard")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("No data");
+}
+
+#[tokio::test]
+async fn dashboard_should_handle_single_project_only() {
+    WebApp::given()
+        .a_file_with_content(
+            "## TT 2025-01-15\n\
+             - #only-project 2h 30m Solo work\n",
+        )
+        .when_get("/api/dashboard")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("only-project")
+        .expect_contains("150 min");
+}
+
+#[tokio::test]
+async fn dashboard_should_handle_very_large_durations() {
+    WebApp::given()
+        .a_file_with_content(
+            "## TT 2025-01-15\n\
+             - #epic-project 999h 59m Marathon coding\n",
+        )
+        .when_get("/api/dashboard")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("epic-project")
+        .expect_contains("59999 min");
+}
+
+#[tokio::test]
+async fn dashboard_should_handle_zero_duration_entries() {
+    WebApp::given()
+        .a_file_with_content(
+            "## TT 2025-01-15\n\
+             - #project-alpha 0m Planning\n\
+             - #project-beta 2h Real work\n",
+        )
+        .when_get("/api/dashboard")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("project-beta");
+}
+
+#[tokio::test]
+async fn dashboard_partial_should_render_empty_list() {
+    WebApp::given()
+        .a_file_with_content("")
+        .when_get("/api/dashboard")
+        .should_succeed()
+        .await
+        .expect_status(200);
+}
+
+#[tokio::test]
+async fn dashboard_should_handle_mixed_hour_and_minute_formats() {
+    WebApp::given()
+        .a_file_with_content(
+            "## TT 2025-01-15\n\
+             - #project-alpha 2h 30m Mixed format\n\
+             - #project-beta 1h Only hours\n\
+             - #project-gamma 45m Only minutes\n",
+        )
+        .when_get("/api/dashboard")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("project-alpha")
+        .expect_contains("project-beta")
+        .expect_contains("project-gamma");
+}
+
+#[tokio::test]
+async fn dashboard_should_aggregate_multiple_entries_same_project() {
+    WebApp::given()
+        .a_file_with_content(
+            "## TT 2025-01-15\n\
+             - #project-alpha 1h Task 1\n\
+             - #project-alpha 2h Task 2\n\
+             - #project-alpha 30m Task 3\n",
+        )
+        .when_get("/api/dashboard")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("project-alpha")
+        .expect_contains("210 min");
+}
+
+#[tokio::test]
+async fn dashboard_should_handle_projects_with_special_characters() {
+    WebApp::given()
+        .a_file_with_content(
+            "## TT 2025-01-15\n\
+             - #project-with-dashes 2h Work\n\
+             - #project_with_underscores 1h More work\n",
+        )
+        .when_get("/api/dashboard")
+        .should_succeed()
+        .await
+        .expect_status(200)
+        .expect_contains("project-with-dashes")
+        .expect_contains("project_with_underscores");
+}
