@@ -117,10 +117,40 @@
 
 <script>
 let currentPeriod = '';
+let currentDateFrom = '';
+let currentDateTo = '';
+let currentLimit = 'false';
+
+function updateTagLinksWithFilters() {
+    const tagLinks = document.querySelectorAll('a[hx-get*="/api/tag/"]');
+    tagLinks.forEach(link => {
+        const originalHref = link.getAttribute('hx-get');
+        const tagName = originalHref.match(/\/api\/tag\/([^?]+)/)?.[1] || '';
+        if (!tagName) return;
+
+        const params = new URLSearchParams();
+        if (currentPeriod) {
+            params.append('period', currentPeriod);
+        }
+        if (currentDateFrom) {
+            params.append('from', currentDateFrom);
+        }
+        if (currentDateTo) {
+            params.append('to', currentDateTo);
+        }
+        params.append('limit', currentLimit);
+
+        const queryString = params.toString();
+        const newUrl = `/api/tag/${tagName}${queryString ? '?' + queryString : ''}`;
+        link.setAttribute('hx-get', newUrl);
+    });
+}
 
 function updateFilters(period) {
     if (period !== undefined) {
         currentPeriod = period;
+        currentDateFrom = '';
+        currentDateTo = '';
         // Reset checkbox and date inputs when period changes
         const limitCheckbox = document.getElementById('limit-checkbox');
         if (limitCheckbox) {
@@ -134,14 +164,14 @@ function updateFilters(period) {
     }
 
     const limitCheckbox = document.getElementById('limit-checkbox');
-    const limitParam = limitCheckbox && limitCheckbox.checked ? 'true' : 'false';
+    currentLimit = limitCheckbox && limitCheckbox.checked ? 'true' : 'false';
 
     // Build query string
     const params = new URLSearchParams();
     if (currentPeriod) {
         params.append('period', currentPeriod);
     }
-    params.append('limit', limitParam);
+    params.append('limit', currentLimit);
 
     const queryString = params.toString();
 
@@ -165,6 +195,8 @@ function applyDateRange() {
 
     // Clear period when using date range
     currentPeriod = '';
+    currentDateFrom = dateFrom.value;
+    currentDateTo = dateTo.value;
 
     // Reset checkbox
     const limitCheckbox = document.getElementById('limit-checkbox');
@@ -172,13 +204,13 @@ function applyDateRange() {
         limitCheckbox.checked = false;
     }
 
-    const limitParam = 'false';
+    currentLimit = 'false';
 
     // Build query string with date range
     const params = new URLSearchParams();
-    params.append('from', dateFrom.value);
-    params.append('to', dateTo.value);
-    params.append('limit', limitParam);
+    params.append('from', currentDateFrom);
+    params.append('to', currentDateTo);
+    params.append('limit', currentLimit);
 
     const queryString = params.toString();
 
@@ -190,5 +222,7 @@ function applyDateRange() {
     const pieUrl = `/api/chart/projects-pie?${queryString}`;
     htmx.ajax('GET', pieUrl, {target:'#chart-pie', swap:'innerHTML'});
 }
+
+document.addEventListener('htmx:afterSwap', updateTagLinksWithFilters);
 </script>
 {% endblock %}
