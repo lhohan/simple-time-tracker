@@ -44,15 +44,15 @@ test-w:
 
 # Run tests with coverage
 test-coverage:
-    cargo llvm-cov nextest --features web
+    cargo llvm-cov nextest --features web --ignore-filename-regex templates/
 
 # CI specific - Run tests with coverage
 ci-test-coverage: test-coverage
-    cargo llvm-cov report --lcov --output-path lcov.info
+    cargo llvm-cov report --lcov --output-path lcov.info --ignore-filename-regex templates/
 
 # Run tests with coverage and open the report
 test-coverage-report:
-    cargo llvm-cov nextest --open --features web
+    cargo llvm-cov nextest --open --features web --ignore-filename-regex templates/
 
 # Run performance benchmarks (CLI parsing with large dataset)
 bench:

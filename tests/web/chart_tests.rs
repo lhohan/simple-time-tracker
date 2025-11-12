@@ -122,12 +122,13 @@ async fn pie_chart_should_filter_by_this_week() {
         .expect_contains("this-week-work")
         .expect_not_contains("old-work");
 }
+
 #[tokio::test]
 async fn pie_chart_should_handle_single_data_point() {
     let input = r#"
- ## TT 2025-01-15
- - #solo-project 2h 30m Only entry
- "#;
+## TT 2025-01-15
+- #solo-project 2h 30m Only entry
+"#;
 
     WebApp::given()
         .a_file_with_content(input)
@@ -142,18 +143,18 @@ async fn pie_chart_should_handle_single_data_point() {
 #[tokio::test]
 async fn pie_chart_should_handle_many_data_points() {
     let input = r#"
- ## TT 2025-01-15
- - #project-01 1h Work
- - #project-02 1h Work
- - #project-03 1h Work
- - #project-04 1h Work
- - #project-05 1h Work
- - #project-06 1h Work
- - #project-07 1h Work
- - #project-08 1h Work
- - #project-09 1h Work
- - #project-10 1h Work
- "#;
+## TT 2025-01-15
+- #project-01 1h Work
+- #project-02 1h Work
+- #project-03 1h Work
+- #project-04 1h Work
+- #project-05 1h Work
+- #project-06 1h Work
+- #project-07 1h Work
+- #project-08 1h Work
+- #project-09 1h Work
+- #project-10 1h Work
+"#;
 
     WebApp::given()
         .a_file_with_content(input)
@@ -168,10 +169,10 @@ async fn pie_chart_should_handle_many_data_points() {
 #[tokio::test]
 async fn pie_chart_should_handle_very_large_durations() {
     let input = r#"
- ## TT 2025-01-15
- - #epic-project 999h 59m Marathon session
- - #normal-project 2h Regular work
- "#;
+## TT 2025-01-15
+- #epic-project 999h 59m Marathon session
+- #normal-project 2h Regular work
+"#;
 
     WebApp::given()
         .a_file_with_content(input)
@@ -186,13 +187,13 @@ async fn pie_chart_should_handle_very_large_durations() {
 #[tokio::test]
 async fn pie_chart_should_filter_by_custom_date_range() {
     let input = r#"
- ## TT 2025-01-10
- - #before-range 2h Before
- ## TT 2025-01-15
- - #in-range 5h Within range
- ## TT 2025-01-20
- - #after-range 3h After
- "#;
+## TT 2025-01-10
+- #before-range 2h Before
+## TT 2025-01-15
+- #in-range 5h Within range
+## TT 2025-01-20
+- #after-range 3h After
+"#;
 
     WebApp::given()
         .a_file_with_content(input)
@@ -209,14 +210,14 @@ async fn pie_chart_should_filter_by_custom_date_range() {
 #[tokio::test]
 async fn pie_chart_should_combine_date_range_and_limit() {
     let input = r#"
- ## TT 2025-01-15
- - #project-alpha 10h Main
- - #project-beta 5h Secondary
- - #project-gamma 2h Minor
- - #project-delta 1h Tiny
- ## TT 2025-01-20
- - #project-zeta 10h Outside range
- "#;
+## TT 2025-01-15
+- #project-alpha 10h Main
+- #project-beta 5h Secondary
+- #project-gamma 2h Minor
+- #project-delta 1h Tiny
+## TT 2025-01-20
+- #project-zeta 10h Outside range
+"#;
 
     WebApp::given()
         .a_file_with_content(input)
@@ -234,10 +235,10 @@ async fn pie_chart_should_combine_date_range_and_limit() {
 #[tokio::test]
 async fn pie_chart_should_handle_zero_duration_entries() {
     let input = r#"
- ## TT 2025-01-15
- - #project-alpha 0m Planning
- - #project-beta 2h Real work
- "#;
+## TT 2025-01-15
+- #project-alpha 0m Planning
+- #project-beta 2h Real work
+"#;
 
     WebApp::given()
         .a_file_with_content(input)
