@@ -206,6 +206,7 @@ pub struct EntryDisplay {
 pub async fn tag_detail(
     State(state): State<Arc<AppState>>,
     axum::extract::Path(tag_name): axum::extract::Path<String>,
+    Query(params): Query<DashboardParams>,
 ) -> Result<Html<String>, WebError> {
     use crate::domain::tags::Tag;
 
@@ -215,8 +216,16 @@ pub async fn tag_detail(
 
     let template = if let Some(data_path) = state.data_path.clone() {
         let tag_name_clone = tag_name.clone();
+        let clock = std::env::var("TT_TODAY")
+            .ok()
+            .and_then(|today_str| NaiveDate::parse_from_str(&today_str, "%Y-%m-%d").ok())
+            .map(Clock::with_today)
+            .unwrap_or_else(Clock::system);
+
+        let filter = extract_filter_from_params(&params, &clock)?;
+
         let tracking_result =
-            tokio::task::spawn_blocking(move || parsing::process_input(&data_path, None))
+            tokio::task::spawn_blocking(move || parsing::process_input(&data_path, filter.as_ref()))
                 .await
                 .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
                 .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
