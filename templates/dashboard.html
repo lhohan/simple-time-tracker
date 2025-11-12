@@ -175,6 +175,10 @@ function updateFilters(period) {
 
     const queryString = params.toString();
 
+    // Update total time summary
+    const summaryUrl = `/api/dashboard/summary?${queryString}`;
+    htmx.ajax('GET', summaryUrl, {target:'#summary', swap:'innerHTML'});
+
     // Update projects table
     const projectsUrl = `/api/dashboard?${queryString}`;
     htmx.ajax('GET', projectsUrl, {target:'#projects', swap:'innerHTML'});
@@ -213,6 +217,10 @@ function applyDateRange() {
     params.append('limit', currentLimit);
 
     const queryString = params.toString();
+
+    // Update total time summary
+    const summaryUrl = `/api/dashboard/summary?${queryString}`;
+    htmx.ajax('GET', summaryUrl, {target:'#summary', swap:'innerHTML'});
 
     // Update projects table
     const projectsUrl = `/api/dashboard?${queryString}`;
