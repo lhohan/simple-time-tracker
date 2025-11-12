@@ -32,7 +32,7 @@ web-w *args="":
 
 # Test the 'tt' app
 test:
-    cargo nextest run
+    cargo test --features web -- --test-threads=1
 
 # Test only the web dashboard
 test-web:
