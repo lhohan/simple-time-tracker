@@ -44,7 +44,7 @@ test-w:
 
 # Run tests with coverage
 test-coverage:
-    cargo llvm-cov nextest
+    cargo llvm-cov nextest --features web
 
 # CI specific - Run tests with coverage
 ci-test-coverage: test-coverage
@@ -52,7 +52,7 @@ ci-test-coverage: test-coverage
 
 # Run tests with coverage and open the report
 test-coverage-report:
-    cargo llvm-cov nextest --open
+    cargo llvm-cov nextest --open --features web
 
 # Run performance benchmarks (CLI parsing with large dataset)
 bench:
