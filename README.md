@@ -38,15 +38,17 @@ just web
 just web-w -i ./data/time-entries.md
 
 # View available options
-cargo run --bin tt-web -- --help
+cargo run --features web -- --web --help
 ```
 
 Server runs at **http://127.0.0.1:3000**
 
 **Features:**
 - Interactive dashboard with project time summaries
-- Filter by period (Today, This Week, This Month)
+- Filter by period (Today, This Week, This Month, custom date ranges)
+- Limit to top 90% of projects by cumulative time
 - Drill-down to individual entries per tag
+- Dedicated outcomes analysis page
 - HTMX-powered updates without page reload
 - Robust error handling for production use
 

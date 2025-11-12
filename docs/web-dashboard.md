@@ -226,9 +226,8 @@ The web dashboard demonstrates the ports & adapters pattern:
 
 ```
 src/
-├── bin/
-│   └── tt-web.rs           # Web server entry point
-├── web/
+├── main.rs                 # Entry point with CLI and web modes
+├── web/                    # Web module (feature-gated)
 │   ├── mod.rs              # Module exports
 │   ├── server.rs           # Axum server & routing
 │   ├── handlers.rs         # HTTP request handlers
@@ -236,11 +235,15 @@ src/
 templates/
 ├── base.html               # Base layout with CSS/HTMX
 ├── dashboard.html          # Main dashboard view
+├── outcomes.html           # Outcomes analysis page
 ├── projects_partial.html   # Project list (HTMX partial)
+├── outcomes_partial.html   # Outcomes list (HTMX partial)
+├── chart_*.html            # Chart templates
 └── tag_detail.html         # Tag detail view (HTMX partial)
 tests/web/
 ├── common.rs               # Web test DSL
 ├── dashboard_tests.rs      # Dashboard acceptance tests
+├── chart_tests.rs          # Chart tests
 └── tag_detail_tests.rs     # Detail view tests
 ```
 
@@ -344,11 +347,13 @@ just test
 ```
 Error: Address already in use (os error 48)
 ```
-Solution: Change port in `src/bin/tt-web.rs` or kill process on port 3000:
+Solution: Use `--port` flag to change port or kill process on port 3000:
 ```bash
-# Find process using port 3000
+# Use different port
+cargo run --features web -- --web --port 3001
+
+# Or find and kill process using port 3000
 lsof -i :3000
-# Kill it
 kill -9 <PID>
 ```
 
@@ -376,7 +381,7 @@ Askama validates templates at compile time. Check:
 **Slow Parsing:**
 - Consider caching parsed data in `AppState`
 - Use period filters to reduce data processing
-- Profile with `cargo flamegraph --bin tt-web`
+- Profile with `cargo flamegraph --features web -- --web`
 
 **High Memory Usage:**
 - Large markdown files are parsed on every request

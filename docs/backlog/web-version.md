@@ -1,5 +1,8 @@
 # Time Tracker Web Dashboard - Implementation Prompt
 
+> **Status: COMPLETED** (with modifications)
+> The web dashboard has been implemented and integrated into the main `tt` binary using the `--web` flag instead of a separate binary. See `docs/web-dashboard.md` for current documentation.
+
 ## Overview
 Create a clean, extensible web interface for the time-tracker project using **Axum + HTMX + Askama**.
 The web server should:
