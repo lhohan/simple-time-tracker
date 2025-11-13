@@ -149,12 +149,7 @@ function updateFilters(period) {
         currentPeriod = period;
         currentDateFrom = '';
         currentDateTo = '';
-        // Reset checkbox and date inputs when period changes
-        const limitCheckbox = document.getElementById('limit-checkbox');
-        if (limitCheckbox) {
-            limitCheckbox.checked = false;
-        }
-        // Clear date inputs when using period filters
+        // Clear date inputs when using period filters (preserve limit checkbox state)
         const dateFrom = document.getElementById('date-from');
         const dateTo = document.getElementById('date-to');
         if (dateFrom) dateFrom.value = '';
