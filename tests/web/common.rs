@@ -6,8 +6,15 @@ use assert_fs::prelude::*;
 use axum::body::Body;
 use axum::http::{Method, Request, StatusCode};
 use chrono::NaiveDate;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, OnceLock};
 use tower::util::ServiceExt;
+
+// Global mutex to serialize access to TT_TODAY environment variable
+static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+
+fn get_env_lock() -> &'static Mutex<()> {
+    ENV_LOCK.get_or_init(|| Mutex::new(()))
+}
 
 #[derive(Debug, Clone)]
 enum InputSource {
@@ -96,9 +103,16 @@ impl RequestBuilder {
             (None, None)
         };
 
+        // Acquire lock to serialize access to TT_TODAY environment variable
+        let _guard = get_env_lock().lock().expect("Failed to acquire env lock");
+
+        // Always set TT_TODAY to avoid race conditions between tests
         if let Some(run_date) = self.spec.run_date {
             let today = run_date.format("%Y-%m-%d").to_string();
             std::env::set_var("TT_TODAY", today);
+        } else {
+            // Clear any previously set TT_TODAY to ensure clean state
+            std::env::remove_var("TT_TODAY");
         }
 
         let state = std::sync::Arc::new(time_tracker::web::AppState {
@@ -124,6 +138,8 @@ impl RequestBuilder {
             .expect("Failed to execute request");
 
         std::env::remove_var("TT_TODAY");
+
+        // Lock is automatically released when _guard goes out of scope
 
         WebAppResult {
             status: response.status(),
