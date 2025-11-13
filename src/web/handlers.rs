@@ -103,16 +103,36 @@ fn extract_filter_from_params(
     }
 }
 
-pub async fn dashboard(State(state): State<Arc<AppState>>) -> Result<Html<String>, WebError> {
+pub async fn dashboard(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<DashboardParams>,
+) -> Result<Html<String>, WebError> {
     let template = if let Some(data_path) = state.data_path.clone() {
-        let tracking_result =
-            tokio::task::spawn_blocking(move || parsing::process_input(&data_path, None))
-                .await
-                .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
-                .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
+        let clock = std::env::var("TT_TODAY")
+            .ok()
+            .and_then(|today_str| NaiveDate::parse_from_str(&today_str, "%Y-%m-%d").ok())
+            .map(Clock::with_today)
+            .unwrap_or_else(Clock::system);
+
+        let filter = extract_filter_from_params(&params, &clock)?;
+
+        let period = params
+            .period
+            .as_ref()
+            .and_then(|p| PeriodRequested::from_str(p, &clock).ok());
+
+        let tracking_result = tokio::task::spawn_blocking(move || {
+            parsing::process_input(&data_path, filter.as_ref())
+        })
+        .await
+        .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
+        .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
 
         if let Some(time_entries) = tracking_result.time_entries {
-            let overview = OverviewReport::overview(&time_entries, None, None);
+            let limit = params
+                .limit
+                .and_then(|l| l.then_some(OutputLimit::CumulativePercentageThreshold(90.00)));
+            let overview = OverviewReport::overview(&time_entries, limit.as_ref(), period.as_ref());
 
             DashboardTemplate {
                 total_time: format_minutes(overview.total_minutes()),
