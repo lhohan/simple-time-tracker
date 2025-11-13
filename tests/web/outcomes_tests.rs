@@ -172,7 +172,8 @@ async fn outcomes_partial_should_limit_to_top_outcomes() {
         .await
         .expect_status(200)
         .expect_contains("outcome-alpha")
-        .expect_contains("outcome-beta");
+        .expect_contains("outcome-beta")
+        .expect_not_contains("outcome-delta");
 }
 
 #[tokio::test]
@@ -263,7 +264,8 @@ async fn outcomes_chart_should_respect_limit_filter() {
         .should_succeed()
         .await
         .expect_status(200)
-        .expect_contains("outcome-alpha");
+        .expect_contains("outcome-alpha")
+        .expect_not_contains("outcome-delta");
 }
 
 #[tokio::test]

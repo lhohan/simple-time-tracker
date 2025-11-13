@@ -117,7 +117,7 @@ impl OverviewReport {
         period_requested: Option<&PeriodRequested>,
     ) -> Self {
         let entries_summed = sum_time_entries(time_report, limit);
-        let outcomes_summed = sum_outcomes(time_report);
+        let outcomes_summed = sum_outcomes(time_report, limit);
 
         OverviewReport {
             entries_total_time: entries_summed,
@@ -218,16 +218,30 @@ fn sum_entries(entries: &[TimeEntry]) -> Vec<(String, u32)> {
         .collect()
 }
 
-fn sum_outcomes(time_report: &TrackedTime) -> Vec<TimeTotal> {
-    sum_time_by_key(time_report.entries.iter(), |entry| {
+fn sum_outcomes(time_report: &TrackedTime, limit: Option<&OutputLimit>) -> Vec<TimeTotal> {
+    let summed_outcomes = sum_time_by_key(time_report.entries.iter(), |entry| {
         entry
             .outcome
             .as_ref()
             .map(|outcome| outcome.description().to_string())
-    })
-    .into_iter()
-    .map(|(outcome, duration)| TimeTotal::new(outcome, duration, time_report.total_minutes))
-    .collect()
+    });
+
+    let summed_outcomes_sorted = summed_outcomes
+        .into_iter()
+        .map(|(outcome, minutes)| TimeTotal::new(outcome, minutes, time_report.total_minutes))
+        .sorted_by(|a, b| {
+            b.minutes
+                .cmp(&a.minutes)
+                .then(a.description.cmp(&b.description))
+        });
+
+    match limit {
+        Some(OutputLimit::CumulativePercentageThreshold(threshold)) => {
+            let total_minutes = f64::from(time_report.total_minutes);
+            limit_number_of_entries(total_minutes, summed_outcomes_sorted, *threshold)
+        }
+        None => summed_outcomes_sorted.collect(),
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
