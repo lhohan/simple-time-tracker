@@ -48,42 +48,49 @@
 
         <div id="filters">
             <h3>Filter by Period</h3>
-            <button hx-get="/api/dashboard?period=today"
-                    hx-target="#projects"
-                    hx-include="#limit-checkbox"
-                    hx-push-url="true"
-                    hx-on::after-request="filterUpdated(event)">Today</button>
-            <button hx-get="/api/dashboard?period=this-week"
-                    hx-target="#projects"
-                    hx-include="#limit-checkbox"
-                    hx-push-url="true"
-                    hx-on::after-request="filterUpdated(event)">This Week</button>
-            <button hx-get="/api/dashboard?period=this-month"
-                    hx-target="#projects"
-                    hx-include="#limit-checkbox"
-                    hx-push-url="true"
-                    hx-on::after-request="filterUpdated(event)">This Month</button>
+            <input type="hidden" id="period" name="period" value="">
+            <input type="hidden" id="from" name="from" value="">
+            <input type="hidden" id="to" name="to" value="">
             <button hx-get="/api/dashboard"
                     hx-target="#projects"
-                    hx-include="#limit-checkbox"
+                    hx-include="#period, #from, #to, #limit-checkbox"
                     hx-push-url="true"
-                    hx-on::after-request="filterUpdated(event)">All Time</button>
+                    hx-on::htmx:beforeRequest="setPeriod('today'); syncDateInputs()"
+                    hx-on::htmx:afterRequest="filterUpdated(event)">Today</button>
+            <button hx-get="/api/dashboard"
+                    hx-target="#projects"
+                    hx-include="#period, #from, #to, #limit-checkbox"
+                    hx-push-url="true"
+                    hx-on::htmx:beforeRequest="setPeriod('this-week'); syncDateInputs()"
+                    hx-on::htmx:afterRequest="filterUpdated(event)">This Week</button>
+            <button hx-get="/api/dashboard"
+                    hx-target="#projects"
+                    hx-include="#period, #from, #to, #limit-checkbox"
+                    hx-push-url="true"
+                    hx-on::htmx:beforeRequest="setPeriod('this-month'); syncDateInputs()"
+                    hx-on::htmx:afterRequest="filterUpdated(event)">This Month</button>
+            <button hx-get="/api/dashboard"
+                    hx-target="#projects"
+                    hx-include="#period, #from, #to, #limit-checkbox"
+                    hx-push-url="true"
+                    hx-on::htmx:beforeRequest="setPeriod(''); syncDateInputs()"
+                    hx-on::htmx:afterRequest="filterUpdated(event)">All Time</button>
 
             <div style="margin-top: 1rem;">
                 <h4>Custom Date Range</h4>
                 <label>
                     From:
-                    <input type="date" id="date-from" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-include="#date-from, #date-to, #limit-checkbox" hx-push-url="true" hx-on::after-request="filterUpdated(event)">
+                    <input type="date" id="date-from" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-include="#period, #from, #to, #limit-checkbox" hx-push-url="true" hx-on::htmx:beforeRequest="syncDateInputs()" hx-on::htmx:afterRequest="filterUpdated(event)">
                 </label>
                 <label style="margin-left: 1rem;">
                     To:
-                    <input type="date" id="date-to" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-include="#date-from, #date-to, #limit-checkbox" hx-push-url="true" hx-on::after-request="filterUpdated(event)">
+                    <input type="date" id="date-to" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-include="#period, #from, #to, #limit-checkbox" hx-push-url="true" hx-on::htmx:beforeRequest="syncDateInputs()" hx-on::htmx:afterRequest="filterUpdated(event)">
                 </label>
             </div>
 
             <div style="margin-top: 1rem;">
                 <label>
-                    <input type="checkbox" id="limit-checkbox" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-include="#date-from, #date-to, #limit-checkbox" hx-push-url="true" hx-on::after-request="filterUpdated(event)">
+                    <input type="checkbox" id="limit-checkbox" name="limit" value="true" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-include="#period, #from, #to, #limit-checkbox" hx-push-url="true" hx-on::htmx:afterRequest="filterUpdated(event)">
                     Limit to top 90%
                 </label>
             </div>
@@ -130,28 +137,50 @@
 </div>
 
 <script>
-function filterUpdated(event) {
-    const formData = new FormData();
-    const filters = document.getElementById('filters');
+function setPeriod(period) {
+    document.getElementById('period').value = period;
+    // Clear date range when switching periods
+    document.getElementById('from').value = '';
+    document.getElementById('to').value = '';
+    document.getElementById('date-from').value = '';
+    document.getElementById('date-to').value = '';
+}
 
-    // Collect all filter inputs (period, dates, limit)
-    const inputs = filters.querySelectorAll('input[type="date"], input[type="checkbox"], select');
-    inputs.forEach(input => {
-        if (input.type === 'checkbox') {
-            if (input.checked) formData.append(input.id, input.value || 'true');
-        } else if (input.value) {
-            formData.append(input.id.replace(/-/g, '').replace('date', ''), input.value);
-        }
-    });
+function syncDateInputs() {
+    // Sync visible date inputs to hidden ones before request
+    document.getElementById('from').value = document.getElementById('date-from').value;
+    document.getElementById('to').value = document.getElementById('date-to').value;
+
+    // Clear period when using date range
+    if (document.getElementById('date-from').value || document.getElementById('date-to').value) {
+        document.getElementById('period').value = '';
+    }
+}
+
+function filterUpdated(event) {
+    const period = document.getElementById('period').value;
+    const from = document.getElementById('from').value;
+    const to = document.getElementById('to').value;
+    const limitCheckbox = document.getElementById('limit-checkbox');
+    const limit = limitCheckbox && limitCheckbox.checked ? 'true' : 'false';
+
+    // Build query string with current filter state
+    const params = new URLSearchParams();
+    if (period) params.append('period', period);
+    if (from) params.append('from', from);
+    if (to) params.append('to', to);
+    params.append('limit', limit);
+
+    const queryString = params.toString();
 
     // Update summary
-    htmx.ajax('GET', '/api/dashboard/summary?' + new URLSearchParams(formData).toString(), {
+    htmx.ajax('GET', '/api/dashboard/summary?' + queryString, {
         target: '#summary',
         swap: 'innerHTML'
     });
 
     // Update chart
-    htmx.ajax('GET', '/api/chart/projects-pie?' + new URLSearchParams(formData).toString(), {
+    htmx.ajax('GET', '/api/chart/projects-pie?' + queryString, {
         target: '#chart-pie',
         swap: 'innerHTML'
     });
