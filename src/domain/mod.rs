@@ -1,5 +1,6 @@
 pub mod dates;
 pub mod reporting;
+pub mod stats;
 pub mod tags;
 pub mod time;
 use std::collections::VecDeque;

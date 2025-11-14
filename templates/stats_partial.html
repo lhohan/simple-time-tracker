@@ -1,0 +1,133 @@
+<style>
+.tag-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 1rem;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.tag-row header {
+    font-weight: bold;
+    border-bottom: 2px solid #333;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, #4CAF50 0%, #2196F3 100%);
+    height: 20px;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-text {
+    color: white;
+    font-size: 12px;
+    line-height: 20px;
+    margin-left: 4px;
+}
+
+.unused-tags-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.tag-badge {
+    background: #f0f0f0;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 14px;
+    border: 1px solid #ddd;
+}
+
+.stats-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: #f9f9f9;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    text-align: center;
+}
+
+.stat-card h3 {
+    margin: 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.stat-card .value {
+    font-size: 28px;
+    font-weight: bold;
+    margin-top: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .tag-row {
+        grid-template-columns: 1fr;
+    }
+
+    .unused-tags-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+}
+</style>
+
+<div class="stats-summary">
+    <div class="stat-card">
+        <h3>Total Tags Used</h3>
+        <div class="value">{{ used_tags.len() }}</div>
+    </div>
+    <div class="stat-card">
+        <h3>Unused Tags</h3>
+        <div class="value">{{ unused_tags.len() }}</div>
+    </div>
+    <div class="stat-card">
+        <h3>Total Entries</h3>
+        <div class="value">{{ total_entries }}</div>
+    </div>
+</div>
+
+{% if used_tags.len() > 0 %}
+<h2>Used Tags</h2>
+<div class="tag-row header">
+    <div>Tag</div>
+    <div>Usage</div>
+    <div>Time</div>
+    <div>Distribution</div>
+</div>
+
+{% for tag in used_tags %}
+<div class="tag-row">
+    <div><strong>{{ tag.tag }}</strong></div>
+    <div>{{ tag.count }} time{% if tag.count != 1 %}s{% endif %}</div>
+    <div>{{ tag.minutes }} min</div>
+    <div>
+        <div class="progress-bar" style="width: {{ tag.percentage }}%">
+            <span class="progress-text">{{ tag.percentage }}%</span>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<p>No tags tracked in this period.</p>
+{% endif %}
+
+{% if unused_tags.len() > 0 %}
+<h2>Unused Tags</h2>
+<p>The following tags have not been used in the selected period:</p>
+<div class="unused-tags-grid">
+    {% for tag in unused_tags %}
+    <div class="tag-badge">{{ tag }}</div>
+    {% endfor %}
+</div>
+{% endif %}
