@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>CLI Flag Statistics</h1>
+
+    <div class="grid">
+        <div>
+            <h3>{{ total_executions }}</h3>
+            <p>Total Executions</p>
+        </div>
+        <div>
+            <h3 style="color: #51cf66;">{{ successful_executions }}</h3>
+            <p>Successful</p>
+        </div>
+        <div>
+            <h3 style="color: #ff6b6b;">{{ failed_executions }}</h3>
+            <p>Failed</p>
+        </div>
+    </div>
+
+    {% if total_executions == 0 %}
+    <p><em>No CLI usage statistics recorded yet.</em></p>
+    {% else %}
+    <div style="margin-top: 2rem;">
+        <h2>Flag Usage</h2>
+
+        <form hx-get="/api/flag-statistics" hx-target="#flags-table" hx-trigger="change">
+            <div class="grid">
+                <input
+                    type="text"
+                    name="include"
+                    placeholder="Include flags (comma-separated, e.g., input,verbose)"
+                    title="Show only these flags"
+                />
+                <input
+                    type="text"
+                    name="exclude"
+                    placeholder="Exclude flags (comma-separated)"
+                    title="Hide these flags"
+                />
+            </div>
+        </form>
+
+        <table id="flags-table">
+            <thead>
+                <tr>
+                    <th>Flag Name</th>
+                    <th>Usage Count</th>
+                    <th>Successful</th>
+                    <th>Failed</th>
+                    <th>Success Rate</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for flag in flags %}
+                <tr>
+                    <td><strong>{{ flag.name }}</strong></td>
+                    <td>{{ flag.count }}</td>
+                    <td><span style="color: #51cf66;">{{ flag.success_count }}</span></td>
+                    <td><span style="color: #ff6b6b;">{{ flag.failure_count }}</span></td>
+                    <td>
+                        {% if flag.count > 0 %}
+                            {% if flag.success_count * 100 >= flag.count * 95 %}
+                                <span style="color: #51cf66;">{% if flag.success_count == flag.count %}100{% else %}{{ flag.success_count * 100 / flag.count }}{% endif %}%</span>
+                            {% else if flag.success_count * 100 >= flag.count * 80 %}
+                                <span style="color: #ffd93d;">{{ flag.success_count * 100 / flag.count }}%</span>
+                            {% else %}
+                                <span style="color: #ff6b6b;">{{ flag.success_count * 100 / flag.count }}%</span>
+                            {% endif %}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if flags.is_empty() %}
+                <tr>
+                    <td colspan="5"><em>No flags match the selected filters.</em></td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e0e0e0;">
+        <a href="/" class="contrast">← Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}
