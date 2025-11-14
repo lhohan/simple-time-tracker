@@ -49,26 +49,26 @@
         <form id="filter-form-outcomes">
             <div id="filters">
                 <h3>Filter by Period</h3>
-                <button type="button" hx-get="/api/outcomes" hx-vals='{"period":"today"}' hx-target="#outcomes-list" hx-include="#filter-form-outcomes" hx-on::htmx:afterRequest="updateOutcomesSummaryAndChart()">Today</button>
-                <button type="button" hx-get="/api/outcomes" hx-vals='{"period":"this-week"}' hx-target="#outcomes-list" hx-include="#filter-form-outcomes" hx-on::htmx:afterRequest="updateOutcomesSummaryAndChart()">This Week</button>
-                <button type="button" hx-get="/api/outcomes" hx-vals='{"period":"this-month"}' hx-target="#outcomes-list" hx-include="#filter-form-outcomes" hx-on::htmx:afterRequest="updateOutcomesSummaryAndChart()">This Month</button>
-                <button type="button" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes" hx-on::htmx:afterRequest="updateOutcomesSummaryAndChart()">All Time</button>
+                <button type="button" hx-get="/api/outcomes" hx-vals='{"period":"today"}' hx-target="#outcomes-list" hx-include="#filter-form-outcomes">Today</button>
+                <button type="button" hx-get="/api/outcomes" hx-vals='{"period":"this-week"}' hx-target="#outcomes-list" hx-include="#filter-form-outcomes">This Week</button>
+                <button type="button" hx-get="/api/outcomes" hx-vals='{"period":"this-month"}' hx-target="#outcomes-list" hx-include="#filter-form-outcomes">This Month</button>
+                <button type="button" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes">All Time</button>
 
                 <div style="margin-top: 1rem;">
                     <h4>Custom Date Range</h4>
                     <label>
                         From:
-                        <input type="date" id="date-from-outcomes" name="from" hx-trigger="change" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes" hx-on::htmx:afterRequest="updateOutcomesSummaryAndChart()">
+                        <input type="date" id="date-from-outcomes" name="from" hx-trigger="change" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes">
                     </label>
                     <label style="margin-left: 1rem;">
                         To:
-                        <input type="date" id="date-to-outcomes" name="to" hx-trigger="change" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes" hx-on::htmx:afterRequest="updateOutcomesSummaryAndChart()">
+                        <input type="date" id="date-to-outcomes" name="to" hx-trigger="change" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes">
                     </label>
                 </div>
 
                 <div style="margin-top: 1rem;">
                     <label>
-                        <input type="checkbox" id="limit-checkbox-outcomes" name="limit" value="true" hx-trigger="change" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes" hx-on::htmx:afterRequest="updateOutcomesSummaryAndChart()">
+                        <input type="checkbox" id="limit-checkbox-outcomes" name="limit" value="true" hx-trigger="change" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes">
                         Limit to top 90%
                     </label>
                 </div>
@@ -103,28 +103,9 @@
     </div>
 
     <div class="chart-sidebar">
-        <div id="chart-outcomes-pie" hx-get="/api/chart/outcomes-pie" hx-trigger="load" hx-swap="innerHTML" hx-include="#filter-form-outcomes">
+        <div id="chart-outcomes-pie">
             <p>Loading chart...</p>
         </div>
     </div>
 </div>
-
-<script>
-function updateOutcomesSummaryAndChart() {
-    const form = document.getElementById('filter-form-outcomes');
-    const formData = new FormData(form);
-    const params = new URLSearchParams(formData);
-    const queryString = params.toString() ? '?' + params.toString() : '';
-
-    htmx.ajax('GET', '/api/outcomes/summary' + queryString, {
-        target: '#summary',
-        swap: 'innerHTML'
-    });
-
-    htmx.ajax('GET', '/api/chart/outcomes-pie' + queryString, {
-        target: '#chart-outcomes-pie',
-        swap: 'innerHTML'
-    });
-}
-</script>
 {% endblock %}

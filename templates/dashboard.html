@@ -49,26 +49,26 @@
         <form id="filter-form">
             <div id="filters">
                 <h3>Filter by Period</h3>
-                <button type="button" hx-get="/api/dashboard" hx-vals='{"period":"today"}' hx-target="#projects" hx-include="#filter-form" hx-on::htmx:afterRequest="updateSummaryAndChart()">Today</button>
-                <button type="button" hx-get="/api/dashboard" hx-vals='{"period":"this-week"}' hx-target="#projects" hx-include="#filter-form" hx-on::htmx:afterRequest="updateSummaryAndChart()">This Week</button>
-                <button type="button" hx-get="/api/dashboard" hx-vals='{"period":"this-month"}' hx-target="#projects" hx-include="#filter-form" hx-on::htmx:afterRequest="updateSummaryAndChart()">This Month</button>
-                <button type="button" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form" hx-on::htmx:afterRequest="updateSummaryAndChart()">All Time</button>
+                <button type="button" hx-get="/api/dashboard" hx-vals='{"period":"today"}' hx-target="#projects" hx-include="#filter-form">Today</button>
+                <button type="button" hx-get="/api/dashboard" hx-vals='{"period":"this-week"}' hx-target="#projects" hx-include="#filter-form">This Week</button>
+                <button type="button" hx-get="/api/dashboard" hx-vals='{"period":"this-month"}' hx-target="#projects" hx-include="#filter-form">This Month</button>
+                <button type="button" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form">All Time</button>
 
                 <div style="margin-top: 1rem;">
                     <h4>Custom Date Range</h4>
                     <label>
                         From:
-                        <input type="date" id="date-from" name="from" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form" hx-on::htmx:afterRequest="updateSummaryAndChart()">
+                        <input type="date" id="date-from" name="from" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form">
                     </label>
                     <label style="margin-left: 1rem;">
                         To:
-                        <input type="date" id="date-to" name="to" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form" hx-on::htmx:afterRequest="updateSummaryAndChart()">
+                        <input type="date" id="date-to" name="to" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form">
                     </label>
                 </div>
 
                 <div style="margin-top: 1rem;">
                     <label>
-                        <input type="checkbox" id="limit-checkbox" name="limit" value="true" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form" hx-on::htmx:afterRequest="updateSummaryAndChart()">
+                        <input type="checkbox" id="limit-checkbox" name="limit" value="true" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form">
                         Limit to top 90%
                     </label>
                 </div>
@@ -109,28 +109,9 @@
     </div>
 
     <div class="chart-sidebar">
-        <div id="chart-pie" hx-get="/api/chart/projects-pie" hx-trigger="load" hx-swap="innerHTML" hx-include="#filter-form">
+        <div id="chart-pie">
             <p>Loading chart...</p>
         </div>
     </div>
 </div>
-
-<script>
-function updateSummaryAndChart() {
-    const form = document.getElementById('filter-form');
-    const formData = new FormData(form);
-    const params = new URLSearchParams(formData);
-    const queryString = params.toString() ? '?' + params.toString() : '';
-
-    htmx.ajax('GET', '/api/dashboard/summary' + queryString, {
-        target: '#summary',
-        swap: 'innerHTML'
-    });
-
-    htmx.ajax('GET', '/api/chart/projects-pie' + queryString, {
-        target: '#chart-pie',
-        swap: 'innerHTML'
-    });
-}
-</script>
 {% endblock %}
