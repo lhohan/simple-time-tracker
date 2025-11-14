@@ -8,6 +8,8 @@ use crate::domain::ParseError;
 use crate::domain::PeriodRequested;
 use crate::reporting::format::Formatter;
 
+pub mod statistics;
+
 #[derive(Parser, Debug)]
 #[command(author, version, about = "Simple time tracking from markdown files")]
 pub struct Args {

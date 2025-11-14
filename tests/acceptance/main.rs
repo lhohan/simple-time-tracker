@@ -1,4 +1,6 @@
 mod breakdown;
+mod cli_stats;
+mod cli_stats_common;
 mod common;
 mod details;
 mod general;
