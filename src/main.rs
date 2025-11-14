@@ -1,6 +1,7 @@
 use anyhow::Result;
 use chrono::NaiveDate;
 use time_tracker::cli::Args;
+use time_tracker::cli::statistics::{StatisticsCollector, write_stat_record};
 use time_tracker::domain::time::Clock;
 
 #[cfg(feature = "web")]
@@ -12,10 +13,25 @@ fn main() -> Result<()> {
     let args = Args::parse()
         .map_err(|err| anyhow::anyhow!("Error parsing command line arguments: {err}"))?;
 
-    if args.web {
+    let stat_record = StatisticsCollector::from_args(&args);
+
+    let result = if args.web {
         run_web_server(args)
     } else {
         run_cli(args)
+    };
+
+    match result {
+        Ok(()) => {
+            let _ = write_stat_record(&stat_record);
+            Ok(())
+        }
+        Err(e) => {
+            let mut failed_record = stat_record;
+            failed_record = StatisticsCollector::with_failure(failed_record, "execution_error".to_string());
+            let _ = write_stat_record(&failed_record);
+            Err(e)
+        }
     }
 }
 
