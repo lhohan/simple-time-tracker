@@ -169,6 +169,13 @@ pub struct ProjectsPartialTemplate {
     pub projects: Vec<TimeTotal>,
 }
 
+#[derive(Template)]
+#[template(path = "dashboard_combined_partial.html")]
+pub struct DashboardCombinedPartialTemplate {
+    pub projects: Vec<TimeTotal>,
+    pub total_time: String,
+}
+
 pub async fn dashboard_summary(
     State(state): State<Arc<AppState>>,
     Query(params): Query<DashboardParams>,
@@ -302,14 +309,21 @@ pub async fn dashboard_partial(
                 .and_then(|l| l.then_some(OutputLimit::CumulativePercentageThreshold(90.00)));
             let overview = OverviewReport::overview(&time_entries, limit.as_ref(), period.as_ref());
 
-            ProjectsPartialTemplate {
+            DashboardCombinedPartialTemplate {
                 projects: overview.entries_time_totals().clone(),
+                total_time: format_minutes(overview.total_minutes()),
             }
         } else {
-            ProjectsPartialTemplate { projects: vec![] }
+            DashboardCombinedPartialTemplate {
+                projects: vec![],
+                total_time: "0m".to_string(),
+            }
         }
     } else {
-        ProjectsPartialTemplate { projects: vec![] }
+        DashboardCombinedPartialTemplate {
+            projects: vec![],
+            total_time: "0m".to_string(),
+        }
     };
 
     let html = template
@@ -505,6 +519,13 @@ pub struct OutcomesPartialTemplate {
     pub outcomes: Vec<TimeTotal>,
 }
 
+#[derive(Template)]
+#[template(path = "outcomes_combined_partial.html")]
+pub struct OutcomesCombinedPartialTemplate {
+    pub outcomes: Vec<TimeTotal>,
+    pub total_time: String,
+}
+
 pub async fn outcomes_partial(
     State(state): State<Arc<AppState>>,
     Query(params): Query<DashboardParams>,
@@ -536,14 +557,21 @@ pub async fn outcomes_partial(
                 .and_then(|l| l.then_some(OutputLimit::CumulativePercentageThreshold(90.00)));
             let overview = OverviewReport::overview(&time_entries, limit.as_ref(), period.as_ref());
 
-            OutcomesPartialTemplate {
+            OutcomesCombinedPartialTemplate {
                 outcomes: overview.outcome_time_totals().clone(),
+                total_time: format_minutes(overview.total_minutes()),
             }
         } else {
-            OutcomesPartialTemplate { outcomes: vec![] }
+            OutcomesCombinedPartialTemplate {
+                outcomes: vec![],
+                total_time: "0m".to_string(),
+            }
         }
     } else {
-        OutcomesPartialTemplate { outcomes: vec![] }
+        OutcomesCombinedPartialTemplate {
+            outcomes: vec![],
+            total_time: "0m".to_string(),
+        }
     };
 
     let html = template
