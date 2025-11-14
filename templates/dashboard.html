@@ -48,12 +48,13 @@
         </div>
 
         <form id="filter-form">
+            <input type="hidden" id="selected-period" name="period" value="">
             <div id="filters">
                 <h3>Filter by Period</h3>
-                <button type="button" hx-get="/api/dashboard" hx-vals='{"period":"today"}' hx-target="#projects" hx-include="#filter-form">Today</button>
-                <button type="button" hx-get="/api/dashboard" hx-vals='{"period":"this-week"}' hx-target="#projects" hx-include="#filter-form">This Week</button>
-                <button type="button" hx-get="/api/dashboard" hx-vals='{"period":"this-month"}' hx-target="#projects" hx-include="#filter-form">This Month</button>
-                <button type="button" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form">All Time</button>
+                <button type="button" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form" onclick="document.getElementById('selected-period').value = 'today'">Today</button>
+                <button type="button" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form" onclick="document.getElementById('selected-period').value = 'this-week'">This Week</button>
+                <button type="button" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form" onclick="document.getElementById('selected-period').value = 'this-month'">This Month</button>
+                <button type="button" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form" onclick="document.getElementById('selected-period').value = ''">All Time</button>
 
                 <div style="margin-top: 1rem;">
                     <h4>Custom Date Range</h4>
