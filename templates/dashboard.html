@@ -48,38 +48,43 @@
 
         <div id="filters">
             <h3>Filter by Period</h3>
+            <input type="hidden" id="current-period" name="period" value="">
             <button hx-get="/api/dashboard?period=today"
                     hx-target="#projects"
                     hx-include="#limit-checkbox"
+                    hx-on::htmx:beforeRequest="document.getElementById('current-period').value='today'"
                     hx-on::htmx:afterRequest="updateSummaryAndChart()">Today</button>
             <button hx-get="/api/dashboard?period=this-week"
                     hx-target="#projects"
                     hx-include="#limit-checkbox"
+                    hx-on::htmx:beforeRequest="document.getElementById('current-period').value='this-week'"
                     hx-on::htmx:afterRequest="updateSummaryAndChart()">This Week</button>
             <button hx-get="/api/dashboard?period=this-month"
                     hx-target="#projects"
                     hx-include="#limit-checkbox"
+                    hx-on::htmx:beforeRequest="document.getElementById('current-period').value='this-month'"
                     hx-on::htmx:afterRequest="updateSummaryAndChart()">This Month</button>
             <button hx-get="/api/dashboard"
                     hx-target="#projects"
                     hx-include="#limit-checkbox"
+                    hx-on::htmx:beforeRequest="document.getElementById('current-period').value=''"
                     hx-on::htmx:afterRequest="updateSummaryAndChart()">All Time</button>
 
             <div style="margin-top: 1rem;">
                 <h4>Custom Date Range</h4>
                 <label>
                     From:
-                    <input type="date" id="date-from" name="from" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-include="#limit-checkbox">
+                    <input type="date" id="date-from" name="from" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-include="#limit-checkbox" hx-on::htmx:beforeRequest="document.getElementById('current-period').value=''" hx-on::htmx:afterRequest="updateSummaryAndChart()">
                 </label>
                 <label style="margin-left: 1rem;">
                     To:
-                    <input type="date" id="date-to" name="to" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-include="#limit-checkbox">
+                    <input type="date" id="date-to" name="to" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-include="#limit-checkbox" hx-on::htmx:beforeRequest="document.getElementById('current-period').value=''" hx-on::htmx:afterRequest="updateSummaryAndChart()">
                 </label>
             </div>
 
             <div style="margin-top: 1rem;">
                 <label>
-                    <input type="checkbox" id="limit-checkbox" name="limit" value="true" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects">
+                    <input type="checkbox" id="limit-checkbox" name="limit" value="true" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-on::htmx:afterRequest="updateSummaryAndChart()">
                     Limit to top 90%
                 </label>
             </div>
@@ -130,11 +135,17 @@ function updateSummaryAndChart() {
     const limitCheckbox = document.getElementById('limit-checkbox');
     const dateFrom = document.getElementById('date-from');
     const dateTo = document.getElementById('date-to');
+    const currentPeriod = document.getElementById('current-period');
 
     // Build query string from current form state
     const params = new URLSearchParams();
 
-    // Add date range if both dates are set
+    // Add period if set
+    if (currentPeriod && currentPeriod.value) {
+        params.append('period', currentPeriod.value);
+    }
+
+    // Add date range if both dates are set (takes precedence over period)
     if (dateFrom.value) params.append('from', dateFrom.value);
     if (dateTo.value) params.append('to', dateTo.value);
 
