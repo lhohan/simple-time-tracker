@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use crate::domain::dates::range::DateRange;
 use crate::domain::dates::{EndDate, StartDate};
-use crate::domain::reporting::{OutputLimit, OverviewReport, TimeTotal};
+use crate::domain::reporting::{OutputLimit, OverviewReport, StatsReport, TagUsage, TimeTotal};
 use crate::domain::time::Clock;
 use crate::domain::PeriodRequested;
 use crate::parsing;
@@ -546,6 +546,120 @@ pub async fn chart_outcomes_pie(
         }
     } else {
         ChartOutcomesPieTemplate { outcomes: vec![] }
+    };
+
+    let html = template
+        .render()
+        .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
+    Ok(Html(html))
+}
+
+#[derive(Template)]
+#[template(path = "stats.html")]
+pub struct StatsPageTemplate {
+    pub used_tags: Vec<TagUsage>,
+    pub unused_tags: Vec<String>,
+    pub total_entries: u32,
+}
+
+pub async fn stats_page(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<DashboardParams>,
+) -> Result<Html<String>, WebError> {
+    let template = if let Some(data_path) = state.data_path.clone() {
+        let clock = std::env::var("TT_TODAY")
+            .ok()
+            .and_then(|today_str| NaiveDate::parse_from_str(&today_str, "%Y-%m-%d").ok())
+            .map(Clock::with_today)
+            .unwrap_or_else(Clock::system);
+
+        let filter = extract_filter_from_params(&params, &clock)?;
+
+        let tracking_result = tokio::task::spawn_blocking(move || {
+            parsing::process_input(&data_path, filter.as_ref())
+        })
+        .await
+        .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
+        .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
+
+        if let Some(time_entries) = tracking_result.time_entries {
+            let stats = StatsReport::from_tracked_time(&time_entries, None);
+
+            StatsPageTemplate {
+                used_tags: stats.used_tags,
+                unused_tags: stats.unused_tags,
+                total_entries: stats.total_entries,
+            }
+        } else {
+            StatsPageTemplate {
+                used_tags: vec![],
+                unused_tags: vec![],
+                total_entries: 0,
+            }
+        }
+    } else {
+        StatsPageTemplate {
+            used_tags: vec![],
+            unused_tags: vec![],
+            total_entries: 0,
+        }
+    };
+
+    let html = template
+        .render()
+        .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
+    Ok(Html(html))
+}
+
+#[derive(Template)]
+#[template(path = "stats_partial.html")]
+pub struct StatsPartialTemplate {
+    pub used_tags: Vec<TagUsage>,
+    pub unused_tags: Vec<String>,
+    pub total_entries: u32,
+}
+
+pub async fn stats_partial(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<DashboardParams>,
+) -> Result<Html<String>, WebError> {
+    let template = if let Some(data_path) = state.data_path.clone() {
+        let clock = std::env::var("TT_TODAY")
+            .ok()
+            .and_then(|today_str| NaiveDate::parse_from_str(&today_str, "%Y-%m-%d").ok())
+            .map(Clock::with_today)
+            .unwrap_or_else(Clock::system);
+
+        let filter = extract_filter_from_params(&params, &clock)?;
+
+        let tracking_result = tokio::task::spawn_blocking(move || {
+            parsing::process_input(&data_path, filter.as_ref())
+        })
+        .await
+        .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
+        .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
+
+        if let Some(time_entries) = tracking_result.time_entries {
+            let stats = StatsReport::from_tracked_time(&time_entries, None);
+
+            StatsPartialTemplate {
+                used_tags: stats.used_tags,
+                unused_tags: stats.unused_tags,
+                total_entries: stats.total_entries,
+            }
+        } else {
+            StatsPartialTemplate {
+                used_tags: vec![],
+                unused_tags: vec![],
+                total_entries: 0,
+            }
+        }
+    } else {
+        StatsPartialTemplate {
+            used_tags: vec![],
+            unused_tags: vec![],
+            total_entries: 0,
+        }
     };
 
     let html = template
