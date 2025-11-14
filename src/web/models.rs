@@ -18,3 +18,11 @@ pub struct DashboardParams {
     #[serde(default, deserialize_with = "empty_string_as_none")]
     pub to: Option<String>,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct FlagStatsParams {
+    #[serde(default, deserialize_with = "empty_string_as_none")]
+    pub include: Option<String>,
+    #[serde(default, deserialize_with = "empty_string_as_none")]
+    pub exclude: Option<String>,
+}

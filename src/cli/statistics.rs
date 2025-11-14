@@ -1,6 +1,7 @@
 use crate::cli::Args;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
@@ -12,6 +13,22 @@ pub struct StatRecord {
     pub success: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error_type: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FlagStat {
+    pub name: String,
+    pub count: u32,
+    pub success_count: u32,
+    pub failure_count: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FlagStatistics {
+    pub flags: Vec<FlagStat>,
+    pub total_executions: u32,
+    pub successful_executions: u32,
+    pub failed_executions: u32,
 }
 
 pub struct StatisticsCollector;
@@ -113,4 +130,68 @@ fn get_stats_dir() -> PathBuf {
         let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
         PathBuf::from(home).join(".time-tracker")
     }
+}
+
+pub fn read_flag_statistics() -> std::io::Result<FlagStatistics> {
+    let stats_file = get_stats_dir().join("stats.jsonl");
+
+    if !stats_file.exists() {
+        return Ok(FlagStatistics {
+            flags: Vec::new(),
+            total_executions: 0,
+            successful_executions: 0,
+            failed_executions: 0,
+        });
+    }
+
+    let content = fs::read_to_string(&stats_file)?;
+    let mut flag_counts: HashMap<String, (u32, u32, u32)> = HashMap::new();
+    let mut total_executions = 0;
+    let mut successful_executions = 0;
+    let mut failed_executions = 0;
+
+    for line in content.lines() {
+        if line.is_empty() {
+            continue;
+        }
+
+        if let Ok(record) = serde_json::from_str::<StatRecord>(line) {
+            total_executions += 1;
+
+            if record.success {
+                successful_executions += 1;
+            } else {
+                failed_executions += 1;
+            }
+
+            for flag in &record.flags_used {
+                let entry = flag_counts.entry(flag.clone()).or_insert((0, 0, 0));
+                entry.0 += 1;
+                if record.success {
+                    entry.1 += 1;
+                } else {
+                    entry.2 += 1;
+                }
+            }
+        }
+    }
+
+    let mut flags: Vec<FlagStat> = flag_counts
+        .into_iter()
+        .map(|(name, (count, success_count, failure_count))| FlagStat {
+            name,
+            count,
+            success_count,
+            failure_count,
+        })
+        .collect();
+
+    flags.sort_by(|a, b| b.count.cmp(&a.count));
+
+    Ok(FlagStatistics {
+        flags,
+        total_executions,
+        successful_executions,
+        failed_executions,
+    })
 }

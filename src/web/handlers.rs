@@ -13,8 +13,9 @@ use crate::domain::time::Clock;
 use crate::domain::PeriodRequested;
 use crate::parsing;
 use crate::parsing::filter::Filter;
+use crate::cli::statistics::{read_flag_statistics, FlagStat};
 
-use super::models::DashboardParams;
+use super::models::{DashboardParams, FlagStatsParams};
 
 pub enum WebError {
     DataProcessingFailed(String),
@@ -625,6 +626,80 @@ pub async fn chart_outcomes_pie(
         }
     } else {
         ChartOutcomesPieTemplate { outcomes: vec![] }
+    };
+
+    let html = template
+        .render()
+        .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
+    Ok(Html(html))
+}
+
+#[derive(Template)]
+#[template(path = "flag_statistics.html")]
+pub struct FlagStatisticsTemplate {
+    pub flags: Vec<FlagStat>,
+    pub total_executions: u32,
+    pub successful_executions: u32,
+    pub failed_executions: u32,
+}
+
+fn apply_flag_filter(
+    mut flags: Vec<FlagStat>,
+    params: &FlagStatsParams,
+) -> Vec<FlagStat> {
+    if let Some(include_str) = &params.include {
+        let include_flags: std::collections::HashSet<_> = include_str
+            .split(',')
+            .map(|s| s.trim().to_lowercase())
+            .collect();
+        flags.retain(|f| include_flags.contains(&f.name.to_lowercase()));
+    }
+
+    if let Some(exclude_str) = &params.exclude {
+        let exclude_flags: std::collections::HashSet<_> = exclude_str
+            .split(',')
+            .map(|s| s.trim().to_lowercase())
+            .collect();
+        flags.retain(|f| !exclude_flags.contains(&f.name.to_lowercase()));
+    }
+
+    flags
+}
+
+pub async fn flag_statistics() -> Result<Html<String>, WebError> {
+    let stats = tokio::task::spawn_blocking(read_flag_statistics)
+        .await
+        .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
+        .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
+
+    let template = FlagStatisticsTemplate {
+        flags: stats.flags,
+        total_executions: stats.total_executions,
+        successful_executions: stats.successful_executions,
+        failed_executions: stats.failed_executions,
+    };
+
+    let html = template
+        .render()
+        .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
+    Ok(Html(html))
+}
+
+pub async fn flag_statistics_partial(
+    Query(params): Query<FlagStatsParams>,
+) -> Result<Html<String>, WebError> {
+    let stats = tokio::task::spawn_blocking(read_flag_statistics)
+        .await
+        .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
+        .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
+
+    let filtered_flags = apply_flag_filter(stats.flags, &params);
+
+    let template = FlagStatisticsTemplate {
+        flags: filtered_flags,
+        total_executions: stats.total_executions,
+        successful_executions: stats.successful_executions,
+        failed_executions: stats.failed_executions,
     };
 
     let html = template
