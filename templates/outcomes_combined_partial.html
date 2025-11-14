@@ -34,6 +34,10 @@
 (function() {
     const ctx = document.getElementById('outcomes-pie-chart');
     if (ctx && typeof Chart !== 'undefined') {
+        if (window.outcomesChart) {
+            window.outcomesChart.destroy();
+        }
+
         const colors = [
             'rgba(255, 99, 132, 0.6)',
             'rgba(54, 162, 235, 0.6)',
@@ -47,7 +51,7 @@
             'rgba(99, 255, 132, 0.6)'
         ];
 
-        new Chart(ctx, {
+        window.outcomesChart = new Chart(ctx, {
             type: 'pie',
             data: {
                 labels: [{% for outcome in outcomes %}'{{ outcome.description }}'{% if !loop.last %}, {% endif %}{% endfor %}],

@@ -40,6 +40,10 @@
 (function() {
     const ctx = document.getElementById('projects-pie-chart');
     if (ctx && typeof Chart !== 'undefined') {
+        if (window.projectsChart) {
+            window.projectsChart.destroy();
+        }
+
         const colors = [
             'rgba(255, 99, 132, 0.6)',
             'rgba(54, 162, 235, 0.6)',
@@ -53,7 +57,7 @@
             'rgba(99, 255, 132, 0.6)'
         ];
 
-        new Chart(ctx, {
+        window.projectsChart = new Chart(ctx, {
             type: 'pie',
             data: {
                 labels: [{% for project in projects %}'{{ project.description }}'{% if !loop.last %}, {% endif %}{% endfor %}],
