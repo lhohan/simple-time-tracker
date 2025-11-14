@@ -220,6 +220,57 @@ pub async fn dashboard_summary(
     Ok(Html(html))
 }
 
+pub async fn outcomes_summary(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<DashboardParams>,
+) -> Result<Html<String>, WebError> {
+    let template = if let Some(data_path) = state.data_path.clone() {
+        let clock = std::env::var("TT_TODAY")
+            .ok()
+            .and_then(|today_str| NaiveDate::parse_from_str(&today_str, "%Y-%m-%d").ok())
+            .map(Clock::with_today)
+            .unwrap_or_else(Clock::system);
+
+        let filter = extract_filter_from_params(&params, &clock)?;
+
+        let period = params
+            .period
+            .as_ref()
+            .and_then(|p| PeriodRequested::from_str(p, &clock).ok());
+
+        let tracking_result = tokio::task::spawn_blocking(move || {
+            parsing::process_input(&data_path, filter.as_ref())
+        })
+        .await
+        .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
+        .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
+
+        if let Some(time_entries) = tracking_result.time_entries {
+            let limit = params
+                .limit
+                .and_then(|l| l.then_some(OutputLimit::CumulativePercentageThreshold(90.00)));
+            let overview = OverviewReport::overview(&time_entries, limit.as_ref(), period.as_ref());
+
+            SummaryPartialTemplate {
+                total_time: format_minutes(overview.total_minutes()),
+            }
+        } else {
+            SummaryPartialTemplate {
+                total_time: "0m".to_string(),
+            }
+        }
+    } else {
+        SummaryPartialTemplate {
+            total_time: "0m".to_string(),
+        }
+    };
+
+    let html = template
+        .render()
+        .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
+    Ok(Html(html))
+}
+
 pub async fn dashboard_partial(
     State(state): State<Arc<AppState>>,
     Query(params): Query<DashboardParams>,
