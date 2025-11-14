@@ -48,30 +48,42 @@
 
         <div id="filters">
             <h3>Filter by Period</h3>
-            <button hx-get="/api/outcomes?period=today" hx-target="#outcomes-list"
-                    onclick="updateOutcomesFilters('today')">Today</button>
-            <button hx-get="/api/outcomes?period=this-week" hx-target="#outcomes-list"
-                    onclick="updateOutcomesFilters('this-week')">This Week</button>
-            <button hx-get="/api/outcomes?period=this-month" hx-target="#outcomes-list"
-                    onclick="updateOutcomesFilters('this-month')">This Month</button>
-            <button hx-get="/api/outcomes" hx-target="#outcomes-list"
-                    onclick="updateOutcomesFilters('')">All Time</button>
+            <button hx-get="/api/outcomes?period=today"
+                    hx-target="#outcomes-list"
+                    hx-include="#limit-checkbox-outcomes"
+                    hx-push-url="true"
+                    hx-on::after-request="outcomesFilterUpdated(event)">Today</button>
+            <button hx-get="/api/outcomes?period=this-week"
+                    hx-target="#outcomes-list"
+                    hx-include="#limit-checkbox-outcomes"
+                    hx-push-url="true"
+                    hx-on::after-request="outcomesFilterUpdated(event)">This Week</button>
+            <button hx-get="/api/outcomes?period=this-month"
+                    hx-target="#outcomes-list"
+                    hx-include="#limit-checkbox-outcomes"
+                    hx-push-url="true"
+                    hx-on::after-request="outcomesFilterUpdated(event)">This Month</button>
+            <button hx-get="/api/outcomes"
+                    hx-target="#outcomes-list"
+                    hx-include="#limit-checkbox-outcomes"
+                    hx-push-url="true"
+                    hx-on::after-request="outcomesFilterUpdated(event)">All Time</button>
 
             <div style="margin-top: 1rem;">
                 <h4>Custom Date Range</h4>
                 <label>
                     From:
-                    <input type="date" id="date-from-outcomes" onchange="applyOutcomesDateRange()">
+                    <input type="date" id="date-from-outcomes" hx-trigger="change" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#date-from-outcomes, #date-to-outcomes, #limit-checkbox-outcomes" hx-push-url="true" hx-on::after-request="outcomesFilterUpdated(event)">
                 </label>
                 <label style="margin-left: 1rem;">
                     To:
-                    <input type="date" id="date-to-outcomes" onchange="applyOutcomesDateRange()">
+                    <input type="date" id="date-to-outcomes" hx-trigger="change" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#date-from-outcomes, #date-to-outcomes, #limit-checkbox-outcomes" hx-push-url="true" hx-on::after-request="outcomesFilterUpdated(event)">
                 </label>
             </div>
 
             <div style="margin-top: 1rem;">
                 <label>
-                    <input type="checkbox" id="limit-checkbox-outcomes" onchange="updateOutcomesFilters()">
+                    <input type="checkbox" id="limit-checkbox-outcomes" hx-trigger="change" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#date-from-outcomes, #date-to-outcomes, #limit-checkbox-outcomes" hx-push-url="true" hx-on::after-request="outcomesFilterUpdated(event)">
                     Limit to top 90%
                 </label>
             </div>
@@ -105,86 +117,39 @@
     </div>
 
     <div class="chart-sidebar">
-        <div id="chart-outcomes-pie" hx-get="/api/chart/outcomes-pie" hx-trigger="load" hx-swap="innerHTML">
+        <div id="chart-outcomes-pie" hx-get="/api/chart/outcomes-pie" hx-trigger="load" hx-swap="innerHTML" hx-include="#filters">
             <p>Loading chart...</p>
         </div>
     </div>
 </div>
 
 <script>
-let currentOutcomesPeriod = '';
+function outcomesFilterUpdated(event) {
+    const formData = new FormData();
+    const filters = document.getElementById('filters');
 
-function updateOutcomesFilters(period) {
-    if (period !== undefined) {
-        currentOutcomesPeriod = period;
-        // Reset checkbox and date inputs when period changes
-        const limitCheckbox = document.getElementById('limit-checkbox-outcomes');
-        if (limitCheckbox) {
-            limitCheckbox.checked = false;
+    // Collect all filter inputs (period, dates, limit)
+    const inputs = filters.querySelectorAll('input[type="date"], input[type="checkbox"], select');
+    inputs.forEach(input => {
+        if (input.type === 'checkbox') {
+            if (input.checked) formData.append(input.id, input.value || 'true');
+        } else if (input.value) {
+            const paramName = input.id.replace(/-outcomes/g, '').replace(/-/g, '');
+            formData.append(paramName, input.value);
         }
-        // Clear date inputs when using period filters
-        const dateFrom = document.getElementById('date-from-outcomes');
-        const dateTo = document.getElementById('date-to-outcomes');
-        if (dateFrom) dateFrom.value = '';
-        if (dateTo) dateTo.value = '';
-    }
+    });
 
-    const limitCheckbox = document.getElementById('limit-checkbox-outcomes');
-    const limitParam = limitCheckbox && limitCheckbox.checked ? 'true' : 'false';
-
-    // Build query string
-    const params = new URLSearchParams();
-    if (currentOutcomesPeriod) {
-        params.append('period', currentOutcomesPeriod);
-    }
-    params.append('limit', limitParam);
-
-    const queryString = params.toString();
-
-    // Update outcomes table
-    const outcomesUrl = `/api/outcomes?${queryString}`;
-    htmx.ajax('GET', outcomesUrl, {target:'#outcomes-list', swap:'innerHTML'});
+    // Update summary
+    htmx.ajax('GET', '/api/outcomes?' + new URLSearchParams(formData).toString(), {
+        target: '#summary',
+        swap: 'innerHTML'
+    });
 
     // Update chart
-    const pieUrl = `/api/chart/outcomes-pie?${queryString}`;
-    htmx.ajax('GET', pieUrl, {target:'#chart-outcomes-pie', swap:'innerHTML'});
-}
-
-function applyOutcomesDateRange() {
-    const dateFrom = document.getElementById('date-from-outcomes');
-    const dateTo = document.getElementById('date-to-outcomes');
-
-    // Only apply if both dates are filled
-    if (!dateFrom.value || !dateTo.value) {
-        return;
-    }
-
-    // Clear period when using date range
-    currentOutcomesPeriod = '';
-
-    // Reset checkbox
-    const limitCheckbox = document.getElementById('limit-checkbox-outcomes');
-    if (limitCheckbox) {
-        limitCheckbox.checked = false;
-    }
-
-    const limitParam = 'false';
-
-    // Build query string with date range
-    const params = new URLSearchParams();
-    params.append('from', dateFrom.value);
-    params.append('to', dateTo.value);
-    params.append('limit', limitParam);
-
-    const queryString = params.toString();
-
-    // Update outcomes table
-    const outcomesUrl = `/api/outcomes?${queryString}`;
-    htmx.ajax('GET', outcomesUrl, {target:'#outcomes-list', swap:'innerHTML'});
-
-    // Update chart
-    const pieUrl = `/api/chart/outcomes-pie?${queryString}`;
-    htmx.ajax('GET', pieUrl, {target:'#chart-outcomes-pie', swap:'innerHTML'});
+    htmx.ajax('GET', '/api/chart/outcomes-pie?' + new URLSearchParams(formData).toString(), {
+        target: '#chart-outcomes-pie',
+        swap: 'innerHTML'
+    });
 }
 </script>
 {% endblock %}
