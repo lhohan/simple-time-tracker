@@ -46,49 +46,34 @@
             <h2>Total Time Tracked: <strong>{{ total_time }}</strong></h2>
         </div>
 
-        <div id="filters">
-            <h3>Filter by Period</h3>
-            <input type="hidden" id="current-period-outcomes" name="period" value="">
-            <button hx-get="/api/outcomes?period=today"
-                    hx-target="#outcomes-list"
-                    hx-include="#limit-checkbox-outcomes"
-                    hx-on::htmx:beforeRequest="document.getElementById('current-period-outcomes').value='today'"
-                    hx-on::htmx:afterRequest="updateOutcomesSummaryAndChart()">Today</button>
-            <button hx-get="/api/outcomes?period=this-week"
-                    hx-target="#outcomes-list"
-                    hx-include="#limit-checkbox-outcomes"
-                    hx-on::htmx:beforeRequest="document.getElementById('current-period-outcomes').value='this-week'"
-                    hx-on::htmx:afterRequest="updateOutcomesSummaryAndChart()">This Week</button>
-            <button hx-get="/api/outcomes?period=this-month"
-                    hx-target="#outcomes-list"
-                    hx-include="#limit-checkbox-outcomes"
-                    hx-on::htmx:beforeRequest="document.getElementById('current-period-outcomes').value='this-month'"
-                    hx-on::htmx:afterRequest="updateOutcomesSummaryAndChart()">This Month</button>
-            <button hx-get="/api/outcomes"
-                    hx-target="#outcomes-list"
-                    hx-include="#limit-checkbox-outcomes"
-                    hx-on::htmx:beforeRequest="document.getElementById('current-period-outcomes').value=''"
-                    hx-on::htmx:afterRequest="updateOutcomesSummaryAndChart()">All Time</button>
+        <form id="filter-form-outcomes">
+            <div id="filters">
+                <h3>Filter by Period</h3>
+                <button type="button" hx-get="/api/outcomes" hx-vals='{"period":"today"}' hx-target="#outcomes-list" hx-include="#filter-form-outcomes" hx-on::htmx:afterRequest="updateOutcomesSummaryAndChart()">Today</button>
+                <button type="button" hx-get="/api/outcomes" hx-vals='{"period":"this-week"}' hx-target="#outcomes-list" hx-include="#filter-form-outcomes" hx-on::htmx:afterRequest="updateOutcomesSummaryAndChart()">This Week</button>
+                <button type="button" hx-get="/api/outcomes" hx-vals='{"period":"this-month"}' hx-target="#outcomes-list" hx-include="#filter-form-outcomes" hx-on::htmx:afterRequest="updateOutcomesSummaryAndChart()">This Month</button>
+                <button type="button" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes" hx-on::htmx:afterRequest="updateOutcomesSummaryAndChart()">All Time</button>
 
-            <div style="margin-top: 1rem;">
-                <h4>Custom Date Range</h4>
-                <label>
-                    From:
-                    <input type="date" id="date-from-outcomes" name="from" hx-trigger="change" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#limit-checkbox-outcomes" hx-on::htmx:beforeRequest="document.getElementById('current-period-outcomes').value=''" hx-on::htmx:afterRequest="updateOutcomesSummaryAndChart()">
-                </label>
-                <label style="margin-left: 1rem;">
-                    To:
-                    <input type="date" id="date-to-outcomes" name="to" hx-trigger="change" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#limit-checkbox-outcomes" hx-on::htmx:beforeRequest="document.getElementById('current-period-outcomes').value=''" hx-on::htmx:afterRequest="updateOutcomesSummaryAndChart()">
-                </label>
-            </div>
+                <div style="margin-top: 1rem;">
+                    <h4>Custom Date Range</h4>
+                    <label>
+                        From:
+                        <input type="date" id="date-from-outcomes" name="from" hx-trigger="change" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes" hx-on::htmx:afterRequest="updateOutcomesSummaryAndChart()">
+                    </label>
+                    <label style="margin-left: 1rem;">
+                        To:
+                        <input type="date" id="date-to-outcomes" name="to" hx-trigger="change" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes" hx-on::htmx:afterRequest="updateOutcomesSummaryAndChart()">
+                    </label>
+                </div>
 
-            <div style="margin-top: 1rem;">
-                <label>
-                    <input type="checkbox" id="limit-checkbox-outcomes" name="limit" value="true" hx-trigger="change" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-on::htmx:afterRequest="updateOutcomesSummaryAndChart()">
-                    Limit to top 90%
-                </label>
+                <div style="margin-top: 1rem;">
+                    <label>
+                        <input type="checkbox" id="limit-checkbox-outcomes" name="limit" value="true" hx-trigger="change" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes" hx-on::htmx:afterRequest="updateOutcomesSummaryAndChart()">
+                        Limit to top 90%
+                    </label>
+                </div>
             </div>
-        </div>
+        </form>
 
         <div id="outcomes-list">
             {% if outcomes.len() > 0 %}
@@ -118,7 +103,7 @@
     </div>
 
     <div class="chart-sidebar">
-        <div id="chart-outcomes-pie" hx-get="/api/chart/outcomes-pie" hx-trigger="load" hx-swap="innerHTML" hx-include="#filters">
+        <div id="chart-outcomes-pie" hx-get="/api/chart/outcomes-pie" hx-trigger="load" hx-swap="innerHTML" hx-include="#filter-form-outcomes">
             <p>Loading chart...</p>
         </div>
     </div>
@@ -126,37 +111,16 @@
 
 <script>
 function updateOutcomesSummaryAndChart() {
-    const limitCheckbox = document.getElementById('limit-checkbox-outcomes');
-    const dateFrom = document.getElementById('date-from-outcomes');
-    const dateTo = document.getElementById('date-to-outcomes');
-    const currentPeriod = document.getElementById('current-period-outcomes');
-
-    // Build query string from current form state
-    const params = new URLSearchParams();
-
-    // Add period if set
-    if (currentPeriod && currentPeriod.value) {
-        params.append('period', currentPeriod.value);
-    }
-
-    // Add date range if both dates are set (takes precedence over period)
-    if (dateFrom.value) params.append('from', dateFrom.value);
-    if (dateTo.value) params.append('to', dateTo.value);
-
-    // Add limit if checked
-    if (limitCheckbox && limitCheckbox.checked) {
-        params.append('limit', 'true');
-    }
-
+    const form = document.getElementById('filter-form-outcomes');
+    const formData = new FormData(form);
+    const params = new URLSearchParams(formData);
     const queryString = params.toString() ? '?' + params.toString() : '';
 
-    // Update summary with same filters
-    htmx.ajax('GET', '/api/outcomes' + queryString, {
+    htmx.ajax('GET', '/api/outcomes/summary' + queryString, {
         target: '#summary',
         swap: 'innerHTML'
     });
 
-    // Update chart with same filters
     htmx.ajax('GET', '/api/chart/outcomes-pie' + queryString, {
         target: '#chart-outcomes-pie',
         swap: 'innerHTML'
