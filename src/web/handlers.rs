@@ -8,7 +8,8 @@ use std::sync::Arc;
 
 use crate::domain::dates::range::DateRange;
 use crate::domain::dates::{EndDate, StartDate};
-use crate::domain::reporting::{OutputLimit, OverviewReport, StatsReport, TagUsage, TimeTotal};
+use crate::domain::reporting::{OutputLimit, OverviewReport, TimeTotal};
+use crate::domain::stats::{StatsReport, TagUsage};
 use crate::domain::time::Clock;
 use crate::domain::PeriodRequested;
 use crate::parsing;
