@@ -11,6 +11,7 @@ pub fn create_router_with_state(state: Arc<AppState>) -> Router {
         .route("/api/dashboard", get(handlers::dashboard_partial))
         .route("/api/dashboard/summary", get(handlers::dashboard_summary))
         .route("/api/outcomes", get(handlers::outcomes_partial))
+        .route("/api/outcomes/summary", get(handlers::outcomes_summary))
         .route("/api/tag/:tag_name", get(handlers::tag_detail))
         .route("/api/chart/projects-pie", get(handlers::chart_projects_pie))
         .route("/api/chart/outcomes-pie", get(handlers::chart_outcomes_pie))
