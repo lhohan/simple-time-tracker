@@ -81,7 +81,7 @@ fn print_result(
 ) {
     if let Some(ref time_report) = tracking_result.time_entries {
         if let Some(unit) = breakdown_unit {
-            let report = domain::reporting::BreakdownReport::from_tracked_time(time_report, unit);
+            let report = domain::reporting::BreakdownReport::from_tracked_time(time_report, unit, include_details);
             let report = FormatableReport::BreakdownReport(&report);
             println!("{}", formatter.format(&report));
         } else if include_details {

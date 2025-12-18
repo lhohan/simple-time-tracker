@@ -140,6 +140,59 @@ just run "./data.md" "this-month" --tags work --breakdown week --format markdown
 - 2025-01-17 (Fri): 1h 15m
 ```
 
+### Breakdown with Task Details
+
+Combine `--breakdown` with `--details` to show tasks aggregated by their first tag at each level of the hierarchy.
+
+#### Examples
+
+```bash
+# Day breakdown with tasks per day
+just run "./data.md" "this-week" --tags project-a,project-b --breakdown day --details
+
+# Week breakdown with tasks per day
+just run "./data.md" "this-month" --tags project-a --breakdown week --details
+
+# Month breakdown with tasks per week
+just run "./data.md" "2025" --tags project-a --breakdown month --details --format markdown
+```
+
+#### Output Format Examples
+
+**Text format (day breakdown with details):**
+```
+2025-01-15 (Wed).. 4h 00m
+  - project-a............... 3h 00m (75%)
+  - project-b............... 1h 00m (25%)
+2025-01-16 (Thu).. 5h 00m
+  - project-c............... 3h 00m (60%)
+  - project-a............... 2h 00m (40%)
+```
+
+**Markdown format:**
+```
+# Time Breakdown Report
+
+## 2025-01-15 (Wed)
+
+- **Time**: 4h 00m
+- **project-a**: 3h 00m (75%)
+- **project-b**: 1h 00m (25%)
+
+## 2025-01-16 (Thu)
+
+- **Time**: 5h 00m
+- **project-c**: 3h 00m (60%)
+- **project-a**: 2h 00m (40%)
+```
+
+#### Features
+
+- **Task aggregation by first tag**: Tasks are grouped by their primary project/context tag
+- **Hierarchical display**: Tasks appear at the leaf level of the breakdown hierarchy
+- **Percentage calculation**: Relative to the immediate parent period
+- **Multiple formats**: Text (indented tree) and Markdown (heading hierarchy)
+
 ## Development Setup
 
 ### Prerequisites

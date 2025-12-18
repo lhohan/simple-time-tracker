@@ -30,6 +30,7 @@ The web interface currently implements a subset of CLI features focused on basic
 | **Display Options** |
 | Limit to top 90% | ✅ `--limit` | ✅ Checkbox | |
 | Show project details/tasks | ✅ `--details` | ❌ | CLI: Shows task descriptions per project |
+| Breakdown with task details | ✅ `--breakdown --details` | ❌ | CLI: Tasks aggregated by first tag at each level |
 | **Reporting** |
 | Overview/summary | ✅ | ✅ | Total time + projects list |
 | Time breakdown | ✅ `--breakdown` | ❌ | CLI: Hierarchical by day/week/month/year |

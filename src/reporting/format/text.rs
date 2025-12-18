@@ -129,6 +129,19 @@ impl TextFormatter {
         for child in &group.children {
             Self::format_breakdown_group(result, child, depth + 1);
         }
+
+        for task in &group.tasks {
+            let task_indent = "  ".repeat(depth + 1);
+            writeln!(
+                result,
+                "{}- {}..{} ({}%)",
+                task_indent,
+                format_padded_description(&task.description),
+                format_duration(task.minutes),
+                task.percentage_of_total
+            )
+            .expect("Writing to String should never fail");
+        }
     }
 
     fn format_tasks_report(report: &DetailReport) -> String {

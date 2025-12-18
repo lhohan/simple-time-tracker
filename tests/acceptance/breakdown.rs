@@ -454,3 +454,206 @@ fn breakdown_by_year_should_handle_multi_year_entries() {
         .expect_output("2021..")
         .expect_output("6h 00m"); // total time across years
 }
+
+#[test]
+fn breakdown_with_details_should_require_tags() {
+    let some_content = r"## TT 2020-01-01
+- #tag-1 1h Task A";
+
+    Cmd::given()
+        .breakdown_flag("day")
+        .details_flag()
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_fail()
+        .expect_error("--details flag requires");
+}
+
+#[test]
+fn breakdown_day_with_details_should_show_tasks_per_day() {
+    let some_content = r"## TT 2020-01-01
+- #project-a 1h Task A
+- #project-b 2h Task B";
+
+    Cmd::given()
+        .breakdown_flag("day")
+        .details_flag()
+        .tags_filter(&["project-a", "project-b"])
+        .at_date("2020-01-01")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2020-01-01 (")
+        .expect_output("3h 00m")
+        .expect_task_with_duration("project-a", "1h 00m")
+        .expect_task_with_duration("project-b", "2h 00m");
+}
+
+#[test]
+fn breakdown_day_with_details_should_show_tasks_grouped_by_day() {
+    let some_content = r"## TT 2020-01-01
+- #project-a 1h Task A
+
+## TT 2020-01-02
+- #project-b 2h Task B";
+
+    Cmd::given()
+        .breakdown_flag("day")
+        .details_flag()
+        .tags_filter(&["project-a", "project-b"])
+        .at_date("2020-01-02")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2020-01-01 (")
+        .expect_output("2020-01-02 (")
+        .expect_task_with_duration("project-a", "1h 00m")
+        .expect_task_with_duration("project-b", "2h 00m")
+        .expect_output_pattern(r"2020-01-01 \((?s).*project-a(?s).*2020-01-02 \((?s).*project-b");
+}
+
+#[test]
+fn breakdown_day_with_details_should_aggregate_same_task_descriptions() {
+    let some_content = r"## TT 2020-01-01
+- #project-a 1h Task A
+- #project-a 30m Task B";
+
+    Cmd::given()
+        .breakdown_flag("day")
+        .details_flag()
+        .tags_filter(&["project-a"])
+        .at_date("2020-01-01")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2020-01-01 (")
+        .expect_output("1h 30m")
+        .expect_task_with_duration("project-a", "1h 30m");
+}
+
+#[test]
+fn breakdown_week_with_details_should_show_tasks_per_day() {
+    let some_content = r"## TT 2020-01-01
+- #project-a 1h Task A
+
+## TT 2020-01-02
+- #project-b 2h Task B";
+
+    Cmd::given()
+        .breakdown_flag("week")
+        .details_flag()
+        .tags_filter(&["project-a", "project-b"])
+        .at_date("2020-01-02")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2020-W01")
+        .expect_output("2020-01-01 (")
+        .expect_output("2020-01-02 (")
+        .expect_task_with_duration("project-a", "1h 00m")
+        .expect_task_with_duration("project-b", "2h 00m");
+}
+
+#[test]
+fn breakdown_month_with_details_should_show_tasks_per_week() {
+    let some_content = r"## TT 2020-01-01
+- #project-a 1h Task A
+
+## TT 2020-01-08
+- #project-b 2h Task B";
+
+    Cmd::given()
+        .breakdown_flag("month")
+        .details_flag()
+        .tags_filter(&["project-a", "project-b"])
+        .at_date("2020-01-08")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2020-01")
+        .expect_output("2020-W01")
+        .expect_output("2020-W02")
+        .expect_task_with_duration("project-a", "1h 00m")
+        .expect_task_with_duration("project-b", "2h 00m");
+}
+
+#[test]
+fn breakdown_year_with_details_should_show_tasks_per_month() {
+    let some_content = r"## TT 2020-01-15
+- #project-a 1h Task A
+
+## TT 2020-02-20
+- #project-b 2h Task B";
+
+    Cmd::given()
+        .breakdown_flag("year")
+        .details_flag()
+        .tags_filter(&["project-a", "project-b"])
+        .at_date("2020-02-20")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2020")
+        .expect_output("2020-01")
+        .expect_output("2020-02")
+        .expect_task_with_duration("project-a", "1h 00m")
+        .expect_task_with_duration("project-b", "2h 00m");
+}
+
+#[test]
+fn breakdown_with_details_should_show_no_tag_placeholder() {
+    let some_content = r"## TT 2020-01-01
+- 1h Task without tag";
+
+    Cmd::given()
+        .breakdown_flag("day")
+        .details_flag()
+        .tags_filter(&["work"])
+        .at_date("2020-01-01")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("No data found.");
+}
+
+#[test]
+fn breakdown_with_details_should_show_entries_with_and_without_tags() {
+    let some_content = r"## TT 2020-01-01
+- #project-a 1h Task A
+- 30m Task without tag";
+
+    Cmd::given()
+        .breakdown_flag("day")
+        .details_flag()
+        .tags_filter(&["project-a"])
+        .at_date("2020-01-01")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("2020-01-01 (")
+        .expect_output("1h 00m")
+        .expect_task_with_duration("project-a", "1h 00m");
+}
+
+#[test]
+fn breakdown_with_details_and_markdown_format_should_show_markdown_output() {
+    let some_content = r"## TT 2020-01-01
+- #project-a 1h Task A
+- #project-b 2h Task B";
+
+    Cmd::given()
+        .breakdown_flag("day")
+        .details_flag()
+        .tags_filter(&["project-a", "project-b"])
+        .output_format("markdown")
+        .at_date("2020-01-01")
+        .a_file_with_content(some_content)
+        .when_run()
+        .should_succeed()
+        .expect_output("# Time Breakdown Report")
+        .expect_output("2020-01-01")
+        .expect_output("project-a")
+        .expect_output("project-b")
+        .expect_output("1h 00m")
+        .expect_output("2h 00m");
+}

@@ -85,6 +85,17 @@ impl MarkdownFormatter {
         if group.children.is_empty() {
             writeln!(result, "- **Time**: {}\n", format_duration(group.minutes))
                 .expect("Writing to String should never fail");
+            
+            for task in &group.tasks {
+                writeln!(
+                    result,
+                    "- **{}**: {} ({}%)",
+                    task.description,
+                    format_duration(task.minutes),
+                    task.percentage_of_total
+                )
+                .expect("Writing to String should never fail");
+            }
         } else {
             for child in &group.children {
                 writeln!(
