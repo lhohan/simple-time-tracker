@@ -16,19 +16,19 @@ check-w:
 
 # Run the 'tt' app
 run path period:
-    cargo run -- -i "{{path}}" --period {{period}}
+    cargo run -- -i "{{ path }}" --period {{ period }}
 
 # Run the web server with a data file
 run-web path:
-    cargo run --features web -- --web -i "{{path}}"
+    cargo run --features web -- --web -i "{{ path }}"
 
 # Run the web server with optional data file path
 web *args="":
-    cargo run --features web -- --web {{args}}
+    cargo run --features web -- --web {{ args }}
 
 # Run the web server with auto-reload on file changes
 web-w *args="":
-    cargo watch -c -x "run --features web -- --web {{args}}"
+    cargo watch -c -x "run --features web -- --web {{ args }}"
 
 # Test the 'tt' app
 test:
@@ -40,7 +40,7 @@ test-web:
 
 # Run tests on change continuously
 test-w:
-    cargo watch -c -x "nextest run"
+    cargo watch -c -x "nextest run --test web --features web"
 
 # Run tests with coverage
 test-coverage:
@@ -98,7 +98,7 @@ fuzz-long:
 
 # Run all fuzz testing targets with custom time limit per target (in seconds)
 fuzz-custom time:
-    cargo +nightly fuzz run tag_fuzz -- -max_total_time={{time}}
-    cargo +nightly fuzz run time_fuzz -- -max_total_time={{time}}
-    cargo +nightly fuzz run description_fuzz -- -max_total_time={{time}}
-    cargo +nightly fuzz run multiline_fuzz -- -max_total_time={{time}}
+    cargo +nightly fuzz run tag_fuzz -- -max_total_time={{ time }}
+    cargo +nightly fuzz run time_fuzz -- -max_total_time={{ time }}
+    cargo +nightly fuzz run description_fuzz -- -max_total_time={{ time }}
+    cargo +nightly fuzz run multiline_fuzz -- -max_total_time={{ time }}
