@@ -107,7 +107,10 @@ fn run_web_server(args: Args) -> Result<()> {
             println!("  tt --web -i /path/to/your/data.md");
         }
 
-        let state = Arc::new(AppState { data_path });
+        let state = Arc::new(AppState {
+            data_path,
+            clock: web::handlers::create_clock(),
+        });
         let app = web::server::create_router_with_state(state);
 
         let listener = tokio::net::TcpListener::bind(&addr)

@@ -117,6 +117,7 @@ impl RequestBuilder {
 
         let state = std::sync::Arc::new(time_tracker::web::AppState {
             data_path: _input_path,
+            clock: time_tracker::web::handlers::create_clock(),
         });
         let app = time_tracker::web::server::create_router_with_state(state);
 

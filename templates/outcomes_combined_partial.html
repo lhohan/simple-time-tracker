@@ -54,7 +54,7 @@
         window.outcomesChart = new Chart(ctx, {
             type: 'pie',
             data: {
-                labels: [{% for outcome in outcomes %}'{{ outcome.description }}'{% if !loop.last %}, {% endif %}{% endfor %}],
+                labels: {{ labels_json|safe }},
                 datasets: [{
                     data: [{% for outcome in outcomes %}{{ outcome.percentage }}{% if !loop.last %}, {% endif %}{% endfor %}],
                     backgroundColor: colors.slice(0, {{ outcomes.len() }}),

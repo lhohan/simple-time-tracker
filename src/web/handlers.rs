@@ -52,13 +52,7 @@ impl IntoResponse for WebError {
 #[derive(Clone)]
 pub struct AppState {
     pub data_path: Option<PathBuf>,
-}
-
-#[derive(Template)]
-#[template(path = "dashboard.html")]
-pub struct DashboardTemplate {
-    pub total_time: String,
-    pub projects: Vec<TimeTotal>,
+    pub clock: Clock,
 }
 
 fn format_minutes(minutes: u32) -> String {
@@ -104,58 +98,86 @@ fn extract_filter_from_params(
     }
 }
 
-pub async fn dashboard(
-    State(state): State<Arc<AppState>>,
-    Query(params): Query<DashboardParams>,
-) -> Result<Html<String>, WebError> {
-    let template = if let Some(data_path) = state.data_path.clone() {
-        let clock = std::env::var("TT_TODAY")
-            .ok()
-            .and_then(|today_str| NaiveDate::parse_from_str(&today_str, "%Y-%m-%d").ok())
-            .map(Clock::with_today)
-            .unwrap_or_else(Clock::system);
+fn labels_json_for(items: &[TimeTotal]) -> String {
+    let labels: Vec<&str> = items.iter().map(|t| t.description.as_str()).collect();
+    serde_json::to_string(&labels).unwrap_or_else(|_| "[]".to_string())
+}
 
-        let filter = extract_filter_from_params(&params, &clock)?;
-
-        let period = params
-            .period
-            .as_ref()
-            .and_then(|p| PeriodRequested::from_str(p, &clock).ok());
-
-        let tracking_result = tokio::task::spawn_blocking(move || {
-            parsing::process_input(&data_path, filter.as_ref())
-        })
-        .await
-        .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
-        .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
-
-        if let Some(time_entries) = tracking_result.time_entries {
-            let limit = params
-                .limit
-                .and_then(|l| l.then_some(OutputLimit::CumulativePercentageThreshold(90.00)));
-            let overview = OverviewReport::overview(&time_entries, limit.as_ref(), period.as_ref());
-
-            DashboardTemplate {
-                total_time: format_minutes(overview.total_minutes()),
-                projects: overview.entries_time_totals().clone(),
-            }
-        } else {
-            DashboardTemplate {
-                total_time: "0m".to_string(),
-                projects: vec![],
-            }
-        }
-    } else {
-        DashboardTemplate {
-            total_time: "8h 30m".to_string(),
-            projects: vec![],
-        }
+async fn load_overview(
+    state: &AppState,
+    params: &DashboardParams,
+) -> Result<Option<OverviewReport>, WebError> {
+    let Some(data_path) = state.data_path.clone() else {
+        return Ok(None);
     };
 
+    let filter = extract_filter_from_params(params, &state.clock)?;
+
+    let period = params
+        .period
+        .as_ref()
+        .and_then(|p| PeriodRequested::from_str(p, &state.clock).ok());
+
+    let tracking_result = tokio::task::spawn_blocking(move || {
+        parsing::process_input(&data_path, filter.as_ref())
+    })
+    .await
+    .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
+    .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
+
+    let Some(time_entries) = tracking_result.time_entries else {
+        return Ok(None);
+    };
+
+    let limit = params
+        .limit
+        .and_then(|l| l.then_some(OutputLimit::CumulativePercentageThreshold(90.00)));
+    let overview = OverviewReport::overview(&time_entries, limit.as_ref(), period.as_ref());
+
+    Ok(Some(overview))
+}
+
+fn render<T: Template>(template: T) -> Result<Html<String>, WebError> {
     let html = template
         .render()
         .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
     Ok(Html(html))
+}
+
+#[derive(Template)]
+#[template(path = "dashboard.html")]
+pub struct DashboardTemplate {
+    pub total_time: String,
+    pub projects: Vec<TimeTotal>,
+    pub labels_json: String,
+}
+
+pub async fn dashboard(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<DashboardParams>,
+) -> Result<Html<String>, WebError> {
+    let template = match load_overview(&state, &params).await? {
+        Some(overview) => {
+            let projects = overview.entries_time_totals().clone();
+            DashboardTemplate {
+                total_time: format_minutes(overview.total_minutes()),
+                labels_json: labels_json_for(&projects),
+                projects,
+            }
+        }
+        None if state.data_path.is_some() => DashboardTemplate {
+            total_time: "0m".to_string(),
+            labels_json: "[]".to_string(),
+            projects: vec![],
+        },
+        None => DashboardTemplate {
+            total_time: "8h 30m".to_string(),
+            labels_json: "[]".to_string(),
+            projects: vec![],
+        },
+    };
+
+    render(template)
 }
 
 #[derive(Template)]
@@ -175,162 +197,62 @@ pub struct ProjectsPartialTemplate {
 pub struct DashboardCombinedPartialTemplate {
     pub projects: Vec<TimeTotal>,
     pub total_time: String,
+    pub labels_json: String,
 }
 
 pub async fn dashboard_summary(
     State(state): State<Arc<AppState>>,
     Query(params): Query<DashboardParams>,
 ) -> Result<Html<String>, WebError> {
-    let template = if let Some(data_path) = state.data_path.clone() {
-        let clock = std::env::var("TT_TODAY")
-            .ok()
-            .and_then(|today_str| NaiveDate::parse_from_str(&today_str, "%Y-%m-%d").ok())
-            .map(Clock::with_today)
-            .unwrap_or_else(Clock::system);
-
-        let filter = extract_filter_from_params(&params, &clock)?;
-
-        let period = params
-            .period
-            .as_ref()
-            .and_then(|p| PeriodRequested::from_str(p, &clock).ok());
-
-        let tracking_result = tokio::task::spawn_blocking(move || {
-            parsing::process_input(&data_path, filter.as_ref())
-        })
-        .await
-        .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
-        .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
-
-        if let Some(time_entries) = tracking_result.time_entries {
-            let limit = params
-                .limit
-                .and_then(|l| l.then_some(OutputLimit::CumulativePercentageThreshold(90.00)));
-            let overview = OverviewReport::overview(&time_entries, limit.as_ref(), period.as_ref());
-
-            SummaryPartialTemplate {
-                total_time: format_minutes(overview.total_minutes()),
-            }
-        } else {
-            SummaryPartialTemplate {
-                total_time: "0m".to_string(),
-            }
-        }
-    } else {
-        SummaryPartialTemplate {
+    let template = match load_overview(&state, &params).await? {
+        Some(overview) => SummaryPartialTemplate {
+            total_time: format_minutes(overview.total_minutes()),
+        },
+        None => SummaryPartialTemplate {
             total_time: "0m".to_string(),
-        }
+        },
     };
 
-    let html = template
-        .render()
-        .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
-    Ok(Html(html))
+    render(template)
 }
 
 pub async fn outcomes_summary(
     State(state): State<Arc<AppState>>,
     Query(params): Query<DashboardParams>,
 ) -> Result<Html<String>, WebError> {
-    let template = if let Some(data_path) = state.data_path.clone() {
-        let clock = std::env::var("TT_TODAY")
-            .ok()
-            .and_then(|today_str| NaiveDate::parse_from_str(&today_str, "%Y-%m-%d").ok())
-            .map(Clock::with_today)
-            .unwrap_or_else(Clock::system);
-
-        let filter = extract_filter_from_params(&params, &clock)?;
-
-        let period = params
-            .period
-            .as_ref()
-            .and_then(|p| PeriodRequested::from_str(p, &clock).ok());
-
-        let tracking_result = tokio::task::spawn_blocking(move || {
-            parsing::process_input(&data_path, filter.as_ref())
-        })
-        .await
-        .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
-        .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
-
-        if let Some(time_entries) = tracking_result.time_entries {
-            let limit = params
-                .limit
-                .and_then(|l| l.then_some(OutputLimit::CumulativePercentageThreshold(90.00)));
-            let overview = OverviewReport::overview(&time_entries, limit.as_ref(), period.as_ref());
-
-            SummaryPartialTemplate {
-                total_time: format_minutes(overview.total_minutes()),
-            }
-        } else {
-            SummaryPartialTemplate {
-                total_time: "0m".to_string(),
-            }
-        }
-    } else {
-        SummaryPartialTemplate {
+    let template = match load_overview(&state, &params).await? {
+        Some(overview) => SummaryPartialTemplate {
+            total_time: format_minutes(overview.total_minutes()),
+        },
+        None => SummaryPartialTemplate {
             total_time: "0m".to_string(),
-        }
+        },
     };
 
-    let html = template
-        .render()
-        .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
-    Ok(Html(html))
+    render(template)
 }
 
 pub async fn dashboard_partial(
     State(state): State<Arc<AppState>>,
     Query(params): Query<DashboardParams>,
 ) -> Result<Html<String>, WebError> {
-    let template = if let Some(data_path) = state.data_path.clone() {
-        let clock = std::env::var("TT_TODAY")
-            .ok()
-            .and_then(|today_str| NaiveDate::parse_from_str(&today_str, "%Y-%m-%d").ok())
-            .map(Clock::with_today)
-            .unwrap_or_else(Clock::system);
-
-        let filter = extract_filter_from_params(&params, &clock)?;
-
-        let period = params
-            .period
-            .as_ref()
-            .and_then(|p| PeriodRequested::from_str(p, &clock).ok());
-
-        let tracking_result = tokio::task::spawn_blocking(move || {
-            parsing::process_input(&data_path, filter.as_ref())
-        })
-        .await
-        .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
-        .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
-
-        if let Some(time_entries) = tracking_result.time_entries {
-            let limit = params
-                .limit
-                .and_then(|l| l.then_some(OutputLimit::CumulativePercentageThreshold(90.00)));
-            let overview = OverviewReport::overview(&time_entries, limit.as_ref(), period.as_ref());
-
+    let template = match load_overview(&state, &params).await? {
+        Some(overview) => {
+            let projects = overview.entries_time_totals().clone();
             DashboardCombinedPartialTemplate {
-                projects: overview.entries_time_totals().clone(),
                 total_time: format_minutes(overview.total_minutes()),
-            }
-        } else {
-            DashboardCombinedPartialTemplate {
-                projects: vec![],
-                total_time: "0m".to_string(),
+                labels_json: labels_json_for(&projects),
+                projects,
             }
         }
-    } else {
-        DashboardCombinedPartialTemplate {
+        None => DashboardCombinedPartialTemplate {
             projects: vec![],
             total_time: "0m".to_string(),
-        }
+            labels_json: "[]".to_string(),
+        },
     };
 
-    let html = template
-        .render()
-        .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
-    Ok(Html(html))
+    render(template)
 }
 
 #[derive(Template)]
@@ -359,13 +281,7 @@ pub async fn tag_detail(
 
     let template = if let Some(data_path) = state.data_path.clone() {
         let tag_name_clone = tag_name.clone();
-        let clock = std::env::var("TT_TODAY")
-            .ok()
-            .and_then(|today_str| NaiveDate::parse_from_str(&today_str, "%Y-%m-%d").ok())
-            .map(Clock::with_today)
-            .unwrap_or_else(Clock::system);
-
-        let filter = extract_filter_from_params(&params, &clock)?;
+        let filter = extract_filter_from_params(&params, &state.clock)?;
 
         let tracking_result =
             tokio::task::spawn_blocking(move || parsing::process_input(&data_path, filter.as_ref()))
@@ -410,63 +326,35 @@ pub async fn tag_detail(
         }
     };
 
-    let html = template
-        .render()
-        .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
-    Ok(Html(html))
+    render(template)
 }
 
 #[derive(Template)]
 #[template(path = "chart_projects_pie.html")]
 pub struct ChartProjectsPieTemplate {
     pub projects: Vec<TimeTotal>,
+    pub labels_json: String,
 }
 
 pub async fn chart_projects_pie(
     State(state): State<Arc<AppState>>,
     Query(params): Query<DashboardParams>,
 ) -> Result<Html<String>, WebError> {
-    let template = if let Some(data_path) = state.data_path.clone() {
-        let clock = std::env::var("TT_TODAY")
-            .ok()
-            .and_then(|today_str| NaiveDate::parse_from_str(&today_str, "%Y-%m-%d").ok())
-            .map(Clock::with_today)
-            .unwrap_or_else(Clock::system);
-
-        let filter = extract_filter_from_params(&params, &clock)?;
-
-        let period = params
-            .period
-            .as_ref()
-            .and_then(|p| PeriodRequested::from_str(p, &clock).ok());
-
-        let tracking_result = tokio::task::spawn_blocking(move || {
-            parsing::process_input(&data_path, filter.as_ref())
-        })
-        .await
-        .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
-        .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
-
-        if let Some(time_entries) = tracking_result.time_entries {
-            let limit = params
-                .limit
-                .and_then(|l| l.then_some(OutputLimit::CumulativePercentageThreshold(90.00)));
-            let overview = OverviewReport::overview(&time_entries, limit.as_ref(), period.as_ref());
-
+    let template = match load_overview(&state, &params).await? {
+        Some(overview) => {
+            let projects = overview.entries_time_totals().clone();
             ChartProjectsPieTemplate {
-                projects: overview.entries_time_totals().clone(),
+                labels_json: labels_json_for(&projects),
+                projects,
             }
-        } else {
-            ChartProjectsPieTemplate { projects: vec![] }
         }
-    } else {
-        ChartProjectsPieTemplate { projects: vec![] }
+        None => ChartProjectsPieTemplate {
+            projects: vec![],
+            labels_json: "[]".to_string(),
+        },
     };
 
-    let html = template
-        .render()
-        .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
-    Ok(Html(html))
+    render(template)
 }
 
 pub async fn health_check() -> &'static str {
@@ -478,40 +366,36 @@ pub async fn health_check() -> &'static str {
 pub struct OutcomesTemplate {
     pub total_time: String,
     pub outcomes: Vec<TimeTotal>,
+    pub labels_json: String,
 }
 
-pub async fn outcomes_page(State(state): State<Arc<AppState>>) -> Result<Html<String>, WebError> {
-    let template = if let Some(data_path) = state.data_path.clone() {
-        let tracking_result =
-            tokio::task::spawn_blocking(move || parsing::process_input(&data_path, None))
-                .await
-                .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
-                .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
-
-        if let Some(time_entries) = tracking_result.time_entries {
-            let overview = OverviewReport::overview(&time_entries, None, None);
-
-            OutcomesTemplate {
-                total_time: format_minutes(overview.total_minutes()),
-                outcomes: overview.outcome_time_totals().clone(),
-            }
-        } else {
-            OutcomesTemplate {
-                total_time: "0m".to_string(),
-                outcomes: vec![],
-            }
-        }
-    } else {
-        OutcomesTemplate {
-            total_time: "0m".to_string(),
-            outcomes: vec![],
-        }
+pub async fn outcomes_page(
+    State(state): State<Arc<AppState>>,
+) -> Result<Html<String>, WebError> {
+    let params = DashboardParams {
+        period: None,
+        limit: None,
+        from: None,
+        to: None,
     };
 
-    let html = template
-        .render()
-        .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
-    Ok(Html(html))
+    let template = match load_overview(&state, &params).await? {
+        Some(overview) => {
+            let outcomes = overview.outcome_time_totals().clone();
+            OutcomesTemplate {
+                total_time: format_minutes(overview.total_minutes()),
+                labels_json: labels_json_for(&outcomes),
+                outcomes,
+            }
+        }
+        None => OutcomesTemplate {
+            total_time: "0m".to_string(),
+            labels_json: "[]".to_string(),
+            outcomes: vec![],
+        },
+    };
+
+    render(template)
 }
 
 #[derive(Template)]
@@ -525,113 +409,58 @@ pub struct OutcomesPartialTemplate {
 pub struct OutcomesCombinedPartialTemplate {
     pub outcomes: Vec<TimeTotal>,
     pub total_time: String,
+    pub labels_json: String,
 }
 
 pub async fn outcomes_partial(
     State(state): State<Arc<AppState>>,
     Query(params): Query<DashboardParams>,
 ) -> Result<Html<String>, WebError> {
-    let template = if let Some(data_path) = state.data_path.clone() {
-        let clock = std::env::var("TT_TODAY")
-            .ok()
-            .and_then(|today_str| NaiveDate::parse_from_str(&today_str, "%Y-%m-%d").ok())
-            .map(Clock::with_today)
-            .unwrap_or_else(Clock::system);
-
-        let filter = extract_filter_from_params(&params, &clock)?;
-
-        let period = params
-            .period
-            .as_ref()
-            .and_then(|p| PeriodRequested::from_str(p, &clock).ok());
-
-        let tracking_result = tokio::task::spawn_blocking(move || {
-            parsing::process_input(&data_path, filter.as_ref())
-        })
-        .await
-        .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
-        .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
-
-        if let Some(time_entries) = tracking_result.time_entries {
-            let limit = params
-                .limit
-                .and_then(|l| l.then_some(OutputLimit::CumulativePercentageThreshold(90.00)));
-            let overview = OverviewReport::overview(&time_entries, limit.as_ref(), period.as_ref());
-
+    let template = match load_overview(&state, &params).await? {
+        Some(overview) => {
+            let outcomes = overview.outcome_time_totals().clone();
             OutcomesCombinedPartialTemplate {
-                outcomes: overview.outcome_time_totals().clone(),
                 total_time: format_minutes(overview.total_minutes()),
-            }
-        } else {
-            OutcomesCombinedPartialTemplate {
-                outcomes: vec![],
-                total_time: "0m".to_string(),
+                labels_json: labels_json_for(&outcomes),
+                outcomes,
             }
         }
-    } else {
-        OutcomesCombinedPartialTemplate {
+        None => OutcomesCombinedPartialTemplate {
             outcomes: vec![],
             total_time: "0m".to_string(),
-        }
+            labels_json: "[]".to_string(),
+        },
     };
 
-    let html = template
-        .render()
-        .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
-    Ok(Html(html))
+    render(template)
 }
 
 #[derive(Template)]
 #[template(path = "chart_outcomes_pie.html")]
 pub struct ChartOutcomesPieTemplate {
     pub outcomes: Vec<TimeTotal>,
+    pub labels_json: String,
 }
 
 pub async fn chart_outcomes_pie(
     State(state): State<Arc<AppState>>,
     Query(params): Query<DashboardParams>,
 ) -> Result<Html<String>, WebError> {
-    let template = if let Some(data_path) = state.data_path.clone() {
-        let clock = std::env::var("TT_TODAY")
-            .ok()
-            .and_then(|today_str| NaiveDate::parse_from_str(&today_str, "%Y-%m-%d").ok())
-            .map(Clock::with_today)
-            .unwrap_or_else(Clock::system);
-
-        let filter = extract_filter_from_params(&params, &clock)?;
-
-        let period = params
-            .period
-            .as_ref()
-            .and_then(|p| PeriodRequested::from_str(p, &clock).ok());
-
-        let tracking_result = tokio::task::spawn_blocking(move || {
-            parsing::process_input(&data_path, filter.as_ref())
-        })
-        .await
-        .map_err(|e| WebError::DataProcessingFailed(format!("Task failed: {}", e)))?
-        .map_err(|e| WebError::DataProcessingFailed(e.to_string()))?;
-
-        if let Some(time_entries) = tracking_result.time_entries {
-            let limit = params
-                .limit
-                .and_then(|l| l.then_some(OutputLimit::CumulativePercentageThreshold(90.00)));
-            let overview = OverviewReport::overview(&time_entries, limit.as_ref(), period.as_ref());
-
+    let template = match load_overview(&state, &params).await? {
+        Some(overview) => {
+            let outcomes = overview.outcome_time_totals().clone();
             ChartOutcomesPieTemplate {
-                outcomes: overview.outcome_time_totals().clone(),
+                labels_json: labels_json_for(&outcomes),
+                outcomes,
             }
-        } else {
-            ChartOutcomesPieTemplate { outcomes: vec![] }
         }
-    } else {
-        ChartOutcomesPieTemplate { outcomes: vec![] }
+        None => ChartOutcomesPieTemplate {
+            outcomes: vec![],
+            labels_json: "[]".to_string(),
+        },
     };
 
-    let html = template
-        .render()
-        .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
-    Ok(Html(html))
+    render(template)
 }
 
 #[derive(Template)]
@@ -679,10 +508,7 @@ pub async fn flag_statistics() -> Result<Html<String>, WebError> {
         failed_executions: stats.failed_executions,
     };
 
-    let html = template
-        .render()
-        .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
-    Ok(Html(html))
+    render(template)
 }
 
 pub async fn flag_statistics_partial(
@@ -702,8 +528,13 @@ pub async fn flag_statistics_partial(
         failed_executions: stats.failed_executions,
     };
 
-    let html = template
-        .render()
-        .map_err(|e| WebError::TemplateRenderFailed(e.to_string()))?;
-    Ok(Html(html))
+    render(template)
+}
+
+pub fn create_clock() -> Clock {
+    std::env::var("TT_TODAY")
+        .ok()
+        .and_then(|today_str| NaiveDate::parse_from_str(&today_str, "%Y-%m-%d").ok())
+        .map(Clock::with_today)
+        .unwrap_or_else(Clock::system)
 }
