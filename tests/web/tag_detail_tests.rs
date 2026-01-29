@@ -16,8 +16,8 @@ async fn tag_detail_should_show_individual_entries() {
         .expect_contains("project-alpha")
         .expect_contains("Building dashboard")
         .expect_contains("Code review")
-        .expect_contains("150 min")
-        .expect_contains("75 min")
+        .expect_contains("2h 30m")
+        .expect_contains("1h 15m")
         .expect_not_contains("project-beta");
 }
 
@@ -67,7 +67,7 @@ async fn tag_detail_should_respect_period_filter() {
         .expect_status(200)
         .expect_contains("project-alpha")
         .expect_contains("Today work")
-        .expect_contains("180 min")
+        .expect_contains("3h")
         .expect_not_contains("Yesterday work");
 }
 
@@ -89,8 +89,8 @@ async fn tag_detail_should_respect_custom_date_range() {
         .expect_status(200)
         .expect_contains("Recent work")
         .expect_contains("Very recent work")
-        .expect_contains("180 min")
-        .expect_contains("240 min")
+        .expect_contains("3h")
+        .expect_contains("4h")
         .expect_not_contains("Older work");
 }
 
@@ -107,7 +107,7 @@ async fn tag_detail_should_handle_single_entry_for_tag() {
         .expect_status(200)
         .expect_contains("solo-tag")
         .expect_contains("Single task")
-        .expect_contains("45 min");
+        .expect_contains("45m");
 }
 
 #[tokio::test]
@@ -153,7 +153,7 @@ async fn tag_detail_should_handle_very_large_durations() {
         .expect_status(200)
         .expect_contains("epic-tag")
         .expect_contains("Marathon session")
-        .expect_contains("59999 min");
+        .expect_contains("999h 59m");
 }
 
 #[tokio::test]
@@ -205,9 +205,9 @@ async fn tag_detail_should_handle_mixed_time_formats() {
         .should_succeed()
         .await
         .expect_status(200)
-        .expect_contains("150 min")
-        .expect_contains("60 min")
-        .expect_contains("45 min");
+        .expect_contains("2h 30m")
+        .expect_contains("1h")
+        .expect_contains("45m");
 }
 
 #[tokio::test]

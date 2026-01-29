@@ -44,7 +44,7 @@ async fn dashboard_should_filter_by_this_week() {
         .await
         .expect_status(200)
         .expect_contains("project-beta")
-        .expect_contains("180 min");
+        .expect_contains("3h");
 }
 
 #[tokio::test]
@@ -306,7 +306,7 @@ async fn dashboard_should_handle_single_project_only() {
         .await
         .expect_status(200)
         .expect_contains("only-project")
-        .expect_contains("150 min");
+        .expect_contains("2h 30m");
 }
 
 #[tokio::test]
@@ -321,7 +321,7 @@ async fn dashboard_should_handle_very_large_durations() {
         .await
         .expect_status(200)
         .expect_contains("epic-project")
-        .expect_contains("59999 min");
+        .expect_contains("999h 59m");
 }
 
 #[tokio::test]
@@ -381,7 +381,7 @@ async fn dashboard_should_aggregate_multiple_entries_same_project() {
         .await
         .expect_status(200)
         .expect_contains("project-alpha")
-        .expect_contains("210 min");
+        .expect_contains("3h 30m");
 }
 
 #[tokio::test]

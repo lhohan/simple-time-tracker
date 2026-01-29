@@ -1,24 +1,26 @@
-<h2>Entries for {{ tag_name }}</h2>
+<div class="card">
+    <h2>Entries for {{ tag_name }}</h2>
 
-{% if entries.len() > 0 %}
-<table>
-    <thead>
-        <tr>
-            <th>Description</th>
-            <th>Duration</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for entry in entries %}
-        <tr>
-            <td>{{ entry.description }}</td>
-            <td>{{ entry.duration }} min</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    {% if entries.len() > 0 %}
+    <table>
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th>Duration</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in entries %}
+            <tr>
+                <td>{{ entry.description }}</td>
+                <td>{{ entry.duration|format_duration }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
-<p><strong>Total: {{ total_minutes }} min</strong></p>
-{% else %}
-<p>No entries found for this tag.</p>
-{% endif %}
+    <p><strong>Total: {{ total_minutes|format_duration }}</strong></p>
+    {% else %}
+    <p>No entries found for this tag.</p>
+    {% endif %}
+</div>

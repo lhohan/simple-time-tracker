@@ -12,8 +12,13 @@
         {% for outcome in outcomes %}
         <tr>
             <td>{{ outcome.description }}</td>
-            <td>{{ outcome.minutes }} min</td>
-            <td>{{ outcome.percentage }}%</td>
+            <td>{{ outcome.minutes|format_duration }}</td>
+            <td>
+                <div class="pct-cell">
+                    <span class="pct-value">{{ outcome.percentage }}%</span>
+                    <div class="pct-bar"><div class="pct-bar-fill" style="width:{{ outcome.percentage }}%"></div></div>
+                </div>
+            </td>
         </tr>
         {% endfor %}
     </tbody>

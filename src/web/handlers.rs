@@ -17,6 +17,23 @@ use crate::cli::statistics::{read_flag_statistics, FlagStat};
 
 use super::models::{DashboardParams, FlagStatsParams};
 
+mod filters {
+    pub fn format_duration(minutes: &u32) -> askama::Result<String> {
+        let hours = minutes / 60;
+        let mins = minutes % 60;
+        let result = if hours > 0 {
+            if mins > 0 {
+                format!("{hours}h {mins}m")
+            } else {
+                format!("{hours}h")
+            }
+        } else {
+            format!("{mins}m")
+        };
+        Ok(result)
+    }
+}
+
 pub enum WebError {
     DataProcessingFailed(String),
     TemplateRenderFailed(String),

@@ -18,11 +18,6 @@
     top: 1rem;
 }
 
-.chart-sidebar canvas {
-    max-width: 100%;
-    max-height: 300px;
-}
-
 @media (max-width: 768px) {
     .dashboard-container {
         grid-template-columns: 1fr;
@@ -34,49 +29,53 @@
 }
 </style>
 
-<div class="dashboard-container">
-    <div class="main-content">
-        <h1>Time Tracker Dashboard</h1>
+<h1 class="page-title">Time Tracker</h1>
 
-        <nav>
-            <a href="/outcomes">View Outcomes →</a>
-            <a href="/flag-statistics">View Flag Statistics →</a>
-        </nav>
+<nav class="top-nav">
+    <a href="/" class="active">Dashboard</a>
+    <a href="/outcomes">Outcomes</a>
+    <a href="/flag-statistics">Flag Statistics</a>
+</nav>
 
-        <div id="summary">
-            <h2>Total Time Tracked: <strong>{{ total_time }}</strong></h2>
+<div id="summary">
+    <div class="stat-card">
+        <div class="stat-label">Total Time Tracked</div>
+        <div class="stat-value">{{ total_time }}</div>
+    </div>
+</div>
+
+<div class="card">
+    <form id="filter-form">
+        <input type="hidden" id="selected-period" name="period" value="">
+        <div class="btn-group">
+            <button type="button" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form" onclick="setPeriod(this, '')">All Time</button>
+            <button type="button" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form" onclick="setPeriod(this, 'today')">Today</button>
+            <button type="button" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form" onclick="setPeriod(this, 'this-week')">This Week</button>
+            <button type="button" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form" onclick="setPeriod(this, 'this-month')">This Month</button>
         </div>
 
-        <form id="filter-form">
-            <input type="hidden" id="selected-period" name="period" value="">
-            <div id="filters">
-                <h3>Filter by Period</h3>
-                <button type="button" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form" onclick="document.getElementById('selected-period').value = 'today'">Today</button>
-                <button type="button" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form" onclick="document.getElementById('selected-period').value = 'this-week'">This Week</button>
-                <button type="button" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form" onclick="document.getElementById('selected-period').value = 'this-month'">This Month</button>
-                <button type="button" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form" onclick="document.getElementById('selected-period').value = ''">All Time</button>
+        <div class="date-range-row">
+            <label>
+                From
+                <input type="date" id="date-from" name="from" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form">
+            </label>
+            <label>
+                To
+                <input type="date" id="date-to" name="to" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form">
+            </label>
+        </div>
 
-                <div style="margin-top: 1rem;">
-                    <h4>Custom Date Range</h4>
-                    <label>
-                        From:
-                        <input type="date" id="date-from" name="from" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form">
-                    </label>
-                    <label style="margin-left: 1rem;">
-                        To:
-                        <input type="date" id="date-to" name="to" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form">
-                    </label>
-                </div>
+        <div style="margin-top: 0.75rem;">
+            <label>
+                <input type="checkbox" id="limit-checkbox" name="limit" value="true" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form">
+                Limit to top 90%
+            </label>
+        </div>
+    </form>
+</div>
 
-                <div style="margin-top: 1rem;">
-                    <label>
-                        <input type="checkbox" id="limit-checkbox" name="limit" value="true" hx-trigger="change" hx-get="/api/dashboard" hx-target="#projects" hx-include="#filter-form">
-                        Limit to top 90%
-                    </label>
-                </div>
-            </div>
-        </form>
-
+<div class="dashboard-container">
+    <div class="main-content">
         <div id="projects">
             {% if projects.len() > 0 %}
             <h2>Time by Project</h2>
@@ -96,8 +95,13 @@
                                 {{ project.description }}
                             </a>
                         </td>
-                        <td>{{ project.minutes }} min</td>
-                        <td>{{ project.percentage }}%</td>
+                        <td>{{ project.minutes|format_duration }}</td>
+                        <td>
+                            <div class="pct-cell">
+                                <span class="pct-value">{{ project.percentage }}%</span>
+                                <div class="pct-bar"><div class="pct-bar-fill" style="width:{{ project.percentage }}%"></div></div>
+                            </div>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -118,55 +122,56 @@
 </div>
 
 <script>
+function setPeriod(btn, value) {
+    document.getElementById('selected-period').value = value;
+    document.querySelectorAll('.btn-group button').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+}
+
 (function() {
-    const ctx = document.getElementById('projects-pie-chart');
+    var ctx = document.getElementById('projects-pie-chart');
     if (ctx && typeof Chart !== 'undefined') {
         if (window.projectsChart) {
             window.projectsChart.destroy();
         }
 
-        const colors = [
-            'rgba(255, 99, 132, 0.6)',
-            'rgba(54, 162, 235, 0.6)',
-            'rgba(255, 206, 86, 0.6)',
-            'rgba(75, 192, 192, 0.6)',
-            'rgba(153, 102, 255, 0.6)',
-            'rgba(255, 159, 64, 0.6)',
-            'rgba(199, 199, 199, 0.6)',
-            'rgba(83, 102, 255, 0.6)',
-            'rgba(255, 99, 255, 0.6)',
-            'rgba(99, 255, 132, 0.6)'
+        var colors = [
+            'rgba(99, 102, 241, 0.7)',
+            'rgba(244, 114, 182, 0.7)',
+            'rgba(251, 191, 36, 0.7)',
+            'rgba(52, 211, 153, 0.7)',
+            'rgba(147, 130, 233, 0.7)',
+            'rgba(251, 146, 60, 0.7)',
+            'rgba(148, 163, 184, 0.7)',
+            'rgba(56, 189, 248, 0.7)',
+            'rgba(232, 121, 249, 0.7)',
+            'rgba(74, 222, 128, 0.7)'
         ];
 
         window.projectsChart = new Chart(ctx, {
-            type: 'pie',
+            type: 'doughnut',
             data: {
                 labels: {{ labels_json|safe }},
                 datasets: [{
                     data: [{% for project in projects %}{{ project.percentage }}{% if !loop.last %}, {% endif %}{% endfor %}],
                     backgroundColor: colors.slice(0, {{ projects.len() }}),
-                    borderWidth: 1
+                    borderWidth: 2,
+                    borderColor: 'rgba(255,255,255,0.8)'
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
+                cutout: '55%',
                 plugins: {
                     legend: {
-                        position: 'bottom',
-                        labels: {
-                            boxWidth: 12,
-                            font: {
-                                size: 11
-                            }
-                        }
+                        display: false
                     },
                     title: {
                         display: true,
-                        text: 'Project Distribution (%)',
-                        font: {
-                            size: 14
-                        }
+                        text: 'Project Distribution',
+                        font: { size: 13, weight: '600' },
+                        padding: { bottom: 10 }
                     },
                     tooltip: {
                         callbacks: {

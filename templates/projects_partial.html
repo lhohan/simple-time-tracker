@@ -16,8 +16,13 @@
                     {{ project.description }}
                 </a>
             </td>
-            <td>{{ project.minutes }} min</td>
-            <td>{{ project.percentage }}%</td>
+            <td>{{ project.minutes|format_duration }}</td>
+            <td>
+                <div class="pct-cell">
+                    <span class="pct-value">{{ project.percentage }}%</span>
+                    <div class="pct-bar"><div class="pct-bar-fill" style="width:{{ project.percentage }}%"></div></div>
+                </div>
+            </td>
         </tr>
         {% endfor %}
     </tbody>

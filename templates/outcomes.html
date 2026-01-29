@@ -18,11 +18,6 @@
     top: 1rem;
 }
 
-.chart-sidebar canvas {
-    max-width: 100%;
-    max-height: 300px;
-}
-
 @media (max-width: 768px) {
     .outcomes-container {
         grid-template-columns: 1fr;
@@ -34,48 +29,53 @@
 }
 </style>
 
-<div class="outcomes-container">
-    <div class="main-content">
-        <h1>Outcomes Analysis</h1>
+<h1 class="page-title">Outcomes Analysis</h1>
 
-        <nav>
-            <a href="/">← Back to Dashboard</a>
-        </nav>
+<nav class="top-nav">
+    <a href="/">Dashboard</a>
+    <a href="/outcomes" class="active">Outcomes</a>
+    <a href="/flag-statistics">Flag Statistics</a>
+</nav>
 
-        <div id="summary">
-            <h2>Total Time Tracked: <strong>{{ total_time }}</strong></h2>
+<div id="summary">
+    <div class="stat-card">
+        <div class="stat-label">Total Time Tracked</div>
+        <div class="stat-value">{{ total_time }}</div>
+    </div>
+</div>
+
+<div class="card">
+    <form id="filter-form-outcomes">
+        <input type="hidden" id="selected-period-outcomes" name="period" value="">
+        <div class="btn-group">
+            <button type="button" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes" onclick="setPeriodOutcomes(this, '')">All Time</button>
+            <button type="button" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes" onclick="setPeriodOutcomes(this, 'today')">Today</button>
+            <button type="button" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes" onclick="setPeriodOutcomes(this, 'this-week')">This Week</button>
+            <button type="button" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes" onclick="setPeriodOutcomes(this, 'this-month')">This Month</button>
         </div>
 
-        <form id="filter-form-outcomes">
-            <input type="hidden" id="selected-period-outcomes" name="period" value="">
-            <div id="filters">
-                <h3>Filter by Period</h3>
-                <button type="button" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes" onclick="document.getElementById('selected-period-outcomes').value = 'today'">Today</button>
-                <button type="button" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes" onclick="document.getElementById('selected-period-outcomes').value = 'this-week'">This Week</button>
-                <button type="button" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes" onclick="document.getElementById('selected-period-outcomes').value = 'this-month'">This Month</button>
-                <button type="button" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes" onclick="document.getElementById('selected-period-outcomes').value = ''">All Time</button>
+        <div class="date-range-row">
+            <label>
+                From
+                <input type="date" id="date-from-outcomes" name="from" hx-trigger="change" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes">
+            </label>
+            <label>
+                To
+                <input type="date" id="date-to-outcomes" name="to" hx-trigger="change" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes">
+            </label>
+        </div>
 
-                <div style="margin-top: 1rem;">
-                    <h4>Custom Date Range</h4>
-                    <label>
-                        From:
-                        <input type="date" id="date-from-outcomes" name="from" hx-trigger="change" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes">
-                    </label>
-                    <label style="margin-left: 1rem;">
-                        To:
-                        <input type="date" id="date-to-outcomes" name="to" hx-trigger="change" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes">
-                    </label>
-                </div>
+        <div style="margin-top: 0.75rem;">
+            <label>
+                <input type="checkbox" id="limit-checkbox-outcomes" name="limit" value="true" hx-trigger="change" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes">
+                Limit to top 90%
+            </label>
+        </div>
+    </form>
+</div>
 
-                <div style="margin-top: 1rem;">
-                    <label>
-                        <input type="checkbox" id="limit-checkbox-outcomes" name="limit" value="true" hx-trigger="change" hx-get="/api/outcomes" hx-target="#outcomes-list" hx-include="#filter-form-outcomes">
-                        Limit to top 90%
-                    </label>
-                </div>
-            </div>
-        </form>
-
+<div class="outcomes-container">
+    <div class="main-content">
         <div id="outcomes-list">
             {% if outcomes.len() > 0 %}
             <h2>Outcomes</h2>
@@ -91,8 +91,13 @@
                     {% for outcome in outcomes %}
                     <tr>
                         <td>{{ outcome.description }}</td>
-                        <td>{{ outcome.minutes }} min</td>
-                        <td>{{ outcome.percentage }}%</td>
+                        <td>{{ outcome.minutes|format_duration }}</td>
+                        <td>
+                            <div class="pct-cell">
+                                <span class="pct-value">{{ outcome.percentage }}%</span>
+                                <div class="pct-bar"><div class="pct-bar-fill" style="width:{{ outcome.percentage }}%"></div></div>
+                            </div>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -111,55 +116,56 @@
 </div>
 
 <script>
+function setPeriodOutcomes(btn, value) {
+    document.getElementById('selected-period-outcomes').value = value;
+    document.querySelectorAll('.btn-group button').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+}
+
 (function() {
-    const ctx = document.getElementById('outcomes-pie-chart');
+    var ctx = document.getElementById('outcomes-pie-chart');
     if (ctx && typeof Chart !== 'undefined') {
         if (window.outcomesChart) {
             window.outcomesChart.destroy();
         }
 
-        const colors = [
-            'rgba(255, 99, 132, 0.6)',
-            'rgba(54, 162, 235, 0.6)',
-            'rgba(255, 206, 86, 0.6)',
-            'rgba(75, 192, 192, 0.6)',
-            'rgba(153, 102, 255, 0.6)',
-            'rgba(255, 159, 64, 0.6)',
-            'rgba(199, 199, 199, 0.6)',
-            'rgba(83, 102, 255, 0.6)',
-            'rgba(255, 99, 255, 0.6)',
-            'rgba(99, 255, 132, 0.6)'
+        var colors = [
+            'rgba(99, 102, 241, 0.7)',
+            'rgba(244, 114, 182, 0.7)',
+            'rgba(251, 191, 36, 0.7)',
+            'rgba(52, 211, 153, 0.7)',
+            'rgba(147, 130, 233, 0.7)',
+            'rgba(251, 146, 60, 0.7)',
+            'rgba(148, 163, 184, 0.7)',
+            'rgba(56, 189, 248, 0.7)',
+            'rgba(232, 121, 249, 0.7)',
+            'rgba(74, 222, 128, 0.7)'
         ];
 
         window.outcomesChart = new Chart(ctx, {
-            type: 'pie',
+            type: 'doughnut',
             data: {
                 labels: {{ labels_json|safe }},
                 datasets: [{
                     data: [{% for outcome in outcomes %}{{ outcome.percentage }}{% if !loop.last %}, {% endif %}{% endfor %}],
                     backgroundColor: colors.slice(0, {{ outcomes.len() }}),
-                    borderWidth: 1
+                    borderWidth: 2,
+                    borderColor: 'rgba(255,255,255,0.8)'
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
+                cutout: '55%',
                 plugins: {
                     legend: {
-                        position: 'bottom',
-                        labels: {
-                            boxWidth: 12,
-                            font: {
-                                size: 11
-                            }
-                        }
+                        display: false
                     },
                     title: {
                         display: true,
-                        text: 'Outcomes Distribution (%)',
-                        font: {
-                            size: 14
-                        }
+                        text: 'Outcomes Distribution',
+                        font: { size: 13, weight: '600' },
+                        padding: { bottom: 10 }
                     },
                     tooltip: {
                         callbacks: {

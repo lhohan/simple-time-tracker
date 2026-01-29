@@ -12,8 +12,13 @@
         {% for outcome in outcomes %}
         <tr>
             <td>{{ outcome.description }}</td>
-            <td>{{ outcome.minutes }} min</td>
-            <td>{{ outcome.percentage }}%</td>
+            <td>{{ outcome.minutes|format_duration }}</td>
+            <td>
+                <div class="pct-cell">
+                    <span class="pct-value">{{ outcome.percentage }}%</span>
+                    <div class="pct-bar"><div class="pct-bar-fill" style="width:{{ outcome.percentage }}%"></div></div>
+                </div>
+            </td>
         </tr>
         {% endfor %}
     </tbody>
@@ -23,7 +28,10 @@
 {% endif %}
 
 <div id="summary" hx-swap-oob="true">
-    <h2>Total Time Tracked: <strong>{{ total_time }}</strong></h2>
+    <div class="stat-card">
+        <div class="stat-label">Total Time Tracked</div>
+        <div class="stat-value">{{ total_time }}</div>
+    </div>
 </div>
 
 <div id="chart-outcomes-pie" hx-swap-oob="true">
@@ -32,54 +40,49 @@
 
 <script>
 (function() {
-    const ctx = document.getElementById('outcomes-pie-chart');
+    var ctx = document.getElementById('outcomes-pie-chart');
     if (ctx && typeof Chart !== 'undefined') {
         if (window.outcomesChart) {
             window.outcomesChart.destroy();
         }
 
-        const colors = [
-            'rgba(255, 99, 132, 0.6)',
-            'rgba(54, 162, 235, 0.6)',
-            'rgba(255, 206, 86, 0.6)',
-            'rgba(75, 192, 192, 0.6)',
-            'rgba(153, 102, 255, 0.6)',
-            'rgba(255, 159, 64, 0.6)',
-            'rgba(199, 199, 199, 0.6)',
-            'rgba(83, 102, 255, 0.6)',
-            'rgba(255, 99, 255, 0.6)',
-            'rgba(99, 255, 132, 0.6)'
+        var colors = [
+            'rgba(99, 102, 241, 0.7)',
+            'rgba(244, 114, 182, 0.7)',
+            'rgba(251, 191, 36, 0.7)',
+            'rgba(52, 211, 153, 0.7)',
+            'rgba(147, 130, 233, 0.7)',
+            'rgba(251, 146, 60, 0.7)',
+            'rgba(148, 163, 184, 0.7)',
+            'rgba(56, 189, 248, 0.7)',
+            'rgba(232, 121, 249, 0.7)',
+            'rgba(74, 222, 128, 0.7)'
         ];
 
         window.outcomesChart = new Chart(ctx, {
-            type: 'pie',
+            type: 'doughnut',
             data: {
                 labels: {{ labels_json|safe }},
                 datasets: [{
                     data: [{% for outcome in outcomes %}{{ outcome.percentage }}{% if !loop.last %}, {% endif %}{% endfor %}],
                     backgroundColor: colors.slice(0, {{ outcomes.len() }}),
-                    borderWidth: 1
+                    borderWidth: 2,
+                    borderColor: 'rgba(255,255,255,0.8)'
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
+                cutout: '55%',
                 plugins: {
                     legend: {
-                        position: 'bottom',
-                        labels: {
-                            boxWidth: 12,
-                            font: {
-                                size: 11
-                            }
-                        }
+                        display: false
                     },
                     title: {
                         display: true,
-                        text: 'Outcomes Distribution (%)',
-                        font: {
-                            size: 14
-                        }
+                        text: 'Outcomes Distribution',
+                        font: { size: 13, weight: '600' },
+                        padding: { bottom: 10 }
                     },
                     tooltip: {
                         callbacks: {
