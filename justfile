@@ -102,3 +102,12 @@ fuzz-custom time:
     cargo +nightly fuzz run time_fuzz -- -max_total_time={{ time }}
     cargo +nightly fuzz run description_fuzz -- -max_total_time={{ time }}
     cargo +nightly fuzz run multiline_fuzz -- -max_total_time={{ time }}
+
+# Validate C4 Structurizr DSL
+c4-validate:
+    nix shell nixpkgs#structurizr-cli -c structurizr-cli validate -workspace docs/c4/time-tracker.dsl
+
+# Export C4 diagrams to a generated directory (kept out of version control)
+c4-export:
+    mkdir -p target/c4
+    nix shell nixpkgs#structurizr-cli -c structurizr-cli export -workspace docs/c4/time-tracker.dsl -format plantuml -output target/c4
