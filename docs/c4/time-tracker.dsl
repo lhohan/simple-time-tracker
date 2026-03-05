@@ -4,18 +4,24 @@ workspace "Time Tracker" "C4 model for the Time Tracker Rust project." {
     model {
         user = person "User" "Tracks time and reviews reports with the CLI and web dashboard."
 
-        timeEntryFiles = softwareSystem "Time Entry Markdown Files" "User-managed markdown files that store tracked time entries."
+        timeEntryFiles = softwareSystem "Time Entry Markdown Files" "User-managed markdown files that store tracked time entries." {
+            tags "External Data Store"
+        }
 
         timeTracker = softwareSystem "Time Tracker" "Rust application for parsing markdown time entries and presenting reports via CLI and web interfaces." {
             cli = container "CLI Application" "Parses markdown time entries and prints reports in text or markdown formats." "Rust + Clap" {
+                tags "CLI"
+
                 cliWorkflow = component "main::run_cli + cli::Args" {
                     description "Parses CLI flags, resolves filters/periods, and orchestrates report generation."
                     technology "Rust (src/main.rs, src/cli/mod.rs)"
+                    tags "Adapter"
                 }
 
                 cliOutputFormatter = component "reporting::format::{text, markdown}" {
                     description "Formats report models as terminal text or markdown output."
                     technology "Rust (src/reporting/format/text.rs, src/reporting/format/markdown.rs)"
+                    tags "Renderer"
                 }
 
                 group "Shared Tracking Core" {
@@ -24,14 +30,18 @@ workspace "Time Tracker" "C4 model for the Time Tracker Rust project." {
             }
 
             web = container "Web Dashboard" "Serves interactive dashboards, tag detail views, outcomes pages, and health endpoints over HTTP." "Rust + Axum + Askama" {
+                tags "Web"
+
                 httpHandlers = component "web::handlers" {
                     description "Accepts HTTP requests, resolves dashboard parameters, and coordinates dashboard, outcomes, tag detail, and health responses."
                     technology "Rust + Axum (src/web/handlers.rs)"
+                    tags "Adapter"
                 }
 
                 templateRenderer = component "Askama templates (templates/*.html)" {
                     description "Renders HTML pages and partials for dashboard and outcomes views."
                     technology "Askama + HTML (templates/*.html)"
+                    tags "Renderer"
                 }
 
                 group "Shared Tracking Core" {
@@ -97,13 +107,67 @@ workspace "Time Tracker" "C4 model for the Time Tracker Rust project." {
         }
 
         styles {
+            element "Element" {
+                shape RoundedBox
+                background #edf2f4
+                color #111111
+            }
+
+            element "Person" {
+                shape Person
+                background #264653
+                color #ffffff
+            }
+
+            element "Software System" {
+                background #0b3d91
+                color #ffffff
+            }
+
+            element "Container" {
+                background #457b9d
+                color #ffffff
+            }
+
             element "Database" {
                 shape Cylinder
+                background #f4a261
+                color #111111
+            }
+
+            element "CLI" {
+                background #1d3557
+                color #ffffff
+            }
+
+            element "Web" {
+                background #2a9d8f
+                color #ffffff
+            }
+
+            element "External Data Store" {
+                background #e9ecef
+                color #111111
             }
 
             element "Shared Component" {
                 background #f4f1de
                 color #111111
+            }
+
+            element "Adapter" {
+                background #d7e3fc
+                color #111111
+            }
+
+            element "Renderer" {
+                background #fde2e4
+                color #111111
+            }
+
+            relationship "Relationship" {
+                color #5c677d
+                thickness 2
             }
         }
     }
