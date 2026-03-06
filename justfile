@@ -108,11 +108,12 @@ fuzz-custom time:
 architecture-docs-validate:
     nix develop -c structurizr-cli validate -workspace docs/c4/time-tracker.dsl
 
-# Export C4 diagrams to a 'target' location
+# Export C4 diagrams to docs/site for manual GitHub Pages publishing
 architecture-docs-export:
-    mkdir -p target/c4
-    nix develop -c structurizr-cli export -workspace docs/c4/time-tracker.dsl -format static -output target/c4
+    mkdir -p docs/site
+    rm -rf docs/site/index.html docs/site/workspace.js docs/site/css docs/site/js
+    nix develop -c structurizr-cli export -workspace docs/c4/time-tracker.dsl -format static -output docs/site
 
 # View the architecture documentation
-view-architecture-docs: architecture-docs-export
-    open target/c4/index.html
+architecture-docs-view: architecture-docs-export
+    open docs/site/index.html

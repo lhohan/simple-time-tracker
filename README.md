@@ -54,6 +54,24 @@ Server runs at **http://127.0.0.1:3000**
 
 See [Web Dashboard Documentation](./docs/web-dashboard.md) for configuration, architecture, and development guide.
 
+### Architecture Docs (C4)
+
+Generate and preview architecture diagrams locally:
+
+```bash
+just architecture-docs-validate
+just architecture-docs-export
+just architecture-docs-view
+```
+
+One-time GitHub Pages setup:
+- Source: Deploy from a branch
+- Branch: `main`
+- Folder: `/docs`
+
+After exporting, commit `docs/site` alongside DSL changes and push `main`.
+The published URL path is `/site/` (for example `https://<owner>.github.io/<repo>/site/`).
+
 ### CLI
 
 ### Basic Usage
