@@ -9,6 +9,7 @@
 - **Performance**: `just bench` (benchmarks), `just bench-w` (continuous benchmarks)
 - **Fuzzing**: `just fuzz` (5-min), `just fuzz-long` (30-min), `just fuzz-custom <seconds>` (custom time)
 - **Development**: `just check-w` (continuous check), `just clean` (clean artifacts)
+- **Architecture docs (C4)**: source DSL at `docs/c4/time-tracker.dsl` (shared components in `docs/c4/shared-tracking-core.dsl`); validate with `just architecture-docs-validate`; export static site with `just architecture-docs-export`
 
 ## Code Style Requirements
 - **Architecture**: Domain-driven design with hexagonal architecture (src/domain/, src/parsing/, src/reporting/)
