@@ -38,7 +38,7 @@
       '';
     };
   in {
-    devShell = pkgs.mkShell {
+    devShells.default = pkgs.mkShell {
       buildInputs = with pkgs; [
         # cargo-llvm-cov   # currently broken on nix packages... for now install manually
         cargo-nextest
