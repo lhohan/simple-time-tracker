@@ -50,6 +50,14 @@ test-coverage:
 ci-test-coverage: test-coverage
     cargo llvm-cov report --lcov --output-path lcov.info --ignore-filename-regex templates/
 
+# Run CRAP complexity/coverage report
+crap-report: _require-cargo-crap ci-test-coverage
+    cargo crap --lcov lcov.info --exclude "tests/**" --exclude "benches/**" --top 10
+
+# Ensure cargo crap is available
+_require-cargo-crap:
+    @cargo crap --help >/dev/null 2>&1 || (echo "Missing dependency: cargo crap. Install it with: cargo binstall cargo-crap" >&2; exit 127)
+
 # Run tests with coverage and open the report
 test-coverage-report:
     cargo llvm-cov nextest --open --features web --ignore-filename-regex templates/
