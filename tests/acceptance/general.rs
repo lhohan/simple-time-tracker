@@ -106,6 +106,36 @@ fn app_should_only_process_tt_sections() {
 }
 
 #[test]
+fn app_should_ignore_entries_in_tt_section_with_invalid_date() {
+    let content = r"## TT 2020-01-01
+    - #valid 1h Valid entry
+    ## TT invalid-date
+    - #ignored 2h Should not count";
+
+    Cmd::given()
+        .a_file_with_content(content)
+        .when_run()
+        .should_succeed()
+        .expect_output("1h 00m total");
+}
+
+#[test]
+fn app_should_resume_tracking_after_next_valid_tt_date() {
+    let content = r"## TT 2020-01-01
+    - #valid 1h Valid entry
+    ## TT invalid-date
+    - #ignored 2h Should not count
+    ## TT 2020-01-02
+    - #later 3h Later valid entry";
+
+    Cmd::given()
+        .a_file_with_content(content)
+        .when_run()
+        .should_succeed()
+        .expect_output("4h 00m total");
+}
+
+#[test]
 fn report_should_include_summary_statistics() {
     let content = r"## TT 2020-01-01
         - #work 2h
