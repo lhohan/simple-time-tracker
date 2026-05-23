@@ -49,6 +49,9 @@ fn process_line_mut(
             }
         }
         Err(error) => {
+            if line.content.starts_with('#') {
+                state.current_date = None;
+            }
             state.errors.push(ParseError::Located {
                 error: Box::new(error),
                 location: Location {
