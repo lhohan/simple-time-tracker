@@ -48,10 +48,17 @@ fn process_line_mut(
                 }
             }
         }
+        Err(error @ ParseError::InvalidDate(_)) => {
+            state.current_date = None;
+            state.errors.push(ParseError::Located {
+                error: Box::new(error),
+                location: Location {
+                    file: file_name.to_string(),
+                    line: line.line_number,
+                },
+            });
+        }
         Err(error) => {
-            if line.content.starts_with('#') {
-                state.current_date = None;
-            }
             state.errors.push(ParseError::Located {
                 error: Box::new(error),
                 location: Location {
