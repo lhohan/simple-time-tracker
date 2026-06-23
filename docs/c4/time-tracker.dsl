@@ -4,11 +4,11 @@ workspace "Time Tracker" "C4 model for the Time Tracker Rust project." {
     model {
         user = person "User" "Tracks time and reviews reports with the CLI and web dashboard."
 
-        timeEntryFiles = softwareSystem "Time Entry Markdown Files" "User-managed markdown files that store tracked time entries." {
-            tags "External Data Store"
-        }
-
         timeTracker = softwareSystem "Time Tracker" "Rust application for parsing markdown time entries and presenting reports via CLI and web interfaces." {
+            timeEntryStore = container "Time Entry Store" "File-backed markdown datastore containing tracked time entries (configured by input path)." "Markdown files on filesystem" {
+                tags "Database"
+            }
+
             cli = container "CLI Application" "Parses markdown time entries and prints reports in text or markdown formats." "Rust + Clap" {
                 tags "CLI"
 
@@ -59,8 +59,10 @@ workspace "Time Tracker" "C4 model for the Time Tracker Rust project." {
         user -> timeTracker.cli.cliWorkflow "Runs reports with"
         user -> timeTracker.web.httpHandlers "Uses via browser"
 
-        timeTracker.cli -> timeEntryFiles "Reads time entry markdown files from"
-        timeTracker.web -> timeEntryFiles "Reads time entry markdown files from"
+        user -> timeTracker.timeEntryStore "Maintains tracked time entries in"
+
+        timeTracker.cli -> timeTracker.timeEntryStore "Reads time entry markdown files from"
+        timeTracker.web -> timeTracker.timeEntryStore "Reads time entry markdown files from"
 
         timeTracker.cli -> timeTracker.runStatisticsLog "Appends execution records to"
         timeTracker.web -> timeTracker.runStatisticsLog "Reads flag statistics from and appends execution records to"
@@ -70,14 +72,14 @@ workspace "Time Tracker" "C4 model for the Time Tracker Rust project." {
         timeTracker.cli.cliWorkflow -> timeTracker.cli.cliOutputFormatter "Writes terminal output with"
         timeTracker.cli.cliWorkflow -> timeTracker.cli.executionStatistics "Records execution metadata via"
         timeTracker.cli.cliOutputFormatter -> timeTracker.cli.reportBuilder "Formats report models from"
-        timeTracker.cli.inputProcessing -> timeEntryFiles "Reads markdown entries from"
+        timeTracker.cli.inputProcessing -> timeTracker.timeEntryStore "Reads markdown entries from"
         timeTracker.cli.executionStatistics -> timeTracker.runStatisticsLog "Appends JSONL records to"
 
         timeTracker.web.httpHandlers -> timeTracker.web.inputProcessing "Loads filtered entries via"
         timeTracker.web.httpHandlers -> timeTracker.web.reportBuilder "Builds dashboard and outcomes models with"
         timeTracker.web.httpHandlers -> timeTracker.web.templateRenderer "Renders HTML with"
         timeTracker.web.httpHandlers -> timeTracker.web.executionStatistics "Reads flag usage summaries via"
-        timeTracker.web.inputProcessing -> timeEntryFiles "Reads markdown entries from"
+        timeTracker.web.inputProcessing -> timeTracker.timeEntryStore "Reads markdown entries from"
         timeTracker.web.executionStatistics -> timeTracker.runStatisticsLog "Reads JSONL records from"
     }
 
@@ -143,11 +145,6 @@ workspace "Time Tracker" "C4 model for the Time Tracker Rust project." {
             element "Web" {
                 background #2a9d8f
                 color #ffffff
-            }
-
-            element "External Data Store" {
-                background #e9ecef
-                color #111111
             }
 
             element "Shared Component" {
